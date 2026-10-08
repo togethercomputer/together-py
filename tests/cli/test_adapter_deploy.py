@@ -10,9 +10,9 @@ from together.types.beta import Model, EndpointDeployment
 from together.lib.cli.utils.config import CLIConfig
 from together.types.beta.models.config import Config
 from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
+    load_adapter_model,
     select_lora_config,
     config_adapter_mode,
-    load_adapter_model,
     config_serves_adapters,
     deployment_serves_model,
     select_lora_config_for_deploy,
@@ -178,6 +178,103 @@ async def test_bare_id_not_in_project_is_not_an_adapter() -> None:
 
     assert await load_adapter_model(_cli(client, project_id="proj"), "ml_public") is None
     client.beta.models.retrieve.assert_awaited_once_with(id="ml_public", project_id="proj")
+
+
+async def test_adapter_rollback_text_is_omitted_in_json_mode(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from together.types.beta import Endpoint
+    from together.lib.cli.api.beta.endpoints import deploy as deploy_mod
+
+    base = _model()
+    selected = _config(selectors=[{"key": "adapter_mode", "value": "dynamic"}])
+    endpoint = Endpoint.construct(id="ep_1", name="proj/ep", etag="etag")
+    deployment = _deployment(id="dep_1", etag="dtag")
+
+    async def _return_base(*_args: object, **_kwargs: object) -> Model:
+        return base
+
+    async def _return_configs(*_args: object, **_kwargs: object) -> list[Config]:
+        return [selected]
+
+    async def _no_endpoint(*_args: object, **_kwargs: object) -> None:
+        return None
+
+    async def _return_config(*_args: object, **_kwargs: object) -> Config:
+        return selected
+
+    async def _new_endpoint(*_args: object, **_kwargs: object) -> tuple[Endpoint, bool]:
+        return endpoint, True
+
+    async def _passthrough(_message: str, request: Any) -> Any:
+        return await request
+
+    monkeypatch.setattr(deploy_mod, "load_base_model", _return_base)
+    monkeypatch.setattr(deploy_mod, "list_model_configs", _return_configs)
+    monkeypatch.setattr(deploy_mod, "_peek_endpoint", _no_endpoint)
+    monkeypatch.setattr(deploy_mod, "select_lora_config_for_deploy", _return_config)
+    monkeypatch.setattr(deploy_mod, "assert_explicit_project_id", _no_endpoint)
+    monkeypatch.setattr(deploy_mod, "_find_or_create_endpoint", _new_endpoint)
+    monkeypatch.setattr(deploy_mod, "show_loading_status", _passthrough)
+
+    client = MagicMock()
+    client.beta.endpoints.delete = AsyncMock()
+    client.beta.endpoints.deployments.delete = AsyncMock()
+    client.beta.endpoints.deployments.create = AsyncMock(side_effect=RuntimeError("create failed"))
+    cli = _cli(client, project_id="proj")
+    cli.json = True
+
+    with pytest.raises(RuntimeError, match="create failed"):
+        await deploy_mod._deploy_adapter(
+            cli,
+            adapter=_model(id="ml_lora", name="proj/lora", weights={"type": "WEIGHTS_TYPE_ADAPTER"}),
+            adapter_revision=None,
+            endpoint_name_or_id="ep",
+            config_id=None,
+            min_replicas=None,
+            max_replicas=None,
+            scale_up_window=None,
+            scale_down_window=None,
+            scaling_metric=None,
+            scaling_target=None,
+            scaling_percentile=None,
+            deployment_name="dep",
+            placement_id=None,
+            placement_value=None,
+            inactive_timeout=None,
+            max_concurrent_requests_per_replica=None,
+            traffic_weight=None,
+        )
+
+    assert "Rolling back" not in capsys.readouterr().out
+
+    client.beta.endpoints.deployments.create = AsyncMock(return_value=deployment)
+    client.beta.endpoints.adapters.create = AsyncMock(side_effect=RuntimeError("attach failed"))
+
+    with pytest.raises(RuntimeError, match="attach failed"):
+        await deploy_mod._deploy_adapter(
+            cli,
+            adapter=_model(id="ml_lora", name="proj/lora", weights={"type": "WEIGHTS_TYPE_ADAPTER"}),
+            adapter_revision=None,
+            endpoint_name_or_id="ep",
+            config_id=None,
+            min_replicas=None,
+            max_replicas=None,
+            scale_up_window=None,
+            scale_down_window=None,
+            scaling_metric=None,
+            scaling_target=None,
+            scaling_percentile=None,
+            deployment_name="dep",
+            placement_id=None,
+            placement_value=None,
+            inactive_timeout=None,
+            max_concurrent_requests_per_replica=None,
+            traffic_weight=None,
+        )
+
+    assert "Rolling back" not in capsys.readouterr().out
 
 
 async def test_bare_id_in_project_still_loads_an_adapter() -> None:

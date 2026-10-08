@@ -556,7 +556,8 @@ async def _deploy_adapter(
         except Exception as e:
             if is_new_endpoint:
                 await config.client.beta.endpoints.delete(endpoint.id)
-                console.print("Error creating deployment. Rolling back.")
+                if not config.json:
+                    console.print("Error creating deployment. Rolling back.")
             raise e
     else:
         deployment = existing
@@ -572,7 +573,7 @@ async def _deploy_adapter(
             ),
         )
     except Exception as e:
-        if created_deployment or is_new_endpoint:
+        if (created_deployment or is_new_endpoint) and not config.json:
             console.print("Error attaching adapter. Rolling back.")
         if created_deployment:
             await config.client.beta.endpoints.deployments.delete(
