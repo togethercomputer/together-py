@@ -10,8 +10,8 @@ from respx import MockRouter
 from respx.models import Call, Route
 
 from together import Together, AsyncTogether
-from together.lib.beta.rl import SessionClient
 from together._base_client import BaseClient
+from together.post_training import SessionClient
 
 BASE_URL = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 IDEMPOTENCY_HEADER = "Idempotency-Key"
@@ -73,13 +73,13 @@ def test_sync_client_propagates_stable_retry_key(
 ) -> None:
     post_route, get_route = operation_routes
 
-    client.beta.rl.operations.create_training_checkpoint("session-id", idempotency_key="first-operation")
-    client.beta.rl.operations.create_training_checkpoint("session-id", idempotency_key="second-operation")
-    client.beta.rl.operations.create_training_checkpoint(
+    client.post_training.operations.create_training_checkpoint("session-id", idempotency_key="first-operation")
+    client.post_training.operations.create_training_checkpoint("session-id", idempotency_key="second-operation")
+    client.post_training.operations.create_training_checkpoint(
         "session-id",
         idempotency_key="caller-provided-key",
     )
-    client.beta.rl.operations.retrieve_training_checkpoint(
+    client.post_training.operations.retrieve_training_checkpoint(
         OPERATION_ID,
         session_id="session-id",
     )
@@ -94,13 +94,17 @@ async def test_async_client_propagates_stable_retry_key(
 ) -> None:
     post_route, get_route = operation_routes
 
-    await async_client.beta.rl.operations.create_training_checkpoint("session-id", idempotency_key="first-operation")
-    await async_client.beta.rl.operations.create_training_checkpoint("session-id", idempotency_key="second-operation")
-    await async_client.beta.rl.operations.create_training_checkpoint(
+    await async_client.post_training.operations.create_training_checkpoint(
+        "session-id", idempotency_key="first-operation"
+    )
+    await async_client.post_training.operations.create_training_checkpoint(
+        "session-id", idempotency_key="second-operation"
+    )
+    await async_client.post_training.operations.create_training_checkpoint(
         "session-id",
         idempotency_key="caller-provided-key",
     )
-    await async_client.beta.rl.operations.retrieve_training_checkpoint(
+    await async_client.post_training.operations.retrieve_training_checkpoint(
         OPERATION_ID,
         session_id="session-id",
     )
@@ -170,7 +174,8 @@ async def test_rl_wrappers_generate_retry_keys(
             200, json={"id": OPERATION_ID, "status": "TRAINING_OPERATION_STATUS_COMPLETED", "output": output}
         )
     )
-    session = SessionClient("session-id", _client=AsyncTogether(api_key="test-key", base_url=BASE_URL))
+    rl_client = AsyncTogether(api_key="test-key", base_url=BASE_URL)
+    session = SessionClient("session-id", _client=rl_client)
     try:
         resource = session if owner == "session" else getattr(session, owner)
         for _ in range(2):
