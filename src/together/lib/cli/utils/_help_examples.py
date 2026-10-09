@@ -358,7 +358,7 @@ BETA_ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 """
 
 BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Rolling (capacity-preserving batch swap):
+[dim]-[/dim] Rolling (small batches; source shrinks with remaining traffic):
   [primary]tg beta endpoints rollout my-deployment --rolling[/primary]
 
 [dim]-[/dim] Blue-green cutover:
