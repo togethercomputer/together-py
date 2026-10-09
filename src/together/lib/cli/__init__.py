@@ -540,7 +540,7 @@ _CLI = "together.lib.cli.api"
 files_app = app.command(App(name="files", help="Upload and manage files", help_epilogue=FILES_HELP_EXAMPLES))
 files_app.command(
     f"{_CLI}.files.upload:upload",
-    help="Upload a file for fine-tuning, evals, or inference",
+    help="Upload a file for fine-tuning, calibration, evals, or inference",
     help_epilogue=FILES_UPLOAD_HELP_EXAMPLES,
 )
 files_app.command(f"{_CLI}.files.list:list", alias="ls", help="List your files")
