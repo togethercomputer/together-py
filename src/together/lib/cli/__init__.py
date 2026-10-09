@@ -881,6 +881,44 @@ beta_endpoints_app.command(
     help="List endpoint audit and lifecycle events",
     sort_key=6,
 )
+beta_endpoint_adapters_app = beta_endpoints_app.command(
+    App(name="adapters", help="Manage LoRA adapter attachments for deployments", group="Subcommands")
+)
+beta_endpoint_adapters_app.command(
+    (f"{_CLI}.beta.endpoints.adapters:list"),
+    alias="ls",
+    help="List adapter attachments for a deployment",
+    sort_key=1,
+)
+beta_endpoint_adapters_app.command(
+    (f"{_CLI}.beta.endpoints.adapters:add"),
+    alias="create",
+    help="Attach an adapter to a deployment",
+    sort_key=2,
+)
+beta_endpoint_adapters_app.command(
+    (f"{_CLI}.beta.endpoints.adapters:retrieve"),
+    name="get",
+    help="Get adapter attachment details",
+    sort_key=3,
+)
+beta_endpoint_adapters_app.command(
+    (f"{_CLI}.beta.endpoints.adapters:retrieve"),
+    name="retrieve",
+    show=False,
+)
+beta_endpoint_adapters_app.command(
+    (f"{_CLI}.beta.endpoints.adapters:update"),
+    help="Update an adapter attachment revision",
+    sort_key=4,
+)
+beta_endpoint_adapters_app.command(
+    (f"{_CLI}.beta.endpoints.adapters:remove"),
+    name="rm",
+    alias=("delete", "remove"),
+    help="Remove an adapter attachment",
+    sort_key=5,
+)
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.rollout:rollout"),
     help="Roll out a model to receive traffic over another model",

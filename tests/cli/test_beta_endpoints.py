@@ -140,6 +140,28 @@ def _event_body(**overrides: Any) -> dict[str, Any]:
     return body
 
 
+def _adapter_body(**overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "id": "dad_1",
+        "adapterModelId": "ml_adapter",
+        "desiredRevisionId": "rev_1",
+        "etag": "etag-adapter-1",
+        "perCluster": [
+            {
+                "adapterModelId": "ml_adapter",
+                "clusterId": "cluster-1",
+                "failedPodCount": 0,
+                "readyPodCount": 1,
+                "state": "ADAPTER_LOAD_STATE_READY",
+                "totalPodCount": 1,
+                "realizedRevisionId": "rev_1",
+            }
+        ],
+    }
+    body.update(overrides)
+    return body
+
+
 def _mock_model_and_config(respx_mock: MockRouter) -> None:
     respx_mock.get("/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
     respx_mock.get("/projects/proj/configs").mock(
@@ -854,3 +876,142 @@ class TestBetaEndpointsListEvents:
         assert "SOURCE_KIND_DEPLOYMENT" not in result.output
         assert "LEVEL_" not in result.output
         assert "Subject" not in result.output
+
+
+class TestBetaEndpointAdapters:
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_adapter_attachments(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_1/adapters").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_adapter_body()], "next_cursor": "dad_2"},
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "endpoints", "adapters", "list", "ep_1", "dep_1"])
+
+        assert result.exit_code == 0, result.output
+        assert "dad_1" in result.out_out
+        assert "ml_adapter" in result.out_out
+        assert "READY" in result.out_out
+        assert "1/1" in result.out_out
+        assert "tg beta endpoints adapters list ep_1 dep_1 --after dad_2" in result.out_out
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_add_adapter_attachment_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments/dep_1/adapters").mock(
+            return_value=httpx.Response(200, json=_adapter_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "adapters",
+                "add",
+                "ep_1",
+                "dep_1",
+                "ml_adapter",
+                "--adapter-revision-id",
+                "rev_1",
+                "--force",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert body == {"adapterModelId": "ml_adapter", "adapterRevisionId": "rev_1", "force": True}
+        assert json.loads(result.output)["id"] == "dad_1"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_get_adapter_attachment_with_model_cross_check(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        route = respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_1/adapters/dad_1").mock(
+            return_value=httpx.Response(200, json=_adapter_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "adapters",
+                "get",
+                "ep_1",
+                "dep_1",
+                "dad_1",
+                "--adapter-model-id",
+                "ml_adapter",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        query = parse_qs(urlparse(str(cast(Call, route.calls[0]).request.url)).query)
+        assert query["adapterModelId"] == ["ml_adapter"]
+        assert json.loads(result.output)["id"] == "dad_1"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_adapter_attachment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_1/adapters/dad_1").mock(
+            return_value=httpx.Response(200, json=_adapter_body(desiredRevisionId="rev_2"))
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "adapters",
+                "update",
+                "ep_1",
+                "dep_1",
+                "dad_1",
+                "--adapter-revision-id",
+                "rev_2",
+                "--etag",
+                "etag-adapter-1",
+                "--adapter-model-id",
+                "ml_adapter",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert body == {
+            "adapterRevisionId": "rev_2",
+            "etag": "etag-adapter-1",
+            "adapterModelId": "ml_adapter",
+        }
+        assert json.loads(result.output)["desiredRevisionId"] == "rev_2"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remove_adapter_attachment_uses_attachment_id_and_etag(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        route = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_1/adapters/dad_1").mock(
+            return_value=httpx.Response(200, json={})
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "adapters",
+                "rm",
+                "ep_1",
+                "dep_1",
+                "dad_1",
+                "--etag",
+                "etag-adapter-1",
+                "--adapter-model-id",
+                "ml_adapter",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        query = parse_qs(urlparse(str(cast(Call, route.calls[0]).request.url)).query)
+        assert query == {"etag": ["etag-adapter-1"], "adapterModelId": ["ml_adapter"]}
+        assert json.loads(result.output) == {}
