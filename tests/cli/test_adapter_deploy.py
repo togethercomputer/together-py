@@ -283,6 +283,7 @@ async def test_bare_id_in_project_still_loads_an_adapter() -> None:
 
     loaded = await load_model(_cli(client, project_id="proj"), "ml_lora")
 
+    assert loaded is not None
     assert loaded is adapter
     assert is_adapter_model(loaded)
     client.beta.models.retrieve.assert_awaited_once_with(id="ml_lora", project_id="proj")
