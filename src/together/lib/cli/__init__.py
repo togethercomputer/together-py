@@ -1049,6 +1049,28 @@ jig_app.command(
 )
 jig_app.command((f"{_CLI}.beta.jig.jig:list_deployments_cli"), name="list", alias="ls", help="List all deployments")
 
+### Jig > revisions
+revisions_app = jig_app.command(
+    App(name="revisions", help="Manage deployment revisions", group="Subcommands")
+)
+revisions_app.command(
+    (f"{_CLI}.beta.jig.jig:revisions_list_cli"),
+    name="list",
+    alias="ls",
+    help="List deployment revision history",
+)
+revisions_app.command(
+    (f"{_CLI}.beta.jig.jig:revisions_describe_cli"),
+    name="describe",
+    alias=("retrieve", "get"),
+    help="Get deployment revision details",
+)
+revisions_app.command(
+    (f"{_CLI}.beta.jig.jig:revisions_rollback_cli"),
+    name="rollback",
+    help="Roll back deployment to a previous revision",
+)
+
 secrets_app = jig_app.command(
     App(name="secrets", help="Manage deployment secrets", group="Subcommands", help_epilogue=JIG_SECRETS_HELP_EXAMPLES)
 )

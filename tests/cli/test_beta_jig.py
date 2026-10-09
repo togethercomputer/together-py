@@ -134,6 +134,59 @@ def _volume_api_body(name: str, **extra: object) -> dict[str, object]:
     return body
 
 
+def _revision_event_api_body(**extra: object) -> dict[str, object]:
+    body: dict[str, object] = {
+        "object": "revision_event",
+        "event_number": 3,
+        "revision_number": 2,
+        "revision_id": "rev-2",
+        "action": "rollback",
+        "image": "registry.together.ai/test/app@sha256:abcdef123456",
+        "activated_at": "2026-01-01T00:00:00Z",
+    }
+    body.update(extra)
+    return body
+
+
+def _revision_api_body(**extra: object) -> dict[str, object]:
+    body: dict[str, object] = {
+        "object": "revision",
+        "revision_id": "rev-2",
+        "args": [],
+        "capacity_type": "stable",
+        "command": [],
+        "cpu": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "environment_variables": [],
+        "gpu_count": 1,
+        "gpu_type": "h100-80gb",
+        "health_check_path": "/health",
+        "image": "registry.together.ai/test/app@sha256:abcdef123456",
+        "max_replicas": 2,
+        "memory": 8,
+        "min_replicas": 1,
+        "port": 8000,
+        "protocol": "http",
+        "storage": 100,
+        "volumes": [],
+    }
+    body.update(extra)
+    return body
+
+
+def _deployment_api_body(**extra: object) -> dict[str, object]:
+    body: dict[str, object] = {
+        "object": "deployment",
+        "id": "dep-1",
+        "name": _DEPLOY_NAME,
+        "status": "Ready",
+        "image": "registry.together.ai/test/app@sha256:abcdef123456",
+        "environment_variables": [],
+    }
+    body.update(extra)
+    return body
+
+
 class TestBetaJigSecretsSet:
     @pytest.mark.respx(base_url=base_url)
     def test_set_creates_when_update_returns_not_found(
@@ -309,6 +362,79 @@ class TestBetaJigLogs:
         assert request.url.params["replica_id"] == "replica-1"
         assert request.url.params["revision"] == "revision-1"
         assert request.url.params["version"] == "v2"
+        assert result.exit_code == 0
+
+
+class TestBetaJigRevisions:
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_renders_revision_history_and_forwards_pagination(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        route = respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_revision_event_api_body()]},
+            )
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(
+                ["beta", "jig", "revisions", "list", "--before", "10", "--limit", "5"]
+            )
+
+        assert "Revision history" in result.output
+        assert "rev-2" in result.output
+        assert "rollback" in result.output
+        request = cast(Call, route.calls[0]).request
+        assert request.url.params["before"] == "10"
+        assert request.url.params["limit"] == "5"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_json(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        payload = {"object": "list", "data": [_revision_event_api_body()]}
+        respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "revisions", "list", "--json"])
+
+        assert json.loads(result.output) == payload
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_describe_returns_revision_json(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        payload = _revision_api_body(revision_id="rev-older")
+        respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions/rev-older").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "revisions", "describe", "rev-older"])
+
+        assert json.loads(result.output)["revision_id"] == "rev-older"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rollback_sends_revision_identifier(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        route = respx_mock.post(f"/deployments/{_DEPLOY_NAME}/rollback").mock(
+            return_value=httpx.Response(200, json=_deployment_api_body())
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "revisions", "rollback", "2", "--detach"])
+
+        assert "Rolled back" in result.output
+        assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {"revision_identifier": "2"}
         assert result.exit_code == 0
 
 
