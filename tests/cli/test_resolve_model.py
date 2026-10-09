@@ -334,6 +334,7 @@ async def test_public_model_multiple_profiles_requires_flags(capsys: pytest.Capt
             config="projects/proj_public/configs/cr_a",
             profileId="cr_a",
             quantization="BF16",
+            adapterMode="ADAPTER_MODE_DYNAMIC",
             model="projects/proj_public/models/ml_a/revisions/rv_1",
             modelName="meta-llama/Llama-3-8B-BF16",
         ),
@@ -342,6 +343,7 @@ async def test_public_model_multiple_profiles_requires_flags(capsys: pytest.Capt
             config="projects/proj_public/configs/cr_b",
             profileId="cr_b",
             quantization="FP8",
+            adapterMode="ADAPTER_MODE_DISABLED",
             model="projects/proj_public/models/ml_b/revisions/rv_2",
             modelName="meta-llama/Llama-3-8B-FP8",
         ),
@@ -360,6 +362,8 @@ async def test_public_model_multiple_profiles_requires_flags(capsys: pytest.Capt
     assert "cr_a" in output
     assert "cr_b" in output
     assert "meta-llama/Llama-3-8B-BF16" in output
+    assert "Dyn" in output
+    assert "Dis" in output
     assert "--model meta-llama/Llama-3-8B-BF16 --config cr_a" in output
 
 

@@ -353,6 +353,19 @@ def _profile_gpu(profile: SupportedModelDeploymentProfile) -> str:
     return ""
 
 
+def _profile_adapter_mode(profile: SupportedModelDeploymentProfile) -> str | None:
+    return getattr(profile, "adapter_mode", None) or getattr(profile, "adapterMode", None)
+
+
+def _format_adapter_mode(mode: str | None) -> str:
+    if mode is None:
+        return ""
+    prefix = "ADAPTER_MODE_"
+    if mode.startswith(prefix):
+        return mode[len(prefix) :].replace("_", " ").title()
+    return mode
+
+
 def _ambiguous_profile_error(profiles: list[SupportedModelDeploymentProfile], *, detail: str) -> str:
     choices = "; ".join(
         f"model={_profile_cli_model(profile)} config={_profile_config_id(profile)}" for profile in profiles
@@ -369,6 +382,7 @@ def _print_deployment_profiles(profiles: list[SupportedModelDeploymentProfile], 
     table.add_column("Quant")
     table.add_column("GPUs")
     table.add_column("Parallelism")
+    table.add_column("Adapters")
 
     for profile in profiles:
         table.add_row(
@@ -377,6 +391,7 @@ def _print_deployment_profiles(profiles: list[SupportedModelDeploymentProfile], 
             profile.quantization or "",
             _profile_gpu(profile),
             profile.parallelism or "",
+            _format_adapter_mode(_profile_adapter_mode(profile)),
         )
     console.print(table)
 

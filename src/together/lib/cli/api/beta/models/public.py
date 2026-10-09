@@ -18,6 +18,19 @@ ModalityFilter = Literal["MODALITY_TEXT", "MODALITY_IMAGE", "MODALITY_AUDIO", "M
 ProductFilter = Literal["PRODUCT_SERVERLESS", "PRODUCT_DEDICATED", "PRODUCT_FINE_TUNING"]
 
 
+def _profile_adapter_mode(profile: object) -> str | None:
+    return getattr(profile, "adapter_mode", None) or getattr(profile, "adapterMode", None)
+
+
+def _format_adapter_mode(mode: str | None) -> str:
+    if mode is None:
+        return ""
+    prefix = "ADAPTER_MODE_"
+    if mode.startswith(prefix):
+        return mode[len(prefix) :].replace("_", " ").title()
+    return mode
+
+
 async def public(
     search: Annotated[Optional[str], Parameter(help="Search by id, name, or description")] = None,
     limit: Annotated[Optional[int], Parameter(help="Maximum models to return")] = None,
@@ -55,11 +68,12 @@ async def public(
     table.add_primary_column("Model", ratio=3)
     table.add_column("GPUs")
     table.add_column("Parallelism")
+    table.add_column("Adapters")
 
     for model in response.data:
         profiles = model.deployment_profiles or []
         if not profiles:
-            table.add_row(model.name or model.id or "", "", "", "", "")
+            table.add_row(model.name or model.id or "", "", "", "")
             continue
 
         for profile in profiles:
@@ -73,6 +87,7 @@ async def public(
                 profile_model,
                 gpu,
                 profile.parallelism or "",
+                _format_adapter_mode(_profile_adapter_mode(profile)),
             )
     console.print(table)
 
