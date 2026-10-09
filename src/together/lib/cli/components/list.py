@@ -38,10 +38,15 @@ class ListTable:
         )
 
     def add_primary_column(
-        self, name: str, *, ratio: int | None = None, justify: Literal["left", "center", "right"] = "left"
+        self,
+        name: str,
+        *,
+        ratio: int | None = None,
+        justify: Literal["left", "center", "right"] = "left",
+        overflow: Literal["ellipsis", "fold", "crop"] = "ellipsis",
     ) -> None:
         self.has_primary_column = True
-        self.table.add_column(name, ratio=ratio, justify=justify, style="primary")
+        self.table.add_column(name, ratio=ratio, justify=justify, style="primary", overflow=overflow)
 
     def add_column(
         self,
@@ -51,8 +56,17 @@ class ListTable:
         justify: Literal["left", "center", "right"] = "left",
         width: int | None = None,
         no_wrap: bool = False,
+        overflow: Literal["ellipsis", "fold", "crop"] = "ellipsis",
     ) -> None:
-        self.table.add_column(name, ratio=ratio, justify=justify, style="muted", width=width, no_wrap=no_wrap)
+        self.table.add_column(
+            name,
+            ratio=ratio,
+            justify=justify,
+            style="muted",
+            width=width,
+            no_wrap=no_wrap,
+            overflow=overflow,
+        )
 
     def add_row(self, *values: Any) -> None:
         self.table.add_row(*values)

@@ -43,6 +43,7 @@ from together.lib.cli.utils._help_examples import (
     CLUSTERS_HELP_EXAMPLES,
     JIG_LOGS_HELP_EXAMPLES,
     JIG_PUSH_HELP_EXAMPLES,
+    TRAINING_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
     JIG_BUILD_HELP_EXAMPLES,
     TOP_LEVEL_HELP_EXAMPLES,
@@ -606,14 +607,46 @@ fine_tuning_app.command(
 )
 
 ## Training API commands
-training_app = app.command(App(name="training", help="Prepare trained models for inference"))
-_FP4 = f"{_CLI}.training.prepare_for_fp4_inference"
+training_app = app.command(
+    App(
+        name="training",
+        help="Inspect training resources and prepare models for inference",
+        help_epilogue=TRAINING_HELP_EXAMPLES,
+    )
+)
+_TRAINING = f"{_CLI}.training"
+training_app.command(
+    (f"{_TRAINING}.ls_resources:list_resources"),
+    name="ls-resources",
+    help="List model resources",
+    sort_key=1,
+)
+training_app.command(
+    (f"{_TRAINING}.ls_sessions:list_sessions"),
+    name="ls-sessions",
+    help="List training sessions",
+    sort_key=2,
+)
+training_app.command(
+    (f"{_TRAINING}.ls_checkpoints:list_checkpoints"),
+    name="ls-checkpoints",
+    help="List training and inference checkpoints",
+    sort_key=3,
+)
+training_app.command(
+    (f"{_TRAINING}.retrieve:retrieve"),
+    name="get",
+    help="Get a model resource, training session, or checkpoint by ID",
+    sort_key=4,
+)
+_FP4 = f"{_TRAINING}.prepare_for_fp4_inference"
 training_fp4_app = training_app.command(
     App(
         name="prepare-for-fp4-inference",
         alias="fp4",
         help="Merge fine-tuned adapters into their base model and prepare them for FP4 inference",
         help_epilogue=TRAINING_FP4_HELP_EXAMPLES,
+        sort_key=5,
     )
 )
 training_fp4_app.command(
