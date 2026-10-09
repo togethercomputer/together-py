@@ -11,6 +11,8 @@ from respx import MockRouter
 from respx.models import Call
 
 from tests.cli.utils import CliRunner
+from together.types.beta import EndpointDeploymentSummary
+from together.lib.cli.api.beta.endpoints.list import _format_replicas
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -148,6 +150,17 @@ def _mock_model_and_config(respx_mock: MockRouter) -> None:
             json={"object": "list", "data": [_config_body()], "next_cursor": None},
         )
     )
+
+
+class TestFormatReplicas:
+    def test_formats_desired_replicas_as_target(self) -> None:
+        deployment = EndpointDeploymentSummary.construct(
+            state="DEPLOYMENT_STATE_SCALING",
+            readyReplicas=1,
+            desiredReplicas=2,
+        )
+
+        assert _format_replicas(deployment) == "1/2"
 
 
 class TestBetaEndpointsDeploy:
@@ -696,7 +709,10 @@ class TestBetaEndpointsList:
 
         result = cli_runner.invoke(["beta", "endpoints", "ls", "--project", "proj"])
 
+        output = " ".join(result.output.split())
         assert result.exit_code == 0, result.output
+        assert "Ready/Target" in output
+        assert "1/1" in output
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_org_scoped(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

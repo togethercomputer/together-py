@@ -99,7 +99,7 @@ def print_endpoints_table(
     table.add_primary_column("Name", ratio=2)
     table.add_column("Model", ratio=2)
     table.add_column("GPU")
-    table.add_column("Replicas")
+    table.add_column("Ready/Target", width=12, no_wrap=True)
 
     for endpoint in endpoints:
         deployments = endpoint.deployments or []
@@ -185,8 +185,8 @@ def _format_replicas(deployment: EndpointDeploymentSummary) -> str:
     ready = deployment.ready_replicas or 0
     desired = deployment.desired_replicas or 0
     if ready == desired and ready > 0:
-        return f"[green]•[/green] {ready}/{desired} ready"
-    return f"{ready}/{desired} ready"
+        return f"[green]•[/green] {ready}/{desired}"
+    return f"{ready}/{desired}"
 
 
 def _prettify_hardware(hardware: str | None) -> str:
