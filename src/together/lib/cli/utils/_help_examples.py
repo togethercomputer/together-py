@@ -760,6 +760,10 @@ JIG_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta jig status[/primary]
   [primary]tg beta jig logs --follow[/primary]
 
+[dim]-[/dim] List revisions and roll back:
+  [primary]tg beta jig revisions[/primary]
+  [primary]tg beta jig rollback <revision-number-or-id>[/primary]
+
 [dim]-[/dim] List deployments or tear one down:
   [primary]tg beta jig list[/primary]
   [primary]tg beta jig destroy[/primary]
