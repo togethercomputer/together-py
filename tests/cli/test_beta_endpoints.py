@@ -695,7 +695,7 @@ class TestBetaEndpointsDeployAdapter:
 
         assert result.exit_code != 0
         assert result.output.index("--attach-adapter") < result.output.index("--merge")
-        assert "Normal experience for testing" in result.output
+        assert "is a LoRA adapter" in result.output
         assert not any(call.request.method == "POST" for call in cast(list[Call], respx_mock.calls))
 
     def test_deploy_rejects_merge_with_attach_adapter(self, cli_runner: CliRunner) -> None:
@@ -1370,7 +1370,7 @@ class TestBetaEndpointsDeployAdapter:
         assert result.exit_code != 0
         assert delete_deployment.call_count == 1
         assert delete_endpoint.call_count == 1
-        assert "Rolling back" in result.output
+        assert "Rolling back" not in result.output
 
 
 class TestBetaEndpointsList:

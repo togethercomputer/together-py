@@ -42,6 +42,7 @@ from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
     is_adapter_model,
     list_model_configs,
     find_compatible_deployment,
+    load_client_project_adapter,
     select_lora_config_for_deploy,
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
@@ -254,6 +255,10 @@ async def deploy(
         raise ValueError("Use either --merge or --attach-adapter, not both.")
 
     loaded_model = await load_model(config, model)
+    if loaded_model is None:
+        # Resolver ignores the default project. Still notice a LoRA there so
+        # deploy asks for --merge / --attach-adapter instead of shipping the base.
+        loaded_model = await load_client_project_adapter(config, model)
     adapter_model = loaded_model if loaded_model is not None and is_adapter_model(loaded_model) else None
     if adapter_model is None and (merge or attach_adapter):
         flag = "--merge" if merge else "--attach-adapter"

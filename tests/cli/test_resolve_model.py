@@ -233,20 +233,25 @@ async def test_private_named_model_uses_base_model_id_for_config_but_custom_path
 
 
 @pytest.mark.asyncio
-async def test_bare_id_from_client_project_is_kept() -> None:
-    model = _private_model(id="ml_lora", projectId="proj_from_client", baseModelId="ml_base")
+async def test_bare_id_ignores_client_default_project() -> None:
+    """A public id that is also in the default project stays on the catalog path."""
+    catalog = _private_model(
+        id="ml_base",
+        projectId="proj_public",
+        name="together/some-named-model",
+        baseModelId=None,
+    )
     client = MagicMock()
     client.project_id = "proj_from_client"
-    client.beta.models.retrieve = AsyncMock(return_value=model)
+    client.beta.models.retrieve = AsyncMock(return_value=catalog)
     client.beta.models.configs.list = AsyncMock(return_value=MagicMock(data=[_config()]))
     cli = CLIConfig(client=client, non_interactive=True, json=True, project_id=None)
 
-    resolved = await resolve_model_and_config(cli, "ml_lora", config_id=None)
+    resolved = await resolve_model_and_config(cli, "ml_base", config_id=None)
 
-    client.beta.models.retrieve.assert_awaited_once_with(id="ml_lora", project_id="proj_from_client")
     client.beta.models.configs.list.assert_awaited_once_with(reference_model_id="ml_base")
-    assert resolved.model.id == "ml_lora"
-    assert resolved.model.project_id == "proj_from_client"
+    client.beta.models.retrieve.assert_awaited_once_with(id="ml_base", project_id="proj_public")
+    assert construct_model_path(resolved.model, resolved.revision_id) == "projects/proj_public/models/ml_base"
 
 
 @pytest.mark.asyncio

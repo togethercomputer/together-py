@@ -22,8 +22,10 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
 # Logic for resolving a model + config from a user input string
 #
 # 1. Raw model id (e.g. ml_...)
-#    → retrieve from --project or the client project; config via baseModelId / id
+#    → retrieve from --project when it was passed; config via baseModelId / id
 #    → else GET /configs?referenceModelId=... (public / reference models)
+#    The client's default project is not a --project. A public id that is also
+#    retrievable there must stay on the catalog path (ab and shadow included).
 # 2. Full model path (projects/.../models/...)
 #    → retrieve that model (keep it as the deploy target), resolve config via
 #      baseModelId (or the model id when it is itself a reference model).
@@ -134,12 +136,14 @@ async def load_model(config: CLIConfigParameter, model_input: str) -> Model | No
             return None
 
     if "/" not in model_input:
-        # Bare ids are often public reference models. A direct retrieve needs a
-        # project id and 404s when the id is not in that project. Either failure
-        # falls through to config lookup instead of aborting the deploy.
-        project_id = config.project_id or config.client.project_id
+        # A bare id is a project model only when --project was passed. The
+        # client's default project is not a substitute: a public id that is
+        # also retrievable there would deploy projects/<user>/models/...
+        # instead of the catalog path. A miss falls through to configs.
+        if not config.project_id:
+            return None
         try:
-            return await config.client.beta.models.retrieve(id=model_input, project_id=project_id)
+            return await config.client.beta.models.retrieve(id=model_input, project_id=config.project_id)
         except (NotFoundError, ValueError):
             return None
 

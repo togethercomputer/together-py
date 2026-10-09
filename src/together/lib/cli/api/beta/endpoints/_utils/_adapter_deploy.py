@@ -7,7 +7,7 @@ from together import NotFoundError
 from together.types.beta import Model, EndpointDeployment
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.types.beta.models.config import Config
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE, load_model
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     find_config,
     resolve_config,
@@ -137,10 +137,24 @@ def _adapter_mode_rank(mode: str | None) -> int:
     return _ADAPTER_MODE_RANK.get(mode or "", 9)
 
 
-async def load_adapter_model(config: CLIConfigParameter, model_input: str) -> Model | None:
-    """Load ``model_input`` when it is a LoRA adapter. Return None for every other model."""
-    model = await load_model(config, model_input)
-    if model is None or not is_adapter_model(model):
+async def load_client_project_adapter(config: CLIConfigParameter, model_input: str) -> Model | None:
+    """Return a LoRA in the client project when --project was not passed.
+
+    Bare ids otherwise resolve as public reference models, including for ab and
+    shadow. This peek is only so deploy can require --merge / --attach-adapter.
+    A non-adapter hit is dropped: keeping it would deploy a path inside the
+    user's project instead of the catalog path.
+    """
+    if config.project_id or "/" in model_input:
+        return None
+    project_id = config.client.project_id
+    if not project_id:
+        return None
+    try:
+        model = await config.client.beta.models.retrieve(id=model_input, project_id=project_id)
+    except (NotFoundError, ValueError):
+        return None
+    if not is_adapter_model(model):
         return None
     return model
 
