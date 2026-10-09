@@ -21,6 +21,7 @@ from ....types.beta.endpoints import (
     adapter_create_params,
     adapter_delete_params,
     adapter_update_params,
+    adapter_retrieve_params,
 )
 from ....types.beta.endpoints.adapter_list_response import AdapterListResponse
 from ....types.beta.endpoints.adapter_create_response import AdapterCreateResponse
@@ -131,6 +132,7 @@ class AdaptersResource(SyncAPIResource):
         project_id: str | None = None,
         endpoint_id: str,
         deployment_id: str,
+        adapter_model_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -139,7 +141,8 @@ class AdaptersResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AdapterRetrieveResponse:
         """
-        Gets an attached adapter and its per-cluster load state.
+        Gets an adapter attachment by its `dad_` id and returns its per-cluster load
+        state.
 
         Args:
           project_id: Project identifier.
@@ -148,7 +151,10 @@ class AdaptersResource(SyncAPIResource):
 
           deployment_id: Deployment identifier.
 
-          id: Adapter model identifier.
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
+
+          adapter_model_id: Deprecated optional cross-check. When set, this must equal the `ml_` id of the
+              adapter model pinned by the live attachment; model names are not accepted.
 
           extra_headers: Send extra headers
 
@@ -178,7 +184,13 @@ class AdaptersResource(SyncAPIResource):
                 id=id,
             ),
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {"adapter_model_id": adapter_model_id}, adapter_retrieve_params.AdapterRetrieveParams
+                ),
             ),
             cast_to=AdapterRetrieveResponse,
         )
@@ -192,6 +204,7 @@ class AdaptersResource(SyncAPIResource):
         deployment_id: str,
         adapter_revision_id: str,
         etag: str,
+        adapter_model_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -200,8 +213,8 @@ class AdaptersResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AdapterUpdateResponse:
         """
-        Updates the pinned revision of an attached adapter using its row-level etag for
-        optimistic concurrency.
+        Updates the pinned revision of an adapter attachment by its `dad_` id using its
+        row-level etag for optimistic concurrency.
 
         Args:
           project_id: Project identifier.
@@ -210,12 +223,15 @@ class AdaptersResource(SyncAPIResource):
 
           deployment_id: Deployment identifier.
 
-          id: Adapter model identifier.
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
 
           adapter_revision_id: New adapter revision to pin.
 
           etag: Row-level etag from a prior AddAdapter, UpdateAdapter, GetAdapter, or
               ListAdapters response.
+
+          adapter_model_id: Deprecated optional cross-check. When set, this must equal the `ml_` id of the
+              adapter model pinned by the live attachment; model names are not accepted.
 
           extra_headers: Send extra headers
 
@@ -248,6 +264,7 @@ class AdaptersResource(SyncAPIResource):
                 {
                     "adapter_revision_id": adapter_revision_id,
                     "etag": etag,
+                    "adapter_model_id": adapter_model_id,
                 },
                 adapter_update_params.AdapterUpdateParams,
             ),
@@ -335,6 +352,7 @@ class AdaptersResource(SyncAPIResource):
         endpoint_id: str,
         deployment_id: str,
         etag: str,
+        adapter_model_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -343,8 +361,8 @@ class AdaptersResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AdapterDeleteResponse:
         """
-        Detaches an adapter from a deployment using its row-level etag for optimistic
-        concurrency.
+        Detaches an adapter attachment by its `dad_` id using its row-level etag for
+        optimistic concurrency.
 
         Args:
           project_id: Project identifier.
@@ -353,10 +371,13 @@ class AdaptersResource(SyncAPIResource):
 
           deployment_id: Deployment identifier.
 
-          id: Adapter model identifier.
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
 
           etag: Adapter etag from a previous add, update, get, or list response. The removal is
               rejected if the adapter changed after that response.
+
+          adapter_model_id: Deprecated optional cross-check. When set, this must equal the `ml_` id of the
+              adapter model pinned by the live attachment; model names are not accepted.
 
           extra_headers: Send extra headers
 
@@ -390,7 +411,13 @@ class AdaptersResource(SyncAPIResource):
                 extra_query=extra_query,
                 extra_body=extra_body,
                 timeout=timeout,
-                query=maybe_transform({"etag": etag}, adapter_delete_params.AdapterDeleteParams),
+                query=maybe_transform(
+                    {
+                        "etag": etag,
+                        "adapter_model_id": adapter_model_id,
+                    },
+                    adapter_delete_params.AdapterDeleteParams,
+                ),
             ),
             cast_to=AdapterDeleteResponse,
         )
@@ -496,6 +523,7 @@ class AsyncAdaptersResource(AsyncAPIResource):
         project_id: str | None = None,
         endpoint_id: str,
         deployment_id: str,
+        adapter_model_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -504,7 +532,8 @@ class AsyncAdaptersResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AdapterRetrieveResponse:
         """
-        Gets an attached adapter and its per-cluster load state.
+        Gets an adapter attachment by its `dad_` id and returns its per-cluster load
+        state.
 
         Args:
           project_id: Project identifier.
@@ -513,7 +542,10 @@ class AsyncAdaptersResource(AsyncAPIResource):
 
           deployment_id: Deployment identifier.
 
-          id: Adapter model identifier.
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
+
+          adapter_model_id: Deprecated optional cross-check. When set, this must equal the `ml_` id of the
+              adapter model pinned by the live attachment; model names are not accepted.
 
           extra_headers: Send extra headers
 
@@ -543,7 +575,13 @@ class AsyncAdaptersResource(AsyncAPIResource):
                 id=id,
             ),
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {"adapter_model_id": adapter_model_id}, adapter_retrieve_params.AdapterRetrieveParams
+                ),
             ),
             cast_to=AdapterRetrieveResponse,
         )
@@ -557,6 +595,7 @@ class AsyncAdaptersResource(AsyncAPIResource):
         deployment_id: str,
         adapter_revision_id: str,
         etag: str,
+        adapter_model_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -565,8 +604,8 @@ class AsyncAdaptersResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AdapterUpdateResponse:
         """
-        Updates the pinned revision of an attached adapter using its row-level etag for
-        optimistic concurrency.
+        Updates the pinned revision of an adapter attachment by its `dad_` id using its
+        row-level etag for optimistic concurrency.
 
         Args:
           project_id: Project identifier.
@@ -575,12 +614,15 @@ class AsyncAdaptersResource(AsyncAPIResource):
 
           deployment_id: Deployment identifier.
 
-          id: Adapter model identifier.
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
 
           adapter_revision_id: New adapter revision to pin.
 
           etag: Row-level etag from a prior AddAdapter, UpdateAdapter, GetAdapter, or
               ListAdapters response.
+
+          adapter_model_id: Deprecated optional cross-check. When set, this must equal the `ml_` id of the
+              adapter model pinned by the live attachment; model names are not accepted.
 
           extra_headers: Send extra headers
 
@@ -613,6 +655,7 @@ class AsyncAdaptersResource(AsyncAPIResource):
                 {
                     "adapter_revision_id": adapter_revision_id,
                     "etag": etag,
+                    "adapter_model_id": adapter_model_id,
                 },
                 adapter_update_params.AdapterUpdateParams,
             ),
@@ -700,6 +743,7 @@ class AsyncAdaptersResource(AsyncAPIResource):
         endpoint_id: str,
         deployment_id: str,
         etag: str,
+        adapter_model_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -708,8 +752,8 @@ class AsyncAdaptersResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AdapterDeleteResponse:
         """
-        Detaches an adapter from a deployment using its row-level etag for optimistic
-        concurrency.
+        Detaches an adapter attachment by its `dad_` id using its row-level etag for
+        optimistic concurrency.
 
         Args:
           project_id: Project identifier.
@@ -718,10 +762,13 @@ class AsyncAdaptersResource(AsyncAPIResource):
 
           deployment_id: Deployment identifier.
 
-          id: Adapter model identifier.
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
 
           etag: Adapter etag from a previous add, update, get, or list response. The removal is
               rejected if the adapter changed after that response.
+
+          adapter_model_id: Deprecated optional cross-check. When set, this must equal the `ml_` id of the
+              adapter model pinned by the live attachment; model names are not accepted.
 
           extra_headers: Send extra headers
 
@@ -755,7 +802,13 @@ class AsyncAdaptersResource(AsyncAPIResource):
                 extra_query=extra_query,
                 extra_body=extra_body,
                 timeout=timeout,
-                query=await async_maybe_transform({"etag": etag}, adapter_delete_params.AdapterDeleteParams),
+                query=await async_maybe_transform(
+                    {
+                        "etag": etag,
+                        "adapter_model_id": adapter_model_id,
+                    },
+                    adapter_delete_params.AdapterDeleteParams,
+                ),
             ),
             cast_to=AdapterDeleteResponse,
         )

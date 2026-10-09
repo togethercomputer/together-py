@@ -15,8 +15,8 @@ class AdapterRetrieveResponse(BaseModel):
 
     id: str
     """
-    Row identifier for this adapter attachment; changes if the adapter is removed
-    and re-added.
+    Adapter attachment `dad_` id used by get, update, and remove; stale ids never
+    address a replacement after remove and re-add.
     """
 
     adapter_model_id: str = FieldInfo(alias="adapterModelId")

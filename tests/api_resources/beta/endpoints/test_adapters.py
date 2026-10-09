@@ -113,6 +113,17 @@ class TestAdapters:
         assert_matches_type(AdapterRetrieveResponse, adapter, path=["response"])
 
     @parametrize
+    def test_method_retrieve_with_all_params(self, client: Together) -> None:
+        adapter = client.beta.endpoints.adapters.retrieve(
+            id="id",
+            project_id="projectId",
+            endpoint_id="endpointId",
+            deployment_id="deploymentId",
+            adapter_model_id="adapterModelId",
+        )
+        assert_matches_type(AdapterRetrieveResponse, adapter, path=["response"])
+
+    @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
         response = client.beta.endpoints.adapters.with_raw_response.retrieve(
             id="id",
@@ -185,6 +196,19 @@ class TestAdapters:
             deployment_id="deploymentId",
             adapter_revision_id="adapterRevisionId",
             etag="etag",
+        )
+        assert_matches_type(AdapterUpdateResponse, adapter, path=["response"])
+
+    @parametrize
+    def test_method_update_with_all_params(self, client: Together) -> None:
+        adapter = client.beta.endpoints.adapters.update(
+            id="id",
+            project_id="projectId",
+            endpoint_id="endpointId",
+            deployment_id="deploymentId",
+            adapter_revision_id="adapterRevisionId",
+            etag="etag",
+            adapter_model_id="adapterModelId",
         )
         assert_matches_type(AdapterUpdateResponse, adapter, path=["response"])
 
@@ -343,6 +367,18 @@ class TestAdapters:
             endpoint_id="endpointId",
             deployment_id="deploymentId",
             etag="etag",
+        )
+        assert_matches_type(AdapterDeleteResponse, adapter, path=["response"])
+
+    @parametrize
+    def test_method_delete_with_all_params(self, client: Together) -> None:
+        adapter = client.beta.endpoints.adapters.delete(
+            id="id",
+            project_id="projectId",
+            endpoint_id="endpointId",
+            deployment_id="deploymentId",
+            etag="etag",
+            adapter_model_id="adapterModelId",
         )
         assert_matches_type(AdapterDeleteResponse, adapter, path=["response"])
 
@@ -511,6 +547,17 @@ class TestAsyncAdapters:
         assert_matches_type(AdapterRetrieveResponse, adapter, path=["response"])
 
     @parametrize
+    async def test_method_retrieve_with_all_params(self, async_client: AsyncTogether) -> None:
+        adapter = await async_client.beta.endpoints.adapters.retrieve(
+            id="id",
+            project_id="projectId",
+            endpoint_id="endpointId",
+            deployment_id="deploymentId",
+            adapter_model_id="adapterModelId",
+        )
+        assert_matches_type(AdapterRetrieveResponse, adapter, path=["response"])
+
+    @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.endpoints.adapters.with_raw_response.retrieve(
             id="id",
@@ -583,6 +630,19 @@ class TestAsyncAdapters:
             deployment_id="deploymentId",
             adapter_revision_id="adapterRevisionId",
             etag="etag",
+        )
+        assert_matches_type(AdapterUpdateResponse, adapter, path=["response"])
+
+    @parametrize
+    async def test_method_update_with_all_params(self, async_client: AsyncTogether) -> None:
+        adapter = await async_client.beta.endpoints.adapters.update(
+            id="id",
+            project_id="projectId",
+            endpoint_id="endpointId",
+            deployment_id="deploymentId",
+            adapter_revision_id="adapterRevisionId",
+            etag="etag",
+            adapter_model_id="adapterModelId",
         )
         assert_matches_type(AdapterUpdateResponse, adapter, path=["response"])
 
@@ -741,6 +801,18 @@ class TestAsyncAdapters:
             endpoint_id="endpointId",
             deployment_id="deploymentId",
             etag="etag",
+        )
+        assert_matches_type(AdapterDeleteResponse, adapter, path=["response"])
+
+    @parametrize
+    async def test_method_delete_with_all_params(self, async_client: AsyncTogether) -> None:
+        adapter = await async_client.beta.endpoints.adapters.delete(
+            id="id",
+            project_id="projectId",
+            endpoint_id="endpointId",
+            deployment_id="deploymentId",
+            etag="etag",
+            adapter_model_id="adapterModelId",
         )
         assert_matches_type(AdapterDeleteResponse, adapter, path=["response"])
 

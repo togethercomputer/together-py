@@ -6,10 +6,10 @@ from typing_extensions import Required, Annotated, TypedDict
 
 from ...._utils import PropertyInfo
 
-__all__ = ["AdapterUpdateParams"]
+__all__ = ["AdapterRetrieveParams"]
 
 
-class AdapterUpdateParams(TypedDict, total=False):
+class AdapterRetrieveParams(TypedDict, total=False):
     project_id: Annotated[str, PropertyInfo(alias="projectId")]
     """Project identifier."""
 
@@ -18,15 +18,6 @@ class AdapterUpdateParams(TypedDict, total=False):
 
     deployment_id: Required[Annotated[str, PropertyInfo(alias="deploymentId")]]
     """Deployment identifier."""
-
-    adapter_revision_id: Required[Annotated[str, PropertyInfo(alias="adapterRevisionId")]]
-    """New adapter revision to pin."""
-
-    etag: Required[str]
-    """
-    Row-level etag from a prior AddAdapter, UpdateAdapter, GetAdapter, or
-    ListAdapters response.
-    """
 
     adapter_model_id: Annotated[str, PropertyInfo(alias="adapterModelId")]
     """Deprecated optional cross-check.

@@ -24,3 +24,10 @@ class AdapterDeleteParams(TypedDict, total=False):
 
     The removal is rejected if the adapter changed after that response.
     """
+
+    adapter_model_id: Annotated[str, PropertyInfo(alias="adapterModelId")]
+    """Deprecated optional cross-check.
+
+    When set, this must equal the `ml_` id of the adapter model pinned by the live
+    attachment; model names are not accepted.
+    """

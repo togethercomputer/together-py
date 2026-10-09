@@ -40,6 +40,7 @@ from .regression_check_param import RegressionCheckParam as RegressionCheckParam
 from .rollout_promote_params import RolloutPromoteParams as RolloutPromoteParams
 from .adapter_create_response import AdapterCreateResponse as AdapterCreateResponse
 from .adapter_delete_response import AdapterDeleteResponse as AdapterDeleteResponse
+from .adapter_retrieve_params import AdapterRetrieveParams as AdapterRetrieveParams
 from .adapter_update_response import AdapterUpdateResponse as AdapterUpdateResponse
 from .blue_green_config_param import BlueGreenConfigParam as BlueGreenConfigParam
 from .inference_instance_type import InferenceInstanceType as InferenceInstanceType
