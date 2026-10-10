@@ -22,6 +22,12 @@ def find_config(configs: list[Config], config_id: str) -> Config | None:
     return None
 
 
+MULTIPLE_CONFIGS_MESSAGE = (
+    "Multiple configs found for model. Please specify a config id using the --config flag. "
+    "You can use `tg beta models configs <model-id>` to list configs that can be used."
+)
+
+
 def resolve_config(configs: list[Config], config_id: str | None, *, model: str) -> Config:
     """Pick a config from the model's config list, validating an explicit --config when given."""
     if config_id is None:
@@ -29,10 +35,7 @@ def resolve_config(configs: list[Config], config_id: str | None, *, model: str) 
             from together.lib.cli.api.beta.models._utils import print_configs_table
 
             print_configs_table(configs, empty_message="")
-            raise ValueError(
-                "Multiple configs found for model. Please specify a config id using the --config flag. "
-                "You can use `tg beta models configs <model-id>` to list configs that can be used."
-            )
+            raise ValueError(MULTIPLE_CONFIGS_MESSAGE)
         if len(configs) == 0:
             raise ValueError(f"No configs found for model {model}.")
         return configs[0]
@@ -43,6 +46,46 @@ def resolve_config(configs: list[Config], config_id: str | None, *, model: str) 
     raise ValueError(
         f"Config {config_id} is not valid for model {model}. Use `tg beta models configs <model-id>` to list configs."
     )
+
+
+async def choose_config(
+    cli: CLIConfigParameter,
+    configs: list[Config],
+    config_id: str | None,
+    *,
+    model: str,
+) -> Config:
+    """Use ``--config`` or the only config. Several configs prompt, or fail when non-interactive."""
+    if config_id is None and len(configs) > 1 and not cli.non_interactive:
+        return await prompt_for_config(configs, model=model)
+    return resolve_config(configs, config_id, model=model)
+
+
+async def prompt_for_config(configs: list[Config], *, model: str) -> Config:
+    """Ask which config to deploy. A cancelled or unavailable prompt fails like ``--non-interactive``."""
+    from together.lib.cli.utils._prompt import PromptParameter
+    from together.lib.cli.api.beta.models._utils import print_configs_table
+
+    print_configs_table(configs, empty_message="")
+    choices: list[str | tuple[str, str]] = []
+    for item in configs:
+        if item.id:
+            choices.append((item.id, item.id))
+    try:
+        selected_id = await PromptParameter(
+            message="Which config should this deployment use?",
+            instructions=f"{model} has more than one config. Pick one, or rerun with --config.",
+            choices=choices,
+        ).prompt("config")
+    except ValueError:
+        raise
+    except Exception:
+        raise ValueError(MULTIPLE_CONFIGS_MESSAGE) from None
+
+    selected = find_config(configs, str(selected_id))
+    if selected is None:
+        raise ValueError(MULTIPLE_CONFIGS_MESSAGE)
+    return selected
 
 
 def _config_id_matches(config: Config, config_id: str) -> bool:
