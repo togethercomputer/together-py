@@ -32,7 +32,10 @@ _STATE_RANK = {
 
 
 def is_adapter_model(model: Model) -> bool:
-    return model.weights.type == ADAPTER_WEIGHTS_TYPE
+    weights = model.weights
+    if weights is None:
+        return False
+    return weights.type == ADAPTER_WEIGHTS_TYPE
 
 
 def config_adapter_mode(model_config: Config) -> str | None:

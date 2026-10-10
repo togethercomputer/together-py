@@ -60,6 +60,10 @@ def _deployment(**overrides: Any) -> EndpointDeployment:
     return EndpointDeployment.construct(**body)
 
 
+def test_model_without_weights_is_not_an_adapter() -> None:
+    assert is_adapter_model(_model(weights=None)) is False
+
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
