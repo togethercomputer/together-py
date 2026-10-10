@@ -33,8 +33,8 @@ _STATE_RANK = {
 
 def is_adapter_model(model: Model) -> bool:
     weights = model.weights
-    if weights is None:
-        return False
+    if weights is None:  # type: ignore
+        return False  # type: ignore
     return weights.type == ADAPTER_WEIGHTS_TYPE
 
 
