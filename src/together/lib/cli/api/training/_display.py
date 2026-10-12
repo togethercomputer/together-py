@@ -164,14 +164,31 @@ def print_session(session: Session) -> None:
     print_detail("Training session", rows)
 
 
-def _registered_model(checkpoint: Checkpoint) -> str:
+def _artifact_ref(artifact: object) -> str:
+    artifact_id = getattr(artifact, "id", None)
+    revision_id = getattr(artifact, "revision_id", None)
+    if artifact_id and revision_id:
+        return f"{artifact_id}@{revision_id}"
+    return str(artifact_id or "-")
+
+
+def _registry_artifacts(checkpoint: Checkpoint) -> list[tuple[str, str]]:
+    artifacts: list[tuple[str, str]] = []
     registration = checkpoint.inference_registration
     if registration is not None:
-        artifact = registration.model or registration.adapter
-        if artifact is not None:
-            return artifact.id
+        if registration.model is not None:
+            artifacts.append(("Registry model", _artifact_ref(registration.model)))
+        if registration.adapter is not None:
+            artifacts.append(("Registry adapter", _artifact_ref(registration.adapter)))
     if checkpoint.training_registration is not None:
-        return checkpoint.training_registration.id
+        artifacts.append(("Training artifact", _artifact_ref(checkpoint.training_registration)))
+    return artifacts
+
+
+def _registered_model(checkpoint: Checkpoint) -> str:
+    artifacts = _registry_artifacts(checkpoint)
+    if artifacts:
+        return artifacts[0][1]
     return "-"
 
 
@@ -181,7 +198,7 @@ def print_checkpoints_table(checkpoints: list[Checkpoint]) -> None:
     table.add_column("Type", width=10, no_wrap=True)
     table.add_column("Session", ratio=2, overflow="fold")
     table.add_column("Step", width=6, no_wrap=True)
-    table.add_column("Model", ratio=3, overflow="fold")
+    table.add_column("Registry artifact", ratio=3, overflow="fold")
     for checkpoint in checkpoints:
         table.add_row(
             cell(checkpoint.id),
@@ -206,6 +223,7 @@ def print_checkpoint(checkpoint: Checkpoint) -> None:
     ]
     if checkpoint.lora_rank is not None:
         rows.append(("LoRA rank", cell(checkpoint.lora_rank)))
+    rows.extend((label, cell(value)) for label, value in _registry_artifacts(checkpoint))
     print_detail(title, rows)
 
 
