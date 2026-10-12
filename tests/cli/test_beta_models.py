@@ -119,6 +119,7 @@ def _supported_model_body(**overrides: Any) -> dict[str, Any]:
                 "gpuType": "H100",
                 "parallelism": "TP1",
                 "quantization": "fp16",
+                "adapterMode": "ADAPTER_MODE_DYNAMIC",
                 "performanceBenchmarks": {},
             }
         ],
@@ -382,6 +383,7 @@ class TestBetaModelsPublic:
         assert "meta-llama/Llama-3-8B-FP16" in result.output
         assert "1x H100" in result.output
         assert "TP1" in result.output
+        assert "Dynamic" in result.output
         assert "cr_1" not in result.output
 
 
