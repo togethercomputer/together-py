@@ -35,7 +35,6 @@ _TERMINAL_STATUSES = {
     "MODEL_RESOURCES_STATUS_STOPPING",
     "MODEL_RESOURCES_STATUS_STOPPED",
 }
-DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT: float | None = 3600.0
 DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL: float = 10.0
 DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT: float | None = 300.0
 DEFAULT_MODEL_RESOURCES_STOP_INTERVAL: float = 2.0
@@ -93,7 +92,7 @@ class ModelResourcesClient:
         lora_enabled: bool = True,
         compute_config: ComputeConfig | None = None,
         optimizer_config: OptimizerConfig | None = None,
-        timeout: float | None = DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT,
+        timeout: float | None = None,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
     ) -> ModelResourcesClient:
         return run_untracked(
@@ -162,7 +161,7 @@ class ModelResourcesClient:
         lora_enabled: bool = True,
         compute_config: ComputeConfig | None = None,
         optimizer_config: OptimizerConfig | None = None,
-        timeout: float | None = DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT,
+        timeout: float | None = None,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
     ) -> ModelResourcesClient:
         async def create_on_process_loop() -> ModelResourcesClient:
@@ -203,7 +202,9 @@ class ModelResourcesClient:
             current = await self._client.post_training.model_resources.retrieve(self._model_resources_id)
             elapsed = time.monotonic() - start
             tag = f"[model-resources:{self._model_resources_id}]"
-            print(f"{tag} status={current.status} elapsed={elapsed:.1f}s")  # noqa: T201
+            queue_position = current.status_details.queue_position
+            queue_text = "" if queue_position is None else f" queue_position={queue_position}"
+            print(f"{tag} status={current.status}{queue_text} elapsed={elapsed:.1f}s")  # noqa: T201
             if current.status == _READY_STATUS:
                 print(f"{tag} ready in {elapsed:.1f}s")  # noqa: T201
                 return

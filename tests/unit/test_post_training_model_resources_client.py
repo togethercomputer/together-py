@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
@@ -18,10 +19,14 @@ _STOPPING = SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_STOPPING"
 def _fake_client(status: str = "MODEL_RESOURCES_STATUS_READY") -> MagicMock:
     client = MagicMock()
     client.post_training.model_resources.create = AsyncMock(return_value=SimpleNamespace(id="res-1"))
-    client.post_training.model_resources.retrieve = AsyncMock(return_value=SimpleNamespace(status=status))
+    client.post_training.model_resources.retrieve = AsyncMock(return_value=_resource(status))
     client.post_training.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     return client
+
+
+def _resource(status: str, queue_position: int | None = None) -> SimpleNamespace:
+    return SimpleNamespace(status=status, status_details=SimpleNamespace(queue_position=queue_position))
 
 
 def _patch_together(monkeypatch: pytest.MonkeyPatch, client: MagicMock) -> None:
@@ -150,6 +155,36 @@ async def test_create_async_times_out_and_cleans_up(monkeypatch: pytest.MonkeyPa
 
     client.post_training.model_resources.stop.assert_awaited_once_with("res-1")
     client.close.assert_awaited_once()
+
+
+async def test_create_async_prints_queue_position_while_waiting(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    client = _fake_client()
+    client.post_training.model_resources.retrieve = AsyncMock(
+        side_effect=[
+            _resource("MODEL_RESOURCES_STATUS_PENDING", queue_position=2),
+            _resource("MODEL_RESOURCES_STATUS_PENDING", queue_position=1),
+            _resource("MODEL_RESOURCES_STATUS_CREATING"),
+            _resource("MODEL_RESOURCES_STATUS_READY"),
+        ]
+    )
+    _patch_together(monkeypatch, client)
+
+    await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", interval=0.0)
+
+    status_lines = [line for line in capsys.readouterr().out.splitlines() if " status=" in line]
+    assert [line.split(" elapsed=")[0] for line in status_lines] == [
+        "[model-resources:res-1] status=MODEL_RESOURCES_STATUS_PENDING queue_position=2",
+        "[model-resources:res-1] status=MODEL_RESOURCES_STATUS_PENDING queue_position=1",
+        "[model-resources:res-1] status=MODEL_RESOURCES_STATUS_CREATING",
+        "[model-resources:res-1] status=MODEL_RESOURCES_STATUS_READY",
+    ]
+
+
+def test_create_waits_for_ready_without_a_timeout_by_default() -> None:
+    assert inspect.signature(ModelResourcesClient.create).parameters["timeout"].default is None
+    assert inspect.signature(ModelResourcesClient.create_async).parameters["timeout"].default is None
 
 
 async def test_stop_async_closes_client() -> None:

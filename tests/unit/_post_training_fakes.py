@@ -74,6 +74,7 @@ class FakeModelResources:
     async def retrieve(self, _model_resources_id: str) -> Any:
         return SimpleNamespace(
             status="MODEL_RESOURCES_STATUS_READY",
+            status_details=SimpleNamespace(queue_position=None),
             compute_config=SimpleNamespace(num_generator_replicas=self.num_generator_replicas),
         )
 
