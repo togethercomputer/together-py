@@ -175,6 +175,31 @@ class TestTrainingResources:
         assert "tg training ls-resources --after res-1" in result.output
 
     @pytest.mark.respx(base_url=base_url)
+    def test_ls_resources_table_shows_queue_position(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/rl/model-resources").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "data": [
+                        _resource_body(
+                            status="MODEL_RESOURCES_STATUS_PENDING",
+                            status_details={"queue_position": 3},
+                        )
+                    ],
+                    "meta": _meta(),
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["training", "ls-resources"])
+
+        assert result.exit_code == 0, result.output
+        assert "pending" in result.output
+        assert "#3" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_ls_resources_empty(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/rl/model-resources").mock(return_value=httpx.Response(200, json={"data": [], "meta": _meta()}))
 
@@ -378,6 +403,28 @@ class TestTrainingGet:
         assert payload["kind"] == "model_resource"
         assert payload["data"]["id"] == "res-1"
         assert payload["data"]["base_weights_ref"] == "ml_weights"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_get_model_resource_shows_queue_position(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/rl/model-resources/res-1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_resource_body(
+                    status="MODEL_RESOURCES_STATUS_PENDING",
+                    status_details={"queue_position": 4},
+                ),
+            )
+        )
+        _mock_get_misses(respx_mock, "res-1", hit="resource")
+
+        result = cli_runner.invoke(["training", "get", "res-1"])
+
+        assert result.exit_code == 0, result.output
+        assert "Model resource" in result.output
+        assert "Queue position" in result.output
+        assert "4" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_get_training_session(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
