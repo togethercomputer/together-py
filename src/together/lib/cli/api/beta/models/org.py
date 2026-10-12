@@ -5,6 +5,7 @@ from cyclopts import Parameter
 from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._whoami import fetch_whoami, organization_of
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.beta.models._utils import print_models_table
@@ -17,12 +18,14 @@ async def org(
     limit: Annotated[Optional[int], Parameter(help="Maximum models to return")] = None,
     after: AfterParameter = None,
 ) -> None:
-    me = await config.client.whoami()
+    organization = organization_of(await fetch_whoami(config.client))
+    if organization is None:
+        raise ValueError("This credential has no organization. Run `tg whoami` to see the current identity.")
 
     response = await show_loading_status(
         "Loading org-scoped models...",
         config.client.beta.models.list_org_scoped(
-            me.organization_id,
+            organization.id,
             limit=limit if limit is not None else omit,
             after=after or omit,
         ),

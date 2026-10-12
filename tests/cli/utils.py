@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import io
 import os
-from typing import cast
+from typing import Any, cast
 from unittest.mock import patch
 
+import httpx
 import pytest
 from attr import dataclass
 
@@ -30,6 +31,8 @@ class CliRunner:
             "TOGETHER_DISABLE_VERSION_CHECK": "1",
             # Avoid launcher whoami resolve; tests that exercise it should delete this.
             "TOGETHER_PROJECT_ID": "proj",
+            # `tg login` credentials: conftest's autouse `isolate_credentials_file` already points
+            # TOGETHER_CREDENTIALS_PATH at a fresh per-test temp file; tests may override it here.
         }
         self.capsys = capsys
 
@@ -68,3 +71,29 @@ class CliRunner:
                 out_out=captured.out,
                 output=captured.out + captured.err,
             )
+
+
+def stored_access_token() -> "str | None":
+    """Access token of the current `tg login` credentials entry, if any."""
+    from together.lib.cli.auth import load_stored_credentials
+
+    stored = load_stored_credentials()
+    return stored.access_token if stored is not None else None
+
+
+def stored_project_id() -> "str | None":
+    """Project id of the current `tg login` credentials entry, if any."""
+    from together.lib.cli.auth import load_stored_credentials
+
+    stored = load_stored_credentials()
+    return stored.project_id if stored is not None else None
+
+
+def patch_httpx_client(monkeypatch: pytest.MonkeyPatch, transport: httpx.BaseTransport) -> None:
+    """Route every `httpx.Client(...)` created during the test (e.g. by `TogetherAuth`) through `transport`."""
+    real_client = httpx.Client
+
+    def client(**kwargs: Any) -> httpx.Client:
+        return real_client(transport=transport, **kwargs)
+
+    monkeypatch.setattr(httpx, "Client", client)

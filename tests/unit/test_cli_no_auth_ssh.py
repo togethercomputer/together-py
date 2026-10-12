@@ -68,6 +68,93 @@ def test_ssh_command_does_not_require_api_key_or_whoami(monkeypatch: pytest.Monk
     assert resolve_calls == 0, "ssh must not run the project-resolution whoami()"
 
 
+def test_login_command_does_not_require_api_key_or_whoami(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
+
+    require_flags: list[bool] = []
+    resolve_calls = 0
+    real_create = cli._create_client
+
+    def spy_create(*args: object, require_api_key: bool = True, **kwargs: object):  # type: ignore[no-untyped-def]
+        require_flags.append(require_api_key)
+        return real_create(*args, require_api_key=require_api_key, **kwargs)  # type: ignore[arg-type]
+
+    async def spy_resolve(_client: object) -> str:
+        nonlocal resolve_calls
+        resolve_calls += 1
+        return "proj"
+
+    def fake_login(**_kwargs: object) -> None:
+        return None
+
+    monkeypatch.setattr(cli, "_create_client", spy_create)
+    monkeypatch.setattr(cli, "_resolve_project_id", spy_resolve)
+    monkeypatch.setattr("together.lib.cli.api.login.login", fake_login)
+
+    _run(["login", "--no-browser"])
+
+    assert require_flags == [False], "login must build the client with require_api_key=False"
+    assert resolve_calls == 0, "login must not run the project-resolution whoami()"
+
+
+def test_logout_command_does_not_require_api_key_or_whoami(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
+
+    require_flags: list[bool] = []
+    resolve_calls = 0
+    real_create = cli._create_client
+
+    def spy_create(*args: object, require_api_key: bool = True, **kwargs: object):  # type: ignore[no-untyped-def]
+        require_flags.append(require_api_key)
+        return real_create(*args, require_api_key=require_api_key, **kwargs)  # type: ignore[arg-type]
+
+    async def spy_resolve(_client: object) -> str:
+        nonlocal resolve_calls
+        resolve_calls += 1
+        return "proj"
+
+    def fake_logout(**_kwargs: object) -> None:
+        return None
+
+    monkeypatch.setattr(cli, "_create_client", spy_create)
+    monkeypatch.setattr(cli, "_resolve_project_id", spy_resolve)
+    monkeypatch.setattr("together.lib.cli.api.logout.logout", fake_logout)
+
+    _run(["logout"])
+
+    assert require_flags == [False], "logout must build the client with require_api_key=False"
+    assert resolve_calls == 0, "logout must not run the project-resolution whoami()"
+
+
+def test_switch_command_does_not_require_api_key_or_whoami(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
+
+    require_flags: list[bool] = []
+    resolve_calls = 0
+    real_create = cli._create_client
+
+    def spy_create(*args: object, require_api_key: bool = True, **kwargs: object):  # type: ignore[no-untyped-def]
+        require_flags.append(require_api_key)
+        return real_create(*args, require_api_key=require_api_key, **kwargs)  # type: ignore[arg-type]
+
+    async def spy_resolve(_client: object) -> str:
+        nonlocal resolve_calls
+        resolve_calls += 1
+        return "proj"
+
+    def fake_switch(**_kwargs: object) -> None:
+        return None
+
+    monkeypatch.setattr(cli, "_create_client", spy_create)
+    monkeypatch.setattr(cli, "_resolve_project_id", spy_resolve)
+    monkeypatch.setattr("together.lib.cli.api.switch.switch", fake_switch)
+
+    _run(["switch", "proj_abc"])
+
+    assert require_flags == [False], "switch must build the client with require_api_key=False"
+    assert resolve_calls == 0, "switch must not run the project-resolution whoami()"
+
+
 def test_non_ssh_command_still_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
 

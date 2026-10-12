@@ -12,33 +12,30 @@ from tests.cli.utils import CliRunner
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
 
-def _whoami_body() -> dict[str, str]:
+def _whoami_body() -> dict[str, object]:
     return {
-        "api_key_id": "key-1",
-        "organization_id": "org-1",
-        "organization_name": "Acme Org",
-        "project_id": "proj",
-        "project_name": "My Project",
-        "project_slug": "my-project",
-        "user_id": "user-1",
+        "type": "project_api_key",
+        "api_key": {"id": "key-1"},
+        "organization": {"id": "org-1", "name": "Acme Org"},
+        "project": {"id": "proj", "name": "My Project", "slug": "my-project"},
     }
 
 
 class TestAgentJsonDefault:
     @pytest.mark.respx(base_url=base_url)
     def test_agent_defaults_to_json(self, respx_mock: MockRouter, capsys: pytest.CaptureFixture[str]) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         result = CliRunner(capsys, agent=True).invoke(["whoami"])
 
         assert result.exit_code == 0, result.output
         payload = json.loads(result.out_out)
-        assert payload["project_id"] == "proj"
-        assert payload["organization_name"] == "Acme Org"
-        assert payload["project_name"] == "My Project"
+        assert payload["project"]["id"] == "proj"
+        assert payload["organization"]["name"] == "Acme Org"
+        assert payload["project"]["name"] == "My Project"
 
     @pytest.mark.respx(base_url=base_url)
     def test_agent_no_json_stays_text(self, respx_mock: MockRouter, capsys: pytest.CaptureFixture[str]) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         result = CliRunner(capsys, agent=True).invoke(["whoami", "--no-json"])
 
         assert result.exit_code == 0, result.output
@@ -49,7 +46,7 @@ class TestAgentJsonDefault:
 
     @pytest.mark.respx(base_url=base_url)
     def test_human_stays_text_without_flag(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         result = cli_runner.invoke(["whoami"])
 
         assert result.exit_code == 0, result.output
@@ -72,15 +69,18 @@ class TestAgentJsonDefault:
         assert "error" in payload
         assert payload["error"]
 
-    def test_agent_missing_api_key_is_json(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_agent_missing_api_key_is_json(
+        self, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # CliRunner overlays env with clear=False, so a developer shell key would leak through.
+        monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
         runner = CliRunner(capsys, agent=True)
         runner.env.pop("TOGETHER_API_KEY", None)
         result = runner.invoke(["whoami"])
 
         assert result.exit_code == 1
         payload = json.loads(result.out_out)
-        assert "API key" in payload["error"]
-        assert "TOGETHER_API_KEY" in payload["error"]
+        assert payload["error"] == "Not logged in. Run `tg login`."
 
     def test_human_validation_error_stays_text(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["endpoints", "update", "endpoint-123"])

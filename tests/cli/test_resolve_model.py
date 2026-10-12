@@ -8,6 +8,7 @@ import pytest
 from together import NotFoundError
 from together.types.beta import Model
 from together.lib.cli.utils.config import CLIConfig
+from together.lib.cli.utils._whoami import WhoamiApiKey, WhoamiProject, WhoamiOrganization, WhoamiProjectApiKey
 from together.types.beta.models.config import Config
 from together.types.beta.supported_model import SupportedModel
 from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
@@ -17,6 +18,15 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     resolve_model_display_name,
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import construct_config_path
+
+
+def _whoami(slug: str = "my-slug") -> WhoamiProjectApiKey:
+    return WhoamiProjectApiKey(
+        type="project_api_key",
+        api_key=WhoamiApiKey(id="key-1"),
+        organization=WhoamiOrganization(id="org-1", name="Acme"),
+        project=WhoamiProject(id="proj", name="Project", slug=slug),
+    )
 
 
 def _config(**overrides: Any) -> Config:
@@ -109,7 +119,7 @@ async def test_raw_model_id_resolves_via_configs() -> None:
     client.beta.models.configs.list = AsyncMock(
         return_value=MagicMock(data=[_config()]),
     )
-    client.whoami = AsyncMock()
+    client.get = AsyncMock()
 
     resolved = await resolve_model_and_config(_cli_config(client), "ml_base", config_id=None)
 
@@ -122,7 +132,7 @@ async def test_raw_model_id_resolves_via_configs() -> None:
         "id": "ml_base",
         "project_id": "proj_public",
     }
-    client.whoami.assert_not_awaited()
+    client.get.assert_not_awaited()
     assert resolved.model.name == "together/some-named-model"
     assert construct_model_path(resolved.model, resolved.revision_id) == "projects/proj_public/models/ml_base"
     assert construct_config_path(resolved.config) == "projects/proj_public/configs/cr_1"
@@ -212,7 +222,7 @@ async def test_private_named_model_uses_base_model_id_for_config_but_custom_path
         yield private
 
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list = MagicMock(return_value=_list_models())
     client.beta.models.configs.list = AsyncMock(
         return_value=MagicMock(data=[_config()]),
@@ -257,7 +267,7 @@ async def test_bare_id_ignores_client_default_project() -> None:
 @pytest.mark.asyncio
 async def test_public_named_model_uses_deployment_profile() -> None:
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list_supported = AsyncMock(
         return_value=MagicMock(data=[_supported_model()]),
     )
@@ -277,7 +287,7 @@ async def test_public_named_model_uses_deployment_profile() -> None:
 @pytest.mark.asyncio
 async def test_public_model_requires_exactly_one_supported_match() -> None:
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list_supported = AsyncMock(
         return_value=MagicMock(data=[_supported_model(), _supported_model(id="sm_2")]),
     )
@@ -305,7 +315,7 @@ async def test_public_profile_model_name_selects_matching_profile_without_config
         ),
     ]
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list_supported = AsyncMock(
         return_value=MagicMock(data=[_supported_model(deploymentProfiles=profiles)]),
     )
@@ -333,7 +343,7 @@ async def test_public_model_selects_profile_by_config_id() -> None:
         ),
     ]
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list_supported = AsyncMock(
         return_value=MagicMock(data=[_supported_model(deploymentProfiles=profiles)]),
     )
@@ -369,7 +379,7 @@ async def test_public_model_multiple_profiles_requires_flags(capsys: pytest.Capt
         ),
     ]
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list_supported = AsyncMock(
         return_value=MagicMock(data=[_supported_model(deploymentProfiles=profiles)]),
     )
@@ -417,7 +427,7 @@ async def test_raw_model_selects_among_multiple_configs() -> None:
     client.beta.models.configs.list = AsyncMock(
         return_value=MagicMock(data=[_config(), _config(id="cr_lora")]),
     )
-    client.whoami = AsyncMock()
+    client.get = AsyncMock()
 
     resolved = await resolve_model_and_config(_cli_config(client), "ml_base", config_id="cr_lora")
 
@@ -460,7 +470,7 @@ async def test_public_model_uses_configs_api_when_config_is_not_a_profile() -> N
         baseModelId=None,
     )
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list_supported = AsyncMock(
         return_value=MagicMock(
             data=[_supported_model(name="Qwen/Qwen3.5-9B", baseModelId="ml_pub", deploymentProfiles=profiles)]
@@ -504,7 +514,7 @@ async def test_public_profile_name_accepts_non_profile_config() -> None:
     )
     retrieved = _private_model(id="ml_pub", projectId="proj_public", name="Qwen/Qwen3.5-9B-BF16", baseModelId=None)
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list_supported = AsyncMock(
         return_value=MagicMock(
             data=[
@@ -570,7 +580,7 @@ async def test_public_model_finds_config_referenced_by_non_base_profile() -> Non
         return MagicMock(data=[])
 
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list_supported = AsyncMock(
         return_value=MagicMock(
             data=[
@@ -622,7 +632,7 @@ async def test_public_model_searches_later_profile_when_base_model_unset() -> No
         return MagicMock(data=[])
 
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list_supported = AsyncMock(
         return_value=MagicMock(
             data=[
@@ -666,7 +676,7 @@ async def test_public_model_prefers_base_model_path_over_profile_order() -> None
     )
     retrieved = _private_model(id="ml_pub", projectId="proj_public", name="Qwen/Qwen3.5-9B-BF16", baseModelId=None)
     client = MagicMock()
-    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.get = AsyncMock(return_value=_whoami())
     client.beta.models.list_supported = AsyncMock(
         return_value=MagicMock(
             data=[

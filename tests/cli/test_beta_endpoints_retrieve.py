@@ -61,13 +61,10 @@ def _deployment_body(**overrides: Any) -> dict[str, Any]:
 
 def _whoami_body(**overrides: Any) -> dict[str, Any]:
     body: dict[str, Any] = {
-        "api_key_id": "key-1",
-        "organization_id": "org-1",
-        "organization_name": "Acme",
-        "project_id": "proj",
-        "project_name": "My Project",
-        "project_slug": "my-project",
-        "user_id": "user-1",
+        "type": "project_api_key",
+        "api_key": {"id": "key-1"},
+        "organization": {"id": "org-1", "name": "Acme"},
+        "project": {"id": "proj", "name": "My Project", "slug": "my-project"},
     }
     body.update(overrides)
     return body
@@ -178,7 +175,7 @@ class TestBetaEndpointsRetrieve:
 
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_endpoint_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
@@ -278,7 +275,7 @@ class TestBetaEndpointsRetrieve:
 
     @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_endpoint_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
@@ -297,7 +294,7 @@ class TestBetaEndpointsRetrieve:
 
     @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_deployment_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         # Name lookup as endpoint fails (no matching endpoint), then deployment name resolves.
         respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
@@ -322,7 +319,7 @@ class TestBetaEndpointsRetrieve:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
@@ -527,7 +524,7 @@ class TestBetaEndpointsRetrieve:
 
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_deployment_by_ambiguous_name_errors(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         other = _endpoint_body(
             id="ep_2",
             name="my-project/other-endpoint",

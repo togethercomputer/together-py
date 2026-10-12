@@ -573,7 +573,7 @@ async def test_stop_async_waits_until_session_is_inactive(monkeypatch: pytest.Mo
 
 async def test_stop_async_treats_missing_session_as_inactive(monkeypatch: pytest.MonkeyPatch) -> None:
     _instant_stop(monkeypatch)
-    request = httpx.Request("GET", "https://api.together.xyz/sessions/sess")
+    request = httpx.Request("GET", "https://api.together.ai/sessions/sess")
     not_found = NotFoundError(
         "Session not found",
         response=httpx.Response(404, request=request),

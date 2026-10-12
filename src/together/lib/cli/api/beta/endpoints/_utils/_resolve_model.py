@@ -6,6 +6,7 @@ from typing import NamedTuple
 from together import NotFoundError
 from together.types.beta import Model, Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._whoami import project_of, fetch_whoami
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._json_mode import is_json_mode
 from together.types.beta.models.config import Config
@@ -64,9 +65,9 @@ async def resolve_model_reference(config: CLIConfigParameter, model_input: str) 
     if "/" not in model_input:
         return ResolvedModelReference(None, model_input)
 
-    me = await config.client.whoami()
+    project = project_of(await fetch_whoami(config.client))
     prefix, _, _name = model_input.partition("/")
-    if prefix == me.project_slug:
+    if project is not None and prefix == project.slug:
         model = await _find_private_model_by_name(config, model_input)
         if model.base_model:
             return ResolvedModelReference(model.base_model, None)
@@ -147,9 +148,10 @@ async def load_model(config: CLIConfigParameter, model_input: str) -> Model | No
         except (NotFoundError, ValueError):
             return None
 
-    me = await config.client.whoami()
+    project = project_of(await fetch_whoami(config.client))
+    project_slug = project.slug if project is not None else None
     prefix, _, _name = model_input.partition("/")
-    if prefix != me.project_slug:
+    if project_slug is None or prefix != project_slug:
         return None
     return await _find_private_model_by_name(config, model_input)
 
@@ -562,11 +564,14 @@ async def resolve_endpoint(config: CLIConfigParameter, endpoint_id_or_name: str)
     # Exact name filter avoids missing endpoints beyond the first list page.
     endpoints = await config.client.beta.endpoints.list(filter=f'name="{bare_name}"')
 
-    me = await config.client.whoami()
+    project = project_of(await fetch_whoami(config.client))
+    slug = project.slug if project is not None else None
     qualified_name = (
         endpoint_id_or_name
-        if endpoint_id_or_name.startswith(f"{me.project_slug}/")
-        else f"{me.project_slug}/{bare_name}"
+        if slug is not None and endpoint_id_or_name.startswith(f"{slug}/")
+        else f"{slug}/{bare_name}"
+        if slug is not None
+        else bare_name
     )
 
     for endpoint in endpoints.data or []:

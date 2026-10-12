@@ -19,13 +19,10 @@ base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
 def _whoami_body(**overrides: Any) -> dict[str, Any]:
     body: dict[str, Any] = {
-        "api_key_id": "key-1",
-        "organization_id": "org-1",
-        "organization_name": "Acme",
-        "project_id": "proj",
-        "project_name": "My Project",
-        "project_slug": "my-project",
-        "user_id": "user-1",
+        "type": "project_api_key",
+        "api_key": {"id": "key-1"},
+        "organization": {"id": "org-1", "name": "Acme"},
+        "project": {"id": "proj", "name": "My Project", "slug": "my-project"},
     }
     body.update(overrides)
     return body
@@ -265,7 +262,7 @@ class TestBetaModelsCreate:
     def test_create_requires_explicit_project_in_json_mode(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         # Meta still resolves the client project via whoami when --project / env are omitted.
         cli_runner.env.pop("TOGETHER_PROJECT_ID", None)
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
 
         result = cli_runner.invoke(["beta", "models", "create", "my-model", "--base-model", "ml_base", "--json"])
         assert result.exit_code != 0
@@ -388,7 +385,7 @@ class TestBetaModelsPublic:
 class TestBetaModelsOrg:
     @pytest.mark.respx(base_url=base_url)
     def test_org_lists_org_scoped_models(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         route = respx_mock.get("/organizations/org-1/models").mock(
             return_value=httpx.Response(
                 200,
@@ -626,7 +623,7 @@ class TestBetaModelsConfigs:
     def test_configs_resolves_private_model_name_to_base_model(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         respx_mock.get("/projects/proj/models").mock(
             return_value=httpx.Response(
                 200,
@@ -650,7 +647,7 @@ class TestBetaModelsConfigs:
 
     @pytest.mark.respx(base_url=base_url)
     def test_configs_resolves_public_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         respx_mock.get("/supported-models").mock(
             return_value=httpx.Response(
                 200,

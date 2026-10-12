@@ -15,15 +15,12 @@ from together._version import __version__
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
 
-def _whoami_body() -> dict[str, str]:
+def _whoami_body() -> dict[str, object]:
     return {
-        "api_key_id": "key-1",
-        "organization_id": "org-1",
-        "organization_name": "Acme Org",
-        "project_id": "proj",
-        "project_name": "My Project",
-        "project_slug": "my-project",
-        "user_id": "user-1",
+        "type": "project_api_key",
+        "api_key": {"id": "key-1"},
+        "organization": {"id": "org-1", "name": "Acme Org"},
+        "project": {"id": "proj", "name": "My Project", "slug": "my-project"},
     }
 
 
@@ -35,7 +32,7 @@ class TestCliDebug:
 
     @pytest.mark.respx(base_url=base_url)
     def test_debug_whoami_is_structured_and_redacted(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(
+        respx_mock.get("/v3/whoami").mock(
             return_value=httpx.Response(
                 200,
                 json=_whoami_body(),
@@ -67,13 +64,13 @@ class TestCliDebug:
 
     @pytest.mark.respx(base_url=base_url)
     def test_debug_keeps_json_stdout_clean(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
 
         result = cli_runner.invoke(["whoami", "--json", "--debug"])
 
         assert result.exit_code == 0, result.output
         payload = json.loads(result.out_out)
-        assert payload["project_id"] == "proj"
+        assert payload["project"]["id"] == "proj"
         assert "GET" in result.err_out
         assert "debug" in result.err_out
 
@@ -81,7 +78,7 @@ class TestCliDebug:
     def test_debug_error_keeps_status_without_response_body(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/whoami").mock(
+        respx_mock.get("/v3/whoami").mock(
             return_value=httpx.Response(
                 401,
                 json={"error": {"message": "Invalid API key", "type": "invalid_request_error"}},
@@ -101,7 +98,7 @@ class TestCliDebug:
 
     @pytest.mark.respx(base_url=base_url)
     def test_debug_off_does_not_print_http_trace(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
 
         result = cli_runner.invoke(["whoami"])
 
@@ -128,14 +125,14 @@ class TestCliDebug:
         assert "key=<missing>" in err
         assert "…0000" not in err
         assert "GET" in err
-        assert "api key missing" in result.out_out.lower()
+        assert "tg login" in result.out_out
         from together.lib.cli._track_cli import CliTrackingEvents
 
         assert CliTrackingEvents.ApiRequest not in tracked
 
     @pytest.mark.respx(base_url=base_url)
     def test_debug_does_not_leave_logger_hooked(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
 
         first = cli_runner.invoke(["whoami", "--debug"])
         assert first.exit_code == 0, first.output
@@ -167,7 +164,7 @@ class TestCliDebugLogFile:
 
     @pytest.mark.respx(base_url=base_url)
     def test_debug_writes_full_log_file_with_bodies(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(
+        respx_mock.get("/v3/whoami").mock(
             return_value=httpx.Response(200, json=_whoami_body(), headers={"x-request-id": "req_file_1"})
         )
 
@@ -186,14 +183,14 @@ class TestCliDebugLogFile:
         assert "← 200" in log
         assert "req_file_1" in log
         assert "response headers:" in log
-        assert '"organization_id": "org-1"' in log
+        assert '"id": "org-1"' in log
         assert "authorization: <redacted>" in log.lower()
         assert API_KEY not in log
         assert "[muted]" not in log
 
     @pytest.mark.respx(base_url=base_url)
     def test_debug_log_file_includes_error_body(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(
+        respx_mock.get("/v3/whoami").mock(
             return_value=httpx.Response(
                 401, json={"error": {"message": "Invalid API key", "type": "invalid_request_error"}}
             )

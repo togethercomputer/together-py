@@ -113,13 +113,10 @@ def _mock_hardware_catalog(respx_mock: MockRouter) -> None:
 
 def _whoami_body(**overrides: Any) -> dict[str, Any]:
     body: dict[str, Any] = {
-        "api_key_id": "key-1",
-        "organization_id": "org-1",
-        "organization_name": "Acme",
-        "project_id": "proj",
-        "project_name": "My Project",
-        "project_slug": "my-project",
-        "user_id": "user-1",
+        "type": "project_api_key",
+        "api_key": {"id": "key-1"},
+        "organization": {"id": "org-1", "name": "Acme"},
+        "project": {"id": "proj", "name": "My Project", "slug": "my-project"},
     }
     body.update(overrides)
     return body
@@ -411,7 +408,7 @@ class TestBetaEndpointsDeploy:
         cli_runner.env.pop("TOGETHER_PROJECT_ID", None)
         _mock_model_and_config(respx_mock)
         _mock_hardware_catalog(respx_mock)
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
 
         result = cli_runner.invoke(
             [
@@ -588,7 +585,7 @@ class TestBetaEndpointsDeploy:
                 },
             )
         )
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         list_route = respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
@@ -1325,7 +1322,7 @@ class TestBetaEndpointsDeployAdapter:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         _mock_adapter_models(respx_mock)
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         respx_mock.get("/projects/proj/configs").mock(
             return_value=httpx.Response(
                 200,
@@ -1446,7 +1443,7 @@ class TestBetaEndpointsList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_org_scoped(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         route = respx_mock.get("/organizations/org-1/endpoints").mock(
             return_value=httpx.Response(
                 200,

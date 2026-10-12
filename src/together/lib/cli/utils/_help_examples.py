@@ -75,6 +75,16 @@ MODELS_UPLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --hf-token $HUGGING_FACE_TOKEN[/primary]
 """
 
+## Projects
+PROJECTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] List projects you can access:
+  [primary]tg projects list[/primary]
+
+[dim]-[/dim] Switch the saved login token to one of them:
+  [primary]tg switch[/primary]
+  [primary]tg switch <project-id>[/primary]
+"""
+
 ## Fine-tuning API commands
 FINE_TUNING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Create a fine-tuning job:

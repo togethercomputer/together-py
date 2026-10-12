@@ -33,6 +33,7 @@ from together import Together
 from together._types import Omit, omit
 from together._exceptions import APIError, NotFoundError, AuthenticationError
 from together._utils._json import openapi_dumps
+from together.lib.cli.auth import load_stored_credentials
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.deployment import Deployment
@@ -74,6 +75,26 @@ _TRACK_READY_TIMEOUT = 120
 
 class JigError(Exception):
     """Actionable runtime error"""
+
+
+def deployment_api_key(client_key: str | None) -> str:
+    """API key for a deployment secret or registry login.
+
+    `--api-key`, or `$TOGETHER_API_KEY` when that is the client credential, is the key this command
+    is already using. A `tg login` session token is not an API key, JWT or otherwise.
+    `$TOGETHER_API_KEY` is ignored while logged in, so copying it would store a key from a different
+    org than the deploy.
+    """
+    key = (client_key or "").strip()
+    stored = load_stored_credentials()
+    if stored is not None and key == stored.access_token:
+        raise JigError(
+            "A login token cannot be stored as an API key. Pass --api-key with an API key for this project. "
+            "TOGETHER_API_KEY is ignored while you are logged in."
+        )
+    if not key:
+        raise JigError("An API key is required. Pass --api-key or set TOGETHER_API_KEY.")
+    return key
 
 
 # == Configuration ==
@@ -780,12 +801,15 @@ class Jig:
         if warmup:
             _build_warm_image(image)
 
+    def _docker_login(self, host: str) -> None:
+        login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
+        password = deployment_api_key(self.together.api_key)
+        if subprocess.run(login_cmd, input=password, text=True).returncode != 0:
+            raise JigError("Registry login failed")
+
     def push(self, tag: str = "latest") -> None:
         image = self.image(tag)
-        host = self.registry().split("/")[0]
-        login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
-        if subprocess.run(login_cmd, input=self.together.api_key, text=True).returncode != 0:
-            raise JigError("Registry login failed")
+        self._docker_login(self.registry().split("/")[0])
 
         console.print(f"Pushing {image}")
         self._metadata_path(tag).unlink(missing_ok=True)
@@ -836,10 +860,7 @@ class Jig:
         if not builder:
             raise JigError("`docker buildx` is required to build images.")
 
-        host = self.registry().split("/")[0]
-        login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
-        if subprocess.run(login_cmd, input=self.together.api_key, text=True).returncode != 0:
-            raise JigError("Registry login failed")
+        self._docker_login(self.registry().split("/")[0])
 
         if not _dockerfile(self.config):
             console.print(
@@ -942,7 +963,7 @@ class Jig:
 
         self.sync_secrets_from_deployment()
         if "TOGETHER_API_KEY" not in self.state.secrets:
-            self.set_secret("TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API")
+            self.set_secret("TOGETHER_API_KEY", deployment_api_key(self.together.api_key), "Auth key for queue API")
 
         env_dict = dict(self.config.deploy.environment_variables)
         if self.together.base_url.host not in ("api.together.ai", "api.together.xyz"):

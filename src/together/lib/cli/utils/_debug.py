@@ -137,9 +137,19 @@ def sanitize_debug_log_message(message: str) -> str:
     return _redact_secrets_in_error_text(stripped)
 
 
+# OAuth credential fields in token-endpoint bodies (`tg login` / `tg switch` / refresh / logout).
+# Opaque refresh tokens and device codes are not JWTs, so the generic patterns miss them.
+_OAUTH_SECRET_FIELDS = r"access_token|refresh_token|id_token|device_code|client_secret|subject_token|token"
+_OAUTH_JSON_FIELD_RE = re.compile(rf'(?i)("(?:{_OAUTH_SECRET_FIELDS})"\s*:\s*)"[^"]*"')
+_OAUTH_FORM_FIELD_RE = re.compile(rf"(?i)(^|[&\s])({_OAUTH_SECRET_FIELDS})=([^&\s]+)")
+
+
 def redact_for_log_file(text: str) -> str:
     """Redact secrets but keep URL query strings (minus presigned signing params)."""
-    return _redact_secrets_in_error_text(_SIGNED_URL_PARAM_RE.sub(r"\1\2=<redacted>", text))
+    text = _SIGNED_URL_PARAM_RE.sub(r"\1\2=<redacted>", text)
+    text = _OAUTH_JSON_FIELD_RE.sub(r'\1"<redacted>"', text)
+    text = _OAUTH_FORM_FIELD_RE.sub(r"\1\2=<redacted>", text)
+    return _redact_secrets_in_error_text(text)
 
 
 def _safe_url(url: httpx.URL, *, base_url: str = "") -> str:
@@ -406,6 +416,19 @@ def _log_response_details(response: httpx.Response) -> None:
         response.stream = _TeeResponseStream(response, stream)
 
 
+def _log_read_response_details(response: httpx.Response) -> None:
+    """Log headers and body of a response whose body can be read up front (sync, non-streaming)."""
+    if _log_file is None:
+        return
+    _write_log_file("\n".join(["  response headers:", *_format_headers(response.headers)]))
+    content = response.read()
+    truncated = len(content) > _MAX_LOGGED_BODY_BYTES
+    body = _format_body(
+        content[:_MAX_LOGGED_BODY_BYTES], content_type=response.headers.get("content-type"), truncated=truncated
+    )
+    _write_log_file("\n".join([f"  response body for {_request_label(response.request)}:", *body]))
+
+
 def _print_lines(lines: Sequence[str]) -> None:
     for line in lines:
         _debug_print(f"[muted]debug[/muted] {line}")
@@ -442,17 +465,13 @@ def log_debug_note(message: str) -> None:
     _debug_print(f"[muted]debug[/muted] {escape_rich_markup(message)}")
 
 
-async def _on_request(request: httpx.Request) -> None:
-    if not _enabled:
-        return
+def _record_request(request: httpx.Request) -> None:
     request.extensions[_START_EXTENSION] = time.perf_counter()
     _print_lines(render_request_lines(request, base_url=_base_url))
     _log_request_details(request)
 
 
-async def _on_response(response: httpx.Response) -> None:
-    if not _enabled:
-        return
+def _print_response_summary(response: httpx.Response) -> None:
     start = response.request.extensions.get(_START_EXTENSION)
     elapsed: float | None
     if isinstance(start, (int, float)):
@@ -460,7 +479,33 @@ async def _on_response(response: httpx.Response) -> None:
     else:
         elapsed = None
     _print_lines(render_response_lines(response, elapsed=elapsed))
+
+
+async def _on_request(request: httpx.Request) -> None:
+    if not _enabled:
+        return
+    _record_request(request)
+
+
+async def _on_response(response: httpx.Response) -> None:
+    if not _enabled:
+        return
+    _print_response_summary(response)
     _log_response_details(response)
+    _debug_print()
+
+
+def _on_request_sync(request: httpx.Request) -> None:
+    if not _enabled:
+        return
+    _record_request(request)
+
+
+def _on_response_sync(response: httpx.Response) -> None:
+    if not _enabled:
+        return
+    _print_response_summary(response)
+    _log_read_response_details(response)
     _debug_print()
 
 
@@ -515,6 +560,21 @@ def install_http_debug_hooks(http_client: httpx.AsyncClient) -> None:
         request_hooks.append(_on_request)
     if _on_response not in response_hooks:
         response_hooks.append(_on_response)
+
+
+def install_sync_http_debug_hooks(http_client: httpx.Client) -> None:
+    """`--debug` hooks for a sync client whose responses are small and not streamed (OAuth calls).
+
+    Response bodies are read in the hook so they can be logged; do not use this on clients that
+    stream downloads or SSE.
+    """
+    hooks = http_client.event_hooks
+    request_hooks = hooks.setdefault("request", [])
+    response_hooks = hooks.setdefault("response", [])
+    if _on_request_sync not in request_hooks:
+        request_hooks.append(_on_request_sync)
+    if _on_response_sync not in response_hooks:
+        response_hooks.append(_on_response_sync)
 
 
 def setup_cli_debug_logging() -> None:

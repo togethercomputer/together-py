@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import inspect
 from typing import Any, Optional, Annotated, get_args, get_origin
@@ -7,12 +8,19 @@ from typing import Any, Optional, Annotated, get_args, get_origin
 import httpx
 from cyclopts import App, Group, Parameter, CycloptsError, MissingArgumentError
 from rich.markup import escape as escape_rich_markup
+from cyclopts.command_spec import CommandSpec
 
 from together import AsyncTogether
 from together._version import __version__
 from together.lib.utils import log_debug
 from together._exceptions import APIError
 from together._utils._json import openapi_dumps
+from together.lib.cli.auth import (
+    TogetherAuth,
+    StoredTokenAuth,
+    load_stored_base_url,
+    load_stored_credentials,
+)
 from together.lib.cli._track_cli import (
     CliTrackingEvents,
     track_cli,
@@ -29,6 +37,7 @@ from together.lib.cli.utils._debug import (
 )
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
+from together.lib.cli.utils._whoami import project_of, fetch_whoami
 from together.lib.cli.utils._console import CliBrokenPipeError, console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._json_mode import emit_json, is_json_mode, use_json_mode, resolve_output_json
@@ -43,6 +52,7 @@ from together.lib.cli.utils._help_examples import (
     CLUSTERS_HELP_EXAMPLES,
     JIG_LOGS_HELP_EXAMPLES,
     JIG_PUSH_HELP_EXAMPLES,
+    PROJECTS_HELP_EXAMPLES,
     TRAINING_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
     JIG_BUILD_HELP_EXAMPLES,
@@ -103,6 +113,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES,
 )
+from together.lib.cli.utils._project_scope import ProjectScopeSwitched, explain_project_scope
 from together.lib.cli.utils._version_check import VersionCheck
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
@@ -128,11 +139,14 @@ _GLOBAL_PARAM_HELP = {
 # prefix stripped, so this covers both `tg clusters ssh` and the hidden
 # `tg beta clusters ssh` alias.
 _NO_AUTH_COMMANDS = frozenset({"clusters ssh"})
+# Top-level commands that perform their own auth (or clear it) and must not
+# require an existing API key or the project-resolution whoami().
+_NO_AUTH_ROOT_COMMANDS = frozenset({"login", "logout", "switch"})
 
 
-async def _resolve_project_id(client: AsyncTogether) -> str:
-    me = await client.whoami()
-    return me.project_id
+async def _resolve_project_id(client: AsyncTogether) -> Optional[str]:
+    project = project_of(await fetch_whoami(client))
+    return project.id if project is not None else None
 
 
 def _propagate_global_param_group(target_app: App) -> None:
@@ -150,6 +164,47 @@ def _propagate_global_param_group(target_app: App) -> None:
         _propagate_global_param_group(sub)
 
 
+def _resolve_cli_api_key(explicit: Optional[str]) -> Optional[str]:
+    """Prefer `tg login` credentials over `$TOGETHER_API_KEY`. Explicit `--api-key` wins."""
+    if explicit:
+        return explicit
+    stored = load_stored_credentials()
+    return stored.access_token if stored is not None else None
+
+
+def _using_stored_access_token(explicit: Optional[str]) -> bool:
+    return not bool(explicit) and load_stored_credentials() is not None
+
+
+def _refresh_stored_token_if_expired() -> None:
+    try:
+        with TogetherAuth() as auth:
+            auth.refresh()
+    except Exception as e:
+        # Keep going with the stored token. A later 401 refreshes once more; if that
+        # refresh is rejected, the command reports the login error instead of a project picker.
+        log_debug("Stored token refresh failed", error=e)
+
+
+def _install_stored_token_auth(client: AsyncTogether) -> None:
+    def on_token(token: str) -> None:
+        client.api_key = token
+
+    client._client.auth = StoredTokenAuth(client.api_key, on_token)
+
+
+def _session_is_interactive() -> bool:
+    return sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
+
+
+def _apply_project_scope(client: AsyncTogether, config: CLIConfig, switched: ProjectScopeSwitched) -> None:
+    """Point this process at the project token the user just chose."""
+    client.api_key = switched.access_token
+    client.project_id = switched.project_id
+    config.project_id = switched.project_id
+    _install_stored_token_auth(client)
+
+
 # Stainless requires a non-empty key to construct a client. When the user has
 # none, we substitute this placeholder and block real requests. Do not treat the
 # placeholder as a real key in --debug session output.
@@ -164,28 +219,38 @@ def _create_client(
     project_id: Optional[str],
     require_api_key: bool = True,
     debug: bool = False,
+    ignore_base_url_env: bool = False,
 ) -> tuple[AsyncTogether, bool]:
+    api_key = _resolve_cli_api_key(api_key)
     missing_api_key = False
+    # A logged-in session is pinned to its issuer. Hide TOGETHER_BASE_URL from the
+    # SDK when we are not passing an explicit URL, so production keeps the default
+    # (and its non-overridden v2 routing) instead of the env host.
+    hidden_base_url = os.environ.pop("TOGETHER_BASE_URL", None) if ignore_base_url_env else None
     try:
-        client = AsyncTogether(
-            api_key=api_key,
-            base_url=base_url,
-            timeout=timeout,
-            max_retries=max_retries if max_retries is not None else 0,
-            project_id=project_id,
-        )
-    except Exception as e:
-        if "api_key" in str(e):
-            missing_api_key = True
+        try:
             client = AsyncTogether(
-                api_key=_PLACEHOLDER_API_KEY,
+                api_key=api_key,
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=max_retries if max_retries is not None else 0,
                 project_id=project_id,
             )
-        else:
-            raise e
+        except Exception as e:
+            if "api_key" in str(e):
+                missing_api_key = True
+                client = AsyncTogether(
+                    api_key=_PLACEHOLDER_API_KEY,
+                    base_url=base_url,
+                    timeout=timeout,
+                    max_retries=max_retries if max_retries is not None else 0,
+                    project_id=project_id,
+                )
+            else:
+                raise e
+    finally:
+        if hidden_base_url is not None:
+            os.environ["TOGETHER_BASE_URL"] = hidden_base_url
 
     # Wrap the client's httpx requests to track the parameters sent on api requests
     async def track_request(request: httpx.Request) -> None:
@@ -204,6 +269,10 @@ def _create_client(
         # After debug hooks so `--debug` still emits `→ GET` before we exit,
         # but before analytics so a request that is never sent is not tracked.
         async def block_requests_for_api_key(_: httpx.Request) -> None:
+            # `tg login` installs a token on this client after it is built. Later calls
+            # in the same process, such as listing projects, are authenticated.
+            if client.api_key and client.api_key != _PLACEHOLDER_API_KEY:
+                return
             _print_missing_api_key()
             raise CliDiagnosticExit("Together API key missing")
 
@@ -289,20 +358,23 @@ async def launcher(
             teardown_cli_debug()
 
 
-_MISSING_API_KEY = (
-    "Together API key missing. Pass --api-key or set the TOGETHER_API_KEY environment variable. "
-    "You can find your API key at https://api.together.ai/settings/api-keys"
-)
+_MISSING_API_KEY = "Not logged in. Run `tg login`."
+_LOGGED_IN_BASE_URL = "Cannot set --base-url while logged in. This session uses the issuer from `tg login`."
 
 
 def _print_missing_api_key() -> None:
     if is_json_mode():
         emit_json({"error": _MISSING_API_KEY})
         return
-    console.print(
-        "[red]Error:[/red] Together API Key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
-    )
-    console.print("You can find your api key at https://api.together.ai/settings/api-keys")
+    console.print(f"[red]Error:[/red] {_MISSING_API_KEY}")
+
+
+def _reject_logged_in_base_url() -> None:
+    if is_json_mode():
+        emit_json({"error": _LOGGED_IN_BASE_URL})
+    else:
+        console.print(f"[red]Error:[/red] {_LOGGED_IN_BASE_URL}")
+    sys.exit(1)
 
 
 async def _run_launcher(
@@ -329,7 +401,22 @@ async def _run_launcher(
     # entirely the cluster's Dex OIDC flow (see together.lib.cli.api.clusters.ssh).
     # Before the whoami() was added for project resolution these commands worked
     # with no key; skip client setup so they stay keyless.
-    no_auth_command = parsed_command in _NO_AUTH_COMMANDS
+    # `tg login` / `logout` / `switch` do their own auth against the stored issuer.
+    no_auth_command = parsed_command in _NO_AUTH_COMMANDS or parsed_command in _NO_AUTH_ROOT_COMMANDS
+
+    using_stored_token = _using_stored_access_token(api_key)
+    # `tg login` is the one command that picks an environment (`--base-url` / `TOGETHER_BASE_URL`).
+    # Every other command, once logged in, can only talk to the issuer that minted the token.
+    pin_to_issuer = using_stored_token and parsed_command != "login"
+    if pin_to_issuer and base_url is not None:
+        _reject_logged_in_base_url()
+    if using_stored_token and not no_auth_command:
+        _refresh_stored_token_if_expired()
+    if pin_to_issuer:
+        base_url = load_stored_base_url()
+    if project_id is None and using_stored_token:
+        stored = load_stored_credentials()
+        project_id = stored.project_id if stored is not None else None
 
     client, missing_api_key = _create_client(
         api_key,
@@ -339,6 +426,7 @@ async def _run_launcher(
         project_id,
         require_api_key=not no_auth_command,
         debug=bool(debug),
+        ignore_base_url_env=pin_to_issuer and base_url is None,
     )
 
     if debug:
@@ -351,17 +439,19 @@ async def _run_launcher(
             timeout=client.timeout,
             max_retries=client.max_retries,
         )
+    if using_stored_token:
+        _install_stored_token_auth(client)
 
-    # Skip the project-resolution whoami() for out-of-band-auth commands: it is a
-    # Together API call and would reintroduce the API-key dependency for keyless
-    # commands like `clusters ssh`.
-    if not no_auth_command and client.project_id is None:
-        client.project_id = await _resolve_project_id(client)
-        if debug and client.project_id:
-            log_debug_note(f"resolved project {client.project_id}")
+    # Skip the project-resolution whoami() for out-of-band-auth commands and for
+    # `tg login` sessions. Device tokens are not API keys bound to a project.
+    if not no_auth_command and not using_stored_token and client.project_id is None:
+        resolved_project_id = await _resolve_project_id(client)
+        if resolved_project_id is not None:
+            client.project_id = resolved_project_id
+            if debug:
+                log_debug_note(f"resolved project {resolved_project_id}")
 
-    is_interactive = sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
-    non_interactive_mode = bool(non_interactive) or resolved_json or not is_interactive
+    non_interactive_mode = bool(non_interactive) or resolved_json or not _session_is_interactive()
 
     config = CLIConfig(
         client=client,
@@ -432,6 +522,17 @@ async def _run_launcher(
                 console.print("Missing required argument", e.argument.name)
                 raise CliDiagnosticExit(f"Missing required argument: {e.argument.name}") from None
         except APIError as e:
+            stored = load_stored_credentials() if using_stored_token else None
+            if not retried_for_scope:
+                await explain_project_scope(
+                    e,
+                    command=parsed_command,
+                    using_stored_token=using_stored_token,
+                    token_project=stored.project_id if stored is not None else None,
+                    client_project=client.project_id,
+                    non_interactive=config.non_interactive,
+                    client=client,
+                )
             try:
                 try_handle_server_error_message(e, config.json)
             except Exception:
@@ -453,13 +554,42 @@ async def _run_launcher(
     )
     version_check = VersionCheck()
     command_succeeded = False
+    retried_for_scope = False
     try:
-        await run_command()
-        track_cli(
-            CliTrackingEvents.CommandCompleted,
-            {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
-        )
-        command_succeeded = True
+        while True:
+            try:
+                await run_command()
+                track_cli(
+                    CliTrackingEvents.CommandCompleted,
+                    {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
+                )
+                command_succeeded = True
+                break
+            except ProjectScopeSwitched as switched:
+                if retried_for_scope:
+                    raise
+                retried_for_scope = True
+                _apply_project_scope(client, config, switched)
+            except Exception as e:
+                # API errors are prompted inside run_command(). Missing project_id is not.
+                if retried_for_scope or isinstance(e, APIError):
+                    raise
+                stored = load_stored_credentials() if using_stored_token else None
+                try:
+                    await explain_project_scope(
+                        e,
+                        command=parsed_command,
+                        using_stored_token=using_stored_token,
+                        token_project=stored.project_id if stored is not None else None,
+                        client_project=client.project_id,
+                        non_interactive=config.non_interactive,
+                        client=client,
+                    )
+                except ProjectScopeSwitched as switched:
+                    retried_for_scope = True
+                    _apply_project_scope(client, config, switched)
+                    continue
+                raise
     except CliBrokenPipeError:
         track_cli(
             CliTrackingEvents.CommandUserAborted,
@@ -1141,7 +1271,48 @@ storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_list"), name="list", alias="ls", help="List volumes for a Jig deployment"
 )
 
+projects_app = app.command(
+    App(name="projects", help="List projects you can access", help_epilogue=PROJECTS_HELP_EXAMPLES)
+)
+projects_app.command((f"{_CLI}.projects.list:list"), alias="ls", help="List projects you can access")
+
+app.command((f"{_CLI}.login:login"), help="Logs into your account or creates a new one")
+app.command((f"{_CLI}.logout:logout"), help="Logs out of your account")
+app.command((f"{_CLI}.switch:switch"), help="Switches between different scopes")
 app.command((f"{_CLI}.whoami:whoami"), help="Show the current user")
+
+# Cyclopts prints commands with an explicit sort_key before commands that have none.
+# Key every default-group command so login/logout/switch stay at the end of help
+# when new commands are registered without a key.
+_HELP_TAIL_COMMANDS = ("login", "logout", "switch")
+
+
+def _command_primary_name(registered_name: str, cmd: object) -> str:
+    raw_name = getattr(cmd, "name", None)
+    if isinstance(raw_name, str) and raw_name:
+        return raw_name
+    if isinstance(raw_name, tuple) and raw_name and isinstance(raw_name[0], str) and raw_name[0]:
+        return raw_name[0]
+    return registered_name
+
+
+def _pin_root_help_tail(root: App) -> None:
+    commands: dict[int, tuple[str, App | CommandSpec]] = {}
+    for registered_name, cmd in root._commands.items():
+        if registered_name in root.help_flags or registered_name in root.version_flags:
+            continue
+        if getattr(cmd, "group", None):
+            continue
+        commands.setdefault(id(cmd), (_command_primary_name(registered_name, cmd), cmd))
+
+    regular = sorted((name, cmd) for name, cmd in commands.values() if name not in _HELP_TAIL_COMMANDS)
+    tail = [(name, cmd) for name, cmd in commands.values() if name in _HELP_TAIL_COMMANDS]
+    tail.sort(key=lambda item: _HELP_TAIL_COMMANDS.index(item[0]))
+    for index, (_, cmd) in enumerate([*regular, *tail]):
+        cmd.sort_key = index
+
+
+_pin_root_help_tail(app)
 
 app.help_epilogue = TOP_LEVEL_HELP_EXAMPLES
 endpoints_app.help_epilogue = ENDPOINTS_HELP_EXAMPLES
@@ -1160,6 +1331,7 @@ def main() -> None:
     )
     app.command(App(name="beta jig", help="Container deployment", group=BETA_GROUP_TITLE))
     beta_root_app.show = False
+    _pin_root_help_tail(app)
 
     _propagate_global_param_group(app)
 
