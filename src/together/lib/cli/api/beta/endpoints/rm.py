@@ -15,6 +15,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.types.beta.endpoints.ab_experiment import AbExperiment
 from together.types.beta.endpoints.shadow_experiment import ShadowExperiment
+from together.types.beta.endpoints.adapter_list_response import AdapterListResponse
 from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
 from together.lib.cli.api.beta.endpoints._utils._detach_from_experiments import (
     detach_deployment_from_experiments,
@@ -23,7 +24,10 @@ from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment imp
 
 
 async def rm(
-    id: Annotated[str, Parameter(help="Resource ID to delete (ep_..., dep_..., abx_..., exp_..., or rol_...)")],
+    id: Annotated[
+        str,
+        Parameter(help="Resource ID to delete (ep_..., dep_..., dad_..., abx_..., exp_..., or rol_...)"),
+    ],
     force: Annotated[
         bool,
         Parameter(
@@ -41,6 +45,8 @@ async def rm(
         result = await _delete_endpoint(id, force=force, config=config)
     elif id.startswith("dep_"):
         result = await _delete_deployment(id, config=config)
+    elif id.startswith("dad_"):
+        result = await _delete_adapter(id, config=config)
     elif id.startswith("abx_"):
         result = await _delete_ab_experiment(id, config=config)
     elif id.startswith("exp_"):
@@ -48,7 +54,7 @@ async def rm(
     elif id.startswith("rol_"):
         result = await _delete_rollout(id, config=config)
     else:
-        raise ValueError(f"Unrecognized resource ID {id!r}. Expected a prefix of ep_, dep_, abx_, exp_, or rol_.")
+        raise ValueError(f"Unrecognized resource ID {id!r}. Expected a prefix of ep_, dep_, dad_, abx_, exp_, or rol_.")
 
     if config.json:
         console.print_json(openapi_dumps(result).decode("utf-8"))
@@ -197,6 +203,45 @@ async def _scale_down_and_ask_retry(
     )
     console.print("  Scaled min/max replicas to 0 — waiting for it to stop.")
     console.print(f"  Once stopped, retry: [primary]tg beta endpoints rm {escape_rich_markup(deployment_id)}[/primary]")
+
+
+async def _delete_adapter(adapter_id: str, *, config: CLIConfigParameter) -> dict[str, Any]:
+    endpoint_id, deployment_id, adapter = await _find_adapter(config.client, adapter_id)
+    await show_loading_status(
+        "Removing adapter...",
+        config.client.beta.endpoints.adapters.delete(
+            id=adapter.id,
+            endpoint_id=endpoint_id,
+            deployment_id=deployment_id,
+            etag=adapter.etag,
+        ),
+    )
+    return {"message": f"Deleted adapter {adapter_id}", "id": adapter_id, "type": "adapter"}
+
+
+async def _find_adapter(
+    client: AsyncClient,
+    adapter_id: str,
+) -> tuple[str, str, AdapterListResponse]:
+    """Locate an adapter attachment by scanning each deployment's adapter list."""
+    cursor: str | None = None
+    while True:
+        endpoints = await client.beta.endpoints.list(after=cursor or omit)
+        for endpoint in endpoints.data:
+            for deployment in endpoint.deployments or []:
+                if not deployment.id:
+                    continue
+                try:
+                    # Deployments that cannot host adapters reject the list call; keep scanning.
+                    async for adapter in client.beta.endpoints.adapters.list(endpoint.id, deployment.id):
+                        if adapter.id == adapter_id:
+                            return endpoint.id, deployment.id, adapter
+                except APIError:
+                    continue
+        if not endpoints.next_cursor:
+            break
+        cursor = endpoints.next_cursor
+    raise ValueError(f"Adapter {adapter_id} not found.")
 
 
 async def _delete_ab_experiment(experiment_id: str, *, config: CLIConfigParameter) -> dict[str, Any]:

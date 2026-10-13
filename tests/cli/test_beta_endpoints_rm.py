@@ -103,6 +103,18 @@ def _ab_experiment_body(
     return body
 
 
+def _adapter_body(adapter_id: str = "dad_1", **overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "id": adapter_id,
+        "adapterModelId": "ml_adapter",
+        "desiredRevisionId": "rv_1",
+        "etag": "etag-adapter",
+        "perCluster": [],
+    }
+    body.update(overrides)
+    return body
+
+
 def _shadow_experiment_body(
     experiment_id: str = "exp_1",
     targets: list[dict[str, Any]] | None = None,
@@ -630,6 +642,135 @@ class TestBetaEndpointsRm:
         assert delete_route.called
         payload = json.loads(result.out_out)
         assert payload["id"] == "rol_stale"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rm_adapter(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_adapter_body()], "next_cursor": None},
+            )
+        )
+        delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters/dad_1").mock(
+            return_value=httpx.Response(200, json={})
+        )
+
+        result = cli_runner.invoke(_rm_args("dad_1"))
+
+        assert result.exit_code == 0, result.output
+        assert delete_route.called
+        assert cast(Call, delete_route.calls[0]).request.url.params["etag"] == "etag-adapter"
+        payload = json.loads(result.out_out)
+        assert payload["type"] == "adapter"
+        assert payload["id"] == "dad_1"
+        assert payload["message"] == "Deleted adapter dad_1"
+        assert not any(
+            call.request.url.path.endswith("/deployments/dep_shadow/adapters")
+            for call in cast(list[Call], respx_mock.calls)
+        )
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rm_adapter_skips_deployments_that_cannot_list_adapters(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(
+            return_value=httpx.Response(
+                400,
+                json={"error": {"message": "deployment does not serve adapters", "type": "invalid_request_error"}},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_adapter_body("dad_later")], "next_cursor": None},
+            )
+        )
+        delete_route = respx_mock.delete(
+            "/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters/dad_later"
+        ).mock(return_value=httpx.Response(200, json={}))
+
+        result = cli_runner.invoke(_rm_args("dad_later"))
+
+        assert result.exit_code == 0, result.output
+        assert delete_route.called
+        payload = json.loads(result.out_out)
+        assert payload["id"] == "dad_later"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rm_adapter_not_found(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        for deployment_id in ("dep_control", "dep_variant", "dep_shadow"):
+            respx_mock.get(f"/projects/proj/endpoints/ep_1/deployments/{deployment_id}/adapters").mock(
+                return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+            )
+
+        result = cli_runner.invoke(_rm_args("dad_missing"))
+
+        assert result.exit_code != 0
+        assert "Adapter dad_missing not found." in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rm_adapter_follows_list_pagination(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        first_endpoint = _endpoint_body(id="ep_empty", deployments=[])
+        second_endpoint = _endpoint_body()
+
+        def endpoints(request: httpx.Request) -> httpx.Response:
+            if request.url.params.get("after") == "endpoints-2":
+                return httpx.Response(
+                    200,
+                    json={"object": "list", "data": [second_endpoint], "next_cursor": None},
+                )
+            return httpx.Response(
+                200,
+                json={"object": "list", "data": [first_endpoint], "next_cursor": "endpoints-2"},
+            )
+
+        def adapters(request: httpx.Request) -> httpx.Response:
+            if request.url.params.get("after") == "adapters-2":
+                return httpx.Response(
+                    200,
+                    json={"object": "list", "data": [_adapter_body("dad_page2")], "next_cursor": None},
+                )
+            return httpx.Response(
+                200,
+                json={"object": "list", "data": [_adapter_body("dad_other")], "next_cursor": "adapters-2"},
+            )
+
+        respx_mock.get("/projects/proj/endpoints").mock(side_effect=endpoints)
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(side_effect=adapters)
+        delete_route = respx_mock.delete(
+            "/projects/proj/endpoints/ep_1/deployments/dep_control/adapters/dad_page2"
+        ).mock(return_value=httpx.Response(200, json={}))
+
+        result = cli_runner.invoke(_rm_args("dad_page2"))
+
+        assert result.exit_code == 0, result.output
+        assert delete_route.called
+        assert cast(Call, delete_route.calls[0]).request.url.params["etag"] == "etag-adapter"
+        payload = json.loads(result.out_out)
+        assert payload["id"] == "dad_page2"
 
     @pytest.mark.respx(base_url=base_url)
     def test_rm_rejects_unknown_prefix(self, cli_runner: CliRunner) -> None:
