@@ -30,12 +30,6 @@ _FAILED = "TRAINING_OPERATION_STATUS_FAILED"
 
 DEFAULT_OPERATION_TIMEOUT: float | None = 300.0
 DEFAULT_OPERATION_INTERVAL: float = 0.5
-# Polling backs off from `interval` toward this ceiling. The first poll still lands at
-# `interval`, so a fast operation is unaffected; only long waits get cheaper. The cap
-# bounds the tail latency added to an operation that completes mid-sleep. A caller who
-# asks for a wider interval than this keeps it: the ceiling never polls more often than
-# it was asked to.
-_MAX_OPERATION_INTERVAL: float = 5.0
 
 _T = TypeVar("_T")
 
@@ -109,8 +103,6 @@ async def async_wait_for_operation(
 ) -> OperationResponse:
     deadline = None if timeout is None else now() + timeout
     current = operation
-    delay = interval
-    ceiling = max(_MAX_OPERATION_INTERVAL, interval)
 
     while True:
         if current.status == _FAILED:
@@ -132,9 +124,8 @@ async def async_wait_for_operation(
             continue
         # Clamp to the remaining budget so a long sleep does not overshoot the caller's
         # deadline: `timeout` is then honoured when it expires rather than up to one
-        # `ceiling` late.
+        # `interval` late.
         if deadline is None:
-            await sleep(delay)
+            await sleep(interval)
         else:
-            await sleep(min(delay, max(deadline - now(), 0.0)))
-        delay = min(delay * 2, ceiling)
+            await sleep(min(interval, max(deadline - now(), 0.0)))
