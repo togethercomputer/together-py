@@ -5,6 +5,7 @@ import threading
 import subprocess
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
+from collections.abc import Callable
 
 import pytest
 
@@ -291,6 +292,142 @@ async def test_version_check_informs_again_after_ttl(monkeypatch: pytest.MonkeyP
     assert (
         json.loads(cache_path.read_text(encoding="utf-8"))["informed_at"] == 1_000.0 + _version_check._CACHE_TTL_SECONDS
     )
+
+
+def _which(available: set[str]) -> Callable[[str], str | None]:
+    def which(name: str) -> str | None:
+        if name in available:
+            return f"/usr/bin/{name}"
+        return None
+
+    return which
+
+
+def test_upgrade_command_for_uv_tool_includes_cli_extra(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    executable = tmp_path / "uv" / "tools" / "together" / "bin" / "python"
+    monkeypatch.setattr(_version_check.sys, "executable", str(executable))
+    monkeypatch.setattr(_version_check.shutil, "which", _which({"uv", "pipx"}))
+
+    assert _version_check._upgrade_command() == ["uv", "tool", "install", "together[cli]", "--upgrade"]
+    assert _version_check._format_command(_version_check._upgrade_command()) == (
+        "uv tool install 'together[cli]' --upgrade"
+    )
+
+
+def test_upgrade_command_for_pipx_includes_cli_extra(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    executable = tmp_path / "pipx" / "venvs" / "together" / "bin" / "python"
+    monkeypatch.setattr(_version_check.sys, "executable", str(executable))
+    monkeypatch.setattr(_version_check.shutil, "which", _which({"pipx", "uv"}))
+
+    assert _version_check._upgrade_command() == ["pipx", "install", "together[cli]", "--force"]
+    assert _version_check._format_command(_version_check._upgrade_command()) == "pipx install 'together[cli]' --force"
+
+
+def test_format_command_quotes_cli_extra_on_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(_version_check.sys, "platform", "win32")
+
+    assert _version_check._format_command(
+        [r"C:\Program Files\Python\python.exe", "-m", "pip", "install", "--upgrade", "together[cli]"]
+    ) == (r'"C:\Program Files\Python\python.exe" -m pip install --upgrade "together[cli]"')
+
+
+def test_upgrade_command_for_pip_includes_cli_extra(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    executable = tmp_path / "venv" / "bin" / "python"
+    monkeypatch.setattr(_version_check.sys, "executable", str(executable))
+    monkeypatch.setattr(_version_check.shutil, "which", _which({"uv", "pipx"}))
+
+    assert _version_check._upgrade_command() == [
+        str(executable),
+        "-m",
+        "pip",
+        "install",
+        "--upgrade",
+        "together[cli]",
+    ]
+    assert _version_check._format_command(_version_check._upgrade_command()) == (
+        f"{executable} -m pip install --upgrade 'together[cli]'"
+    )
+
+
+def _prepare_outdated_cli(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, output: MagicMock) -> None:
+    monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
+    monkeypatch.setattr(_version_check, "_cache_path", lambda: tmp_path / "version-check.json")
+    monkeypatch.setattr(_version_check, "__version__", "1.0.0")
+    monkeypatch.setattr(_version_check, "_latest_version", lambda: "1.1.0")
+    monkeypatch.setattr(_version_check, "error_console", output)
+
+
+def _printed(output: MagicMock) -> str:
+    return "\n".join(call.args[0] for call in output.print.call_args_list)
+
+
+async def test_version_check_prints_cli_extra_when_non_interactive(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    output = MagicMock()
+    executable = tmp_path / "venv" / "bin" / "python"
+    _prepare_outdated_cli(monkeypatch, tmp_path, output)
+    monkeypatch.setattr(_version_check.sys, "executable", str(executable))
+    monkeypatch.setattr(_version_check.shutil, "which", _which(set()))
+
+    version_check = _version_check.VersionCheck()
+    await version_check.inform(non_interactive=True, allow_prompt=True)
+
+    rendered = _printed(output)
+    assert "1.0.0 → 1.1.0" in rendered
+    assert f"Upgrade with: [bold]{executable} -m pip install --upgrade 'together\\[cli]'[/bold]" in rendered
+
+
+async def test_version_check_prints_cli_extra_when_prompt_not_allowed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    output = MagicMock()
+    confirm = AsyncMock()
+    executable = tmp_path / "venv" / "bin" / "python"
+    _prepare_outdated_cli(monkeypatch, tmp_path, output)
+    monkeypatch.setattr(_version_check.sys, "executable", str(executable))
+    monkeypatch.setattr(_version_check.shutil, "which", _which(set()))
+    monkeypatch.setattr(_version_check, "confirm", confirm)
+
+    version_check = _version_check.VersionCheck()
+    await version_check.inform(non_interactive=False, allow_prompt=False)
+
+    confirm.assert_not_awaited()
+    assert f"Upgrade with: [bold]{executable} -m pip install --upgrade 'together\\[cli]'[/bold]" in _printed(output)
+
+
+async def test_version_check_prompt_upgrades_with_cli_extra(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    output = MagicMock()
+    confirm = AsyncMock(return_value=True)
+    run = MagicMock(return_value=subprocess.CompletedProcess(["uv"], returncode=0))
+    executable = tmp_path / "uv" / "tools" / "together" / "bin" / "python"
+    _prepare_outdated_cli(monkeypatch, tmp_path, output)
+    monkeypatch.setattr(_version_check.sys, "executable", str(executable))
+    monkeypatch.setattr(_version_check.shutil, "which", _which({"uv"}))
+    monkeypatch.setattr(_version_check, "confirm", confirm)
+    monkeypatch.setattr(_version_check.subprocess, "run", run)
+
+    version_check = _version_check.VersionCheck()
+    await version_check.inform(non_interactive=False, allow_prompt=True)
+
+    confirm.assert_awaited_once_with("Upgrade the Together CLI now?")
+    run.assert_called_once_with(["uv", "tool", "install", "together[cli]", "--upgrade"], check=False)
+
+
+async def test_version_check_declined_prompt_prints_cli_extra(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    output = MagicMock()
+    confirm = AsyncMock(return_value=False)
+    executable = tmp_path / "pipx" / "venvs" / "together" / "bin" / "python"
+    _prepare_outdated_cli(monkeypatch, tmp_path, output)
+    monkeypatch.setattr(_version_check.sys, "executable", str(executable))
+    monkeypatch.setattr(_version_check.shutil, "which", _which({"pipx"}))
+    monkeypatch.setattr(_version_check, "confirm", confirm)
+
+    version_check = _version_check.VersionCheck()
+    await version_check.inform(non_interactive=False, allow_prompt=True)
+
+    confirm.assert_awaited_once()
+    assert "Upgrade later with: [bold]pipx install 'together\\[cli]' --force[/bold]" in _printed(output)
 
 
 def test_write_cached_version_preserves_informed_at(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
