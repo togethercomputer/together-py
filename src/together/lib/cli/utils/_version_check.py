@@ -25,6 +25,9 @@ _REQUEST_TIMEOUT_SECONDS = 1.0
 _RESOLUTION_TIMEOUT_SECONDS = _REQUEST_TIMEOUT_SECONDS + 0.5
 _DISABLE_ENV_VAR = "TOGETHER_DISABLE_VERSION_CHECK"
 _TRUTHY_ENV_VALUES = frozenset({"1", "true", "yes"})
+# Keep the CLI extra installed across upgrades. Bracket specs must stay unquoted
+# in argv; `_format_command` adds shell quoting when the command is printed.
+_CLI_UPGRADE_SPEC = "together[cli]"
 
 
 def _parse_version(version: str) -> tuple[int, int, int]:
@@ -172,16 +175,26 @@ def _path_contains(path: Path, *parts: str) -> bool:
 def _upgrade_command() -> list[str]:
     executable = Path(sys.executable)
     if shutil.which("uv") and _path_contains(executable, "uv", "tools"):
-        return ["uv", "tool", "install", "together", "--upgrade"]
+        return ["uv", "tool", "install", _CLI_UPGRADE_SPEC, "--upgrade"]
+    # `pipx upgrade together[cli]` looks up a venv named "together[cli]" and fails.
+    # Reinstalling with --force is what actually adds the extra to an existing tool.
     if shutil.which("pipx") and _path_contains(executable, "pipx", "venvs"):
-        return ["pipx", "upgrade", "together"]
-    return [sys.executable, "-m", "pip", "install", "--upgrade", "together"]
+        return ["pipx", "install", _CLI_UPGRADE_SPEC, "--force"]
+    return [sys.executable, "-m", "pip", "install", "--upgrade", _CLI_UPGRADE_SPEC]
 
 
 def _format_command(command: list[str]) -> str:
     if sys.platform == "win32":
-        return subprocess.list2cmdline(command)
+        # list2cmdline leaves [] bare, and PowerShell globs them, so a copied
+        # `together[cli]` spec never reaches pip.
+        return " ".join(_windows_display_arg(arg) for arg in command)
     return shlex.join(command)
+
+
+def _windows_display_arg(arg: str) -> str:
+    if "[" in arg or "]" in arg:
+        return f'"{arg}"'
+    return subprocess.list2cmdline([arg])
 
 
 def _version_check_disabled() -> bool:
