@@ -7,6 +7,7 @@ from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
 from together import omit
+from together._qs import RepeatedQuery
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -33,6 +34,21 @@ LEVEL_MAP: dict[LevelInput, SDKLevel] = {
 
 def _short_name(fully_qualified_name: str) -> str:
     return fully_qualified_name.rsplit("/", 1)[-1]
+
+
+def _event_types_query(types: str | None) -> dict[str, RepeatedQuery] | None:
+    """Send each event type as its own query value.
+
+    ``--types deployment.scaled,condition.set`` is the documented CLI form, but
+    the API rejects a comma-joined ``types`` value. The SDK comma-joins arrays,
+    so repeated keys are passed through ``extra_query`` instead of ``types``.
+    """
+    if not types:
+        return None
+    values = tuple(part.strip() for part in types.split(",") if part.strip())
+    if not values:
+        return None
+    return {"types": RepeatedQuery(values)}
 
 
 def _format_event_datetime(value: datetime) -> str:
@@ -106,7 +122,7 @@ async def events(
             min_level=LEVEL_MAP[min_level] if min_level else omit,
             since=since if since is not None else omit,
             subject_id=subject_id or omit,
-            types=types.split(",") if types else omit,
+            extra_query=_event_types_query(types),
             until=until if until is not None else omit,
         ),
     )
