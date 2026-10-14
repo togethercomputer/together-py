@@ -73,7 +73,7 @@ class StorageResource(SyncAPIResource):
 
           volume_name: User provided name of the volume.
 
-          instance_cluster_id: Cluster ID to pin the volume to the same substrate as that GPU cluster.
+          instance_cluster_id: Cluster ID to place the volume on the same infrastructure as that GPU cluster.
 
           is_lifecycle_independent: When true, the shared volume is not deleted when the cluster is decommissioned.
 
@@ -312,7 +312,7 @@ class AsyncStorageResource(AsyncAPIResource):
 
           volume_name: User provided name of the volume.
 
-          instance_cluster_id: Cluster ID to pin the volume to the same substrate as that GPU cluster.
+          instance_cluster_id: Cluster ID to place the volume on the same infrastructure as that GPU cluster.
 
           is_lifecycle_independent: When true, the shared volume is not deleted when the cluster is decommissioned.
 

@@ -18,7 +18,7 @@ class StorageCreateParams(TypedDict, total=False):
     """User provided name of the volume."""
 
     instance_cluster_id: str
-    """Cluster ID to pin the volume to the same substrate as that GPU cluster."""
+    """Cluster ID to place the volume on the same infrastructure as that GPU cluster."""
 
     is_lifecycle_independent: bool
     """When true, the shared volume is not deleted when the cluster is decommissioned."""

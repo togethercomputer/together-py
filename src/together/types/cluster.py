@@ -603,7 +603,7 @@ class Cluster(BaseModel):
     install_traefik: Optional[bool] = None
 
     is_in_substrate: Optional[bool] = None
-    """Whether the cluster is managed inside a substrate environment."""
+    """Whether the cluster runs on the Together-managed GPU cluster platform."""
 
     machine_cluster_id: Optional[str] = None
     """ID of the machine cluster backing this GPU cluster."""
