@@ -9,7 +9,8 @@ from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
 from together import APIError, AsyncClient, omit
-from together.types.beta import DeploymentAutoscalingParam
+from together.pagination import AsyncCursorPagination
+from together.types.beta import Endpoint, DeploymentAutoscalingParam
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
@@ -224,7 +225,7 @@ async def _delete_adapter(adapter_id: str, *, config: CLIConfigParameter) -> dic
     return {"message": f"Deleted adapter {adapter_id}", "id": adapter_id, "type": "adapter"}
 
 
-async def _list_endpoint_page(client: AsyncClient, after: str | None) -> Any:
+async def _list_endpoint_page(client: AsyncClient, after: str | None) -> AsyncCursorPagination[Endpoint]:
     # `list` returns an awaitable paginator, not a coroutine, so it cannot be passed to create_task directly.
     return await client.beta.endpoints.list(after=after or omit)
 
@@ -234,7 +235,9 @@ async def _find_adapter(
     adapter_id: str,
 ) -> tuple[str, str, AdapterListResponse]:
     """Locate an adapter attachment by scanning deployment adapter lists concurrently."""
-    pending_page: asyncio.Task[Any] | None = asyncio.create_task(_list_endpoint_page(client, None))
+    pending_page: asyncio.Task[AsyncCursorPagination[Endpoint]] | None = asyncio.create_task(
+        _list_endpoint_page(client, None)
+    )
     try:
         while pending_page is not None:
             endpoints = await pending_page
@@ -252,7 +255,7 @@ async def _find_adapter(
 
 async def _find_adapter_on_page(
     client: AsyncClient,
-    endpoints: list[Any],
+    endpoints: list[Endpoint],
     adapter_id: str,
 ) -> tuple[str, str, AdapterListResponse] | None:
     targets = [
@@ -290,7 +293,7 @@ async def _find_adapter_on_page(
         await asyncio.gather(*tasks, return_exceptions=True)
 
 
-async def _cancel_task(task: asyncio.Task[Any] | None) -> None:
+async def _cancel_task(task: asyncio.Task[AsyncCursorPagination[Endpoint]] | None) -> None:
     if task is None:
         return
     if not task.done():

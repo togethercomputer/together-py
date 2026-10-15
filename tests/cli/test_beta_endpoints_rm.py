@@ -210,14 +210,14 @@ def _adapter_client(
     on_iterate: Any = None,
     adapters_by_deployment: dict[str, str] | None = None,
 ) -> AsyncClient:
-    adapters_by_deployment = adapters_by_deployment or {}
+    adapter_ids: dict[str, str] = {} if adapters_by_deployment is None else adapters_by_deployment
 
     class _Adapters:
         def list(self, _endpoint_id: str, deployment_id: str) -> _AdapterList:
             return _AdapterList(
                 deployment_id,
                 on_iterate=on_iterate,
-                adapter_id=adapters_by_deployment.get(deployment_id),
+                adapter_id=adapter_ids.get(deployment_id),
             )
 
     class _Endpoints:
