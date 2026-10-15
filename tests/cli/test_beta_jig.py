@@ -5,6 +5,7 @@ import json
 from types import SimpleNamespace
 from typing import Any, cast
 from pathlib import Path
+from datetime import datetime, timezone, timedelta
 from contextlib import contextmanager
 from unittest.mock import patch
 
@@ -595,7 +596,7 @@ class TestBetaJigModelMounts:
         class _Api:
             def update(self, _id: str, **kwargs: Any) -> SimpleNamespace:
                 calls.append(kwargs)
-                return SimpleNamespace(status="Updating")
+                return SimpleNamespace(status="Updating", environment_variables=[])
 
         deploy = _jig_mod.DeployConfig(
             model_mounts=[_jig_mod.ModelMount(model="ml_abc123@rv_xyz789", mount_path="/models")]
@@ -620,6 +621,40 @@ class TestBetaJigModelMounts:
         ]
         assert "extra_body" not in calls[0]
 
+    def test_deploy_warns_about_secrets_expiring_soon(self, capsys: pytest.CaptureFixture[str]) -> None:
+        def expires_in(days: int) -> str:
+            return (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+
+        class _Api:
+            def update(self, _id: str, **_kwargs: Any) -> SimpleNamespace:
+                return SimpleNamespace(
+                    status="Updating",
+                    environment_variables=[
+                        SimpleNamespace(name="SOON", value_from_secret_expires_at=expires_in(2)),
+                        SimpleNamespace(name="LATER", value_from_secret_expires_at=expires_in(10)),
+                        SimpleNamespace(name="PLAIN"),
+                    ],
+                )
+
+        jig = SimpleNamespace(
+            api=_Api(),
+            config=SimpleNamespace(deploy=_jig_mod.DeployConfig(), experimental=_jig_mod.ExperimentalConfig()),
+            name=_DEPLOY_NAME,
+            registry=lambda: "registry.together.ai/test/",
+            state=SimpleNamespace(secrets={"TOGETHER_API_KEY": f"{_DEPLOY_NAME}-TOGETHER_API_KEY"}),
+            sync_secrets_from_deployment=lambda: None,
+            validate_model_mounts=lambda: None,
+            validate_volumes=lambda: None,
+            track=_noop_track,
+            together=SimpleNamespace(api_key="test-key", base_url=httpx.URL(base_url)),
+        )
+
+        _jig_mod.Jig.deploy(cast(Any, jig), existing_image="example.com/acme/app:tag")
+
+        out = capsys.readouterr().out
+        assert "Secret SOON used by this deployment will expire" in out
+        assert "LATER" not in out
+
     def test_deployment_api_key_uses_an_explicit_key_without_the_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
         save_stored_credentials(StoredCredentials(access_token="opaque-login-token"))
@@ -639,7 +674,7 @@ class TestBetaJigModelMounts:
         class _Api:
             def update(self, _id: str, **kwargs: Any) -> SimpleNamespace:
                 calls.append(kwargs)
-                return SimpleNamespace(status="Updating")
+                return SimpleNamespace(status="Updating", environment_variables=[])
 
         jig = SimpleNamespace(
             api=_Api(),

@@ -22,7 +22,7 @@ import subprocess
 import concurrent.futures
 from typing import TYPE_CHECKING, Any, Union, Literal, Callable, Optional, Annotated
 from pathlib import Path
-from datetime import datetime as dt
+from datetime import datetime as dt, timezone, timedelta
 from functools import cached_property
 from itertools import groupby
 from dataclasses import field, asdict, dataclass, is_dataclass
@@ -164,6 +164,30 @@ def _format_timestamp(iso: str) -> str:
         return dt.fromisoformat(iso.replace("Z", "+00:00")).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
     except ValueError:
         return iso
+
+
+# matches the server's grace period, during which owners are warned before a secret is deleted
+_SECRET_EXPIRY_WARNING_WINDOW = timedelta(days=7)
+
+
+def _warn_expiring_secrets(deployment: Deployment) -> None:
+    """Warn about secrets the deployment references that are deleted within the warning window."""
+    soon = dt.now(timezone.utc) + _SECRET_EXPIRY_WARNING_WINDOW
+    for var in deployment.environment_variables or []:
+        # not in the generated SDK model yet
+        expires_at: str | None = getattr(var, "value_from_secret_expires_at", None)
+        if not expires_at:
+            continue
+        try:
+            expiring = dt.fromisoformat(expires_at.replace("Z", "+00:00")) <= soon
+        except ValueError:
+            continue
+        if expiring:
+            console.print(
+                f"\N{WARNING SIGN} Secret {var.name} used by this deployment will expire and be permanently "
+                f"deleted at {_format_timestamp(expires_at)}. Renew it with: "
+                f"'jig secrets set --name {var.name} --value <value> --ttl 14d'"
+            )
 
 
 @dataclass
@@ -1024,6 +1048,8 @@ class Jig:
                 if "already exists" in e.message:
                     raise JigError(f"Deployment name must be unique. Tip: {self.config._unique_name_hint}") from None
                 raise
+
+        _warn_expiring_secrets(response)
 
         if detach or no_track:
             console.print_json(openapi_dumps(response).decode("utf-8"))
