@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import contextlib
 from typing import Any
 from typing_extensions import Annotated
 
@@ -21,6 +23,9 @@ from together.lib.cli.api.beta.endpoints._utils._detach_from_experiments import 
     detach_deployment_from_experiments,
 )
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import find_endpoint_by_deployment
+
+# Bound how many deployment adapter lists run at once.
+_ADAPTER_LIST_CONCURRENCY = 16
 
 
 async def rm(
@@ -219,29 +224,79 @@ async def _delete_adapter(adapter_id: str, *, config: CLIConfigParameter) -> dic
     return {"message": f"Deleted adapter {adapter_id}", "id": adapter_id, "type": "adapter"}
 
 
+async def _list_endpoint_page(client: AsyncClient, after: str | None) -> Any:
+    # `list` returns an awaitable paginator, not a coroutine, so it cannot be passed to create_task directly.
+    return await client.beta.endpoints.list(after=after or omit)
+
+
 async def _find_adapter(
     client: AsyncClient,
     adapter_id: str,
 ) -> tuple[str, str, AdapterListResponse]:
-    """Locate an adapter attachment by scanning each deployment's adapter list."""
-    cursor: str | None = None
-    while True:
-        endpoints = await client.beta.endpoints.list(after=cursor or omit)
-        for endpoint in endpoints.data:
-            for deployment in endpoint.deployments or []:
-                if not deployment.id:
-                    continue
-                try:
-                    # Deployments that cannot host adapters reject the list call; keep scanning.
-                    async for adapter in client.beta.endpoints.adapters.list(endpoint.id, deployment.id):
-                        if adapter.id == adapter_id:
-                            return endpoint.id, deployment.id, adapter
-                except APIError:
-                    continue
-        if not endpoints.next_cursor:
-            break
-        cursor = endpoints.next_cursor
+    """Locate an adapter attachment by scanning deployment adapter lists concurrently."""
+    pending_page: asyncio.Task[Any] | None = asyncio.create_task(_list_endpoint_page(client, None))
+    try:
+        while pending_page is not None:
+            endpoints = await pending_page
+            pending_page = None
+            if endpoints.next_cursor:
+                # Fetch the next endpoint page while this page's deployments are scanned.
+                pending_page = asyncio.create_task(_list_endpoint_page(client, endpoints.next_cursor))
+            match = await _find_adapter_on_page(client, endpoints.data, adapter_id)
+            if match is not None:
+                return match
+    finally:
+        await _cancel_task(pending_page)
     raise ValueError(f"Adapter {adapter_id} not found.")
+
+
+async def _find_adapter_on_page(
+    client: AsyncClient,
+    endpoints: list[Any],
+    adapter_id: str,
+) -> tuple[str, str, AdapterListResponse] | None:
+    targets = [
+        (endpoint.id, deployment.id)
+        for endpoint in endpoints
+        for deployment in endpoint.deployments or []
+        if deployment.id
+    ]
+    if not targets:
+        return None
+
+    semaphore = asyncio.Semaphore(_ADAPTER_LIST_CONCURRENCY)
+
+    async def scan(endpoint_id: str, deployment_id: str) -> tuple[str, str, AdapterListResponse] | None:
+        async with semaphore:
+            try:
+                # Deployments that cannot host adapters reject the list call; keep scanning.
+                async for adapter in client.beta.endpoints.adapters.list(endpoint_id, deployment_id):
+                    if adapter.id == adapter_id:
+                        return endpoint_id, deployment_id, adapter
+            except APIError:
+                return None
+            return None
+
+    tasks = [asyncio.create_task(scan(endpoint_id, deployment_id)) for endpoint_id, deployment_id in targets]
+    try:
+        for finished in asyncio.as_completed(tasks):
+            match = await finished
+            if match is not None:
+                return match
+        return None
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
+async def _cancel_task(task: asyncio.Task[Any] | None) -> None:
+    if task is None:
+        return
+    if not task.done():
+        task.cancel()
+    with contextlib.suppress(asyncio.CancelledError, Exception):
+        await task
 
 
 async def _delete_ab_experiment(experiment_id: str, *, config: CLIConfigParameter) -> dict[str, Any]:

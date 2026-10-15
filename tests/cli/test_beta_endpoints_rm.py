@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+import asyncio
 from typing import Any, cast
 
 import httpx
@@ -9,9 +10,11 @@ import pytest
 from respx import MockRouter
 from respx.models import Call
 
+from together import AsyncClient
 from tests.cli.utils import CliRunner
 from together.types.beta import AbMember
 from together.lib.cli._track_cli import CliTrackingEvents
+from together.lib.cli.api.beta.endpoints.rm import _find_adapter
 from together.lib.cli.api.beta.endpoints._utils._ab_experiments import members_without_deployment
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -158,6 +161,142 @@ def _capture_cli_events(monkeypatch: pytest.MonkeyPatch) -> list[tuple[CliTracki
 
     monkeypatch.setattr("together.lib.cli.track_cli", capture)
     return events
+
+
+class _Adapter:
+    def __init__(self, adapter_id: str) -> None:
+        self.id = adapter_id
+        self.etag = "etag-adapter"
+
+
+class _Deployment:
+    def __init__(self, deployment_id: str) -> None:
+        self.id = deployment_id
+
+
+class _Endpoint:
+    def __init__(self, endpoint_id: str, deployments: list[_Deployment]) -> None:
+        self.id = endpoint_id
+        self.deployments = deployments
+
+
+class _EndpointPage:
+    def __init__(self, data: list[_Endpoint], next_cursor: str | None = None) -> None:
+        self.data = data
+        self.next_cursor = next_cursor
+
+
+class _AdapterList:
+    def __init__(self, deployment_id: str, *, on_iterate: Any = None, adapter_id: str | None = None) -> None:
+        self._deployment_id = deployment_id
+        self._on_iterate = on_iterate
+        self._adapter_id = adapter_id
+
+    def __aiter__(self) -> Any:
+        return self._iterate()
+
+    async def _iterate(self) -> Any:
+        if self._on_iterate is not None:
+            await self._on_iterate(self._deployment_id)
+        if self._adapter_id is not None:
+            yield _Adapter(self._adapter_id)
+
+
+def _adapter_client(
+    *,
+    endpoints: list[_Endpoint],
+    next_cursor: str | None = None,
+    on_list_endpoints: Any = None,
+    on_iterate: Any = None,
+    adapters_by_deployment: dict[str, str] | None = None,
+) -> AsyncClient:
+    adapters_by_deployment = adapters_by_deployment or {}
+
+    class _Adapters:
+        def list(self, _endpoint_id: str, deployment_id: str) -> _AdapterList:
+            return _AdapterList(
+                deployment_id,
+                on_iterate=on_iterate,
+                adapter_id=adapters_by_deployment.get(deployment_id),
+            )
+
+    class _Endpoints:
+        def __init__(self) -> None:
+            self.adapters = _Adapters()
+
+        async def list(self, *, after: Any = None) -> _EndpointPage:
+            if on_list_endpoints is not None:
+                page = await on_list_endpoints(after)
+                if page is not None:
+                    return page
+            return _EndpointPage(endpoints, next_cursor)
+
+    class _Beta:
+        def __init__(self) -> None:
+            self.endpoints = _Endpoints()
+
+    class _Client:
+        def __init__(self) -> None:
+            self.beta = _Beta()
+
+    return cast(AsyncClient, _Client())
+
+
+async def test_find_adapter_scans_deployments_concurrently() -> None:
+    inflight = 0
+    peak = 0
+
+    async def on_iterate(_deployment_id: str) -> None:
+        nonlocal inflight, peak
+        inflight += 1
+        peak = max(peak, inflight)
+        await asyncio.sleep(0)
+        inflight -= 1
+
+    client = _adapter_client(
+        endpoints=[_Endpoint("ep_1", [_Deployment(deployment_id) for deployment_id in ("dep_a", "dep_b", "dep_c")])],
+        on_iterate=on_iterate,
+        adapters_by_deployment={"dep_b": "dad_target"},
+    )
+
+    endpoint_id, deployment_id, adapter = await _find_adapter(client, "dad_target")
+
+    assert (endpoint_id, deployment_id, adapter.id) == ("ep_1", "dep_b", "dad_target")
+    assert peak == 3
+
+
+async def test_find_adapter_prefetches_next_endpoint_page_and_cancels_it() -> None:
+    page_2_started = asyncio.Event()
+    page_2_cancelled = False
+
+    async def on_list_endpoints(after: Any) -> _EndpointPage | None:
+        nonlocal page_2_cancelled
+        if after != "page-2":
+            return None
+        page_2_started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            page_2_cancelled = True
+            raise
+        return None
+
+    async def on_iterate(_deployment_id: str) -> None:
+        await asyncio.sleep(0)
+
+    client = _adapter_client(
+        endpoints=[_Endpoint("ep_1", [_Deployment("dep_hit")])],
+        next_cursor="page-2",
+        on_list_endpoints=on_list_endpoints,
+        on_iterate=on_iterate,
+        adapters_by_deployment={"dep_hit": "dad_target"},
+    )
+
+    endpoint_id, deployment_id, adapter = await asyncio.wait_for(_find_adapter(client, "dad_target"), timeout=1)
+
+    assert (endpoint_id, deployment_id, adapter.id) == ("ep_1", "dep_hit", "dad_target")
+    assert page_2_started.is_set()
+    assert page_2_cancelled
 
 
 class TestMembersWithoutDeployment:
@@ -660,6 +799,9 @@ class TestBetaEndpointsRm:
                 json={"object": "list", "data": [_adapter_body()], "next_cursor": None},
             )
         )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_shadow/adapters").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
         delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters/dad_1").mock(
             return_value=httpx.Response(200, json={})
         )
@@ -673,10 +815,6 @@ class TestBetaEndpointsRm:
         assert payload["type"] == "adapter"
         assert payload["id"] == "dad_1"
         assert payload["message"] == "Deleted adapter dad_1"
-        assert not any(
-            call.request.url.path.endswith("/deployments/dep_shadow/adapters")
-            for call in cast(list[Call], respx_mock.calls)
-        )
 
     @pytest.mark.respx(base_url=base_url)
     def test_rm_adapter_skips_deployments_that_cannot_list_adapters(
@@ -701,6 +839,9 @@ class TestBetaEndpointsRm:
                 200,
                 json={"object": "list", "data": [_adapter_body("dad_later")], "next_cursor": None},
             )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_shadow/adapters").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
         delete_route = respx_mock.delete(
             "/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters/dad_later"
@@ -760,6 +901,10 @@ class TestBetaEndpointsRm:
 
         respx_mock.get("/projects/proj/endpoints").mock(side_effect=endpoints)
         respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(side_effect=adapters)
+        for deployment_id in ("dep_variant", "dep_shadow"):
+            respx_mock.get(f"/projects/proj/endpoints/ep_1/deployments/{deployment_id}/adapters").mock(
+                return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+            )
         delete_route = respx_mock.delete(
             "/projects/proj/endpoints/ep_1/deployments/dep_control/adapters/dad_page2"
         ).mock(return_value=httpx.Response(200, json={}))
