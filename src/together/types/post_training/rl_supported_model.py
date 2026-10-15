@@ -84,7 +84,7 @@ class ComputeConfigTrainerConfig(BaseModel):
 class ComputeConfig(BaseModel):
     """A validated hardware configuration available for an RL base model."""
 
-    gpu_type: Literal["H100-80GB", "B200-SXM"]
+    gpu_type: Literal["B200-SXM"]
     """GPU type this configuration provisions."""
 
     generator_config: Optional[ComputeConfigGeneratorConfig] = None
@@ -109,7 +109,7 @@ class RlSupportedModel(BaseModel):
     base_model: str
     """Base model identifier to pass as base_model when creating a model resource"""
 
-    default_gpu_type: Literal["H100-80GB", "B200-SXM"]
+    default_gpu_type: Literal["B200-SXM"]
     """GPU type used when model-resource creation omits gpu_type."""
 
     compute_configs: Optional[List[ComputeConfig]] = None

@@ -32,7 +32,7 @@ class ModelResourceCreateParams(TypedDict, total=False):
 class ComputeConfig(TypedDict, total=False):
     """Compute layout to provision."""
 
-    gpu_type: Literal["H100-80GB", "B200-SXM"]
+    gpu_type: Literal["B200-SXM"]
     """GPU type to provision. Omit to use the model's default GPU type."""
 
     num_generator_replicas: int
