@@ -115,6 +115,7 @@ def _supported_model_body(**overrides: Any) -> dict[str, Any]:
                 "gpuCount": 1,
                 "gpuType": "H100",
                 "parallelism": "TP1",
+                "adapterMode": "ADAPTER_MODE_DYNAMIC",
                 "quantization": "fp16",
                 "performanceBenchmarks": {},
             }
@@ -351,6 +352,8 @@ class TestBetaModelsPublic:
                 "text",
                 "--product",
                 "dedicated",
+                "--adapter-mode",
+                "dynamic",
                 "--json",
             ]
         )
@@ -362,6 +365,7 @@ class TestBetaModelsPublic:
         assert "after=tok" in url
         assert "modality=MODALITY_TEXT" in url
         assert "product=PRODUCT_DEDICATED" in url
+        assert "adapterMode=ADAPTER_MODE_DYNAMIC" in url
         assert json.loads(result.output)["next_cursor"] == "c1"
 
     @pytest.mark.respx(base_url=base_url)
@@ -379,6 +383,7 @@ class TestBetaModelsPublic:
         assert "meta-llama/Llama-3-8B-FP16" in result.output
         assert "1x H100" in result.output
         assert "TP1" in result.output
+        assert "dynamic" in result.output
         assert "cr_1" not in result.output
 
 

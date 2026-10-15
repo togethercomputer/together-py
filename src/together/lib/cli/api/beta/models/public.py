@@ -16,6 +16,7 @@ from together.lib.cli.utils._mock_pagination import AfterParameter
 
 ModalityFilter = Literal["MODALITY_TEXT", "MODALITY_IMAGE", "MODALITY_AUDIO", "MODALITY_VIDEO"]
 ProductFilter = Literal["PRODUCT_SERVERLESS", "PRODUCT_DEDICATED", "PRODUCT_FINE_TUNING"]
+AdapterModeFilter = Literal["ADAPTER_MODE_FIXED", "ADAPTER_MODE_DYNAMIC", "ADAPTER_MODE_DISABLED"]
 
 
 async def public(
@@ -29,6 +30,10 @@ async def public(
     product: Annotated[
         Optional[Literal["serverless", "dedicated", "fine-tuning"]],
         Parameter(help="Filter by product surface"),
+    ] = None,
+    adapter_mode: Annotated[
+        Optional[Literal["fixed", "dynamic", "disabled"]],
+        Parameter(help="Filter by adapter serving mode"),
     ] = None,
     *,
     config: CLIConfigParameter,
@@ -44,6 +49,9 @@ async def public(
             product=cast(ProductFilter, f"PRODUCT_{product.upper().replace('-', '_')}")
             if product is not None
             else omit,
+            adapter_mode=cast(AdapterModeFilter, f"ADAPTER_MODE_{adapter_mode.upper()}")
+            if adapter_mode is not None
+            else omit,
         ),
     )
 
@@ -55,11 +63,12 @@ async def public(
     table.add_primary_column("Model", ratio=3)
     table.add_column("GPUs")
     table.add_column("Parallelism")
+    table.add_column("Adapter Mode")
 
     for model in response.data:
         profiles = model.deployment_profiles or []
         if not profiles:
-            table.add_row(model.name or model.id or "", "", "", "", "")
+            table.add_row(model.name or model.id or "", "", "", "")
             continue
 
         for profile in profiles:
@@ -73,6 +82,7 @@ async def public(
                 profile_model,
                 gpu,
                 profile.parallelism or "",
+                _profile_adapter_mode(getattr(profile, "adapter_mode", None)),
             )
     console.print(table)
 
@@ -92,3 +102,9 @@ def _profile_model_id(profile_model: str | None) -> str:
         return ""
     match = re.search(r"/models/(ml_[^/]+)", profile_model)
     return match.group(1) if match else profile_model.rsplit("/", 1)[-1]
+
+
+def _profile_adapter_mode(adapter_mode: str | None) -> str:
+    if not adapter_mode:
+        return ""
+    return adapter_mode.removeprefix("ADAPTER_MODE_").lower().replace("_", "-")
