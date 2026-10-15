@@ -665,6 +665,18 @@ CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --billing-type ON_DEMAND \\
     --nvidia-version-id <nvidia-version-id> \\
     --volume <volume-id>[/primary]
+
+[dim]-[/dim] Create a shared volume with the cluster instead of attaching an existing one:
+  [primary]tg clusters create --non-interactive \\
+    --name my-cluster \\
+    --cluster-type KUBERNETES \\
+    --gpu-type H100_SXM \\
+    --region us-central-8 \\
+    --num-gpus 8 \\
+    --billing-type ON_DEMAND \\
+    --nvidia-version-id <nvidia-version-id> \\
+    --shared-volume-name my-data \\
+    --shared-volume-size-tib 1[/primary]
 """
 
 CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES = """[dim]Examples:[/dim]

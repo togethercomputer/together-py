@@ -1280,6 +1280,124 @@ class TestClustersCreate:
         assert body["slurm_shm_size_gib"] == 32
         assert result.exit_code == 0
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_posts_inline_shared_volume(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        created = _cluster_body("new-id", "with-volume")
+        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        result = cli_runner.invoke(
+            [
+                "clusters",
+                "create",
+                "--non-interactive",
+                "--cluster-type",
+                "KUBERNETES",
+                "--gpu-type",
+                "H100_SXM",
+                "--nvidia-driver-version",
+                "565",
+                "--cuda-version",
+                "12.6",
+                "--region",
+                "us-central-8",
+                "--num-gpus",
+                "8",
+                "--billing-type",
+                "ON_DEMAND",
+                "--name",
+                "with-volume",
+                "--shared-volume-name",
+                "with-volume-storage",
+                "--shared-volume-size-tib",
+                "1",
+            ],
+        )
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert "volume_id" not in body
+        assert body["shared_volume"] == {
+            "region": "us-central-8",
+            "size_tib": 1,
+            "volume_name": "with-volume-storage",
+        }
+
+    def test_create_rejects_volume_and_shared_volume_together(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            [
+                "clusters",
+                "create",
+                "--non-interactive",
+                "--json",
+                "--cluster-type",
+                "KUBERNETES",
+                "--gpu-type",
+                "H100_SXM",
+                "--nvidia-version-id",
+                "nvidia-595-24",
+                "--region",
+                "us-central-8",
+                "--num-gpus",
+                "8",
+                "--billing-type",
+                "ON_DEMAND",
+                "--name",
+                "both-volumes",
+                "--volume",
+                "vol-1",
+                "--shared-volume-name",
+                "new-volume",
+                "--shared-volume-size-tib",
+                "1",
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert json.loads(result.output) == {
+            "error": "Use either --volume or --shared-volume-name/--shared-volume-size-tib, not both."
+        }
+
+    def test_create_requires_both_shared_volume_flags(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            [
+                "clusters",
+                "create",
+                "--non-interactive",
+                "--json",
+                "--cluster-type",
+                "KUBERNETES",
+                "--gpu-type",
+                "H100_SXM",
+                "--nvidia-version-id",
+                "nvidia-595-24",
+                "--region",
+                "us-central-8",
+                "--num-gpus",
+                "8",
+                "--billing-type",
+                "ON_DEMAND",
+                "--name",
+                "half-volume",
+                "--shared-volume-size-tib",
+                "1",
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert json.loads(result.output) == {
+            "error": "--shared-volume-name and --shared-volume-size-tib must be provided together."
+        }
+
+    def test_interactive_whole_number_rejects_fraction(self) -> None:
+        with pytest.raises(TogetherError, match="Storage volume size \\(TiB\\) must be a whole number, got '0.1'."):
+            create_cli._parse_whole_number("0.1", what="Storage volume size (TiB)", default=1)
+
+    def test_interactive_whole_number_keeps_default_on_blank(self) -> None:
+        assert create_cli._parse_whole_number("  ", what="GPU count", default=8) == 8
+
+    def test_blank_volume_id_is_rejected(self) -> None:
+        with pytest.raises(TogetherError, match="Volume ID cannot be empty"):
+            create_cli._require_volume_id("  ")
+
 
 class TestClustersUpdate:
     @pytest.mark.respx(base_url=base_url)
