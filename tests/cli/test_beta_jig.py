@@ -126,12 +126,13 @@ def test_volume_upload_failure_exit_preserves_diagnostic(tmp_path: Path) -> None
     assert str(exc_info.value) == "Volume upload failed after the volume was created"
 
 
-def _secret_api_body(name: str) -> dict[str, object]:
+def _secret_api_body(name: str, **extra: object) -> dict[str, object]:
     return {
         "id": "sec-1",
         "name": name,
         "object": "secret",
         "description": "",
+        **extra,
     }
 
 
@@ -156,7 +157,9 @@ class TestBetaJigSecretsSet:
         respx_mock.get(f"/deployments/{_DEPLOY_NAME}").mock(return_value=httpx.Response(404, json={}))
         respx_mock.patch(f"/deployments/secrets/{scoped}").mock(return_value=httpx.Response(404, json={}))
         post = respx_mock.post("/deployments/secrets").mock(
-            return_value=httpx.Response(200, json=_secret_api_body(scoped))
+            return_value=httpx.Response(
+                200, json=_secret_api_body(scoped, expires_at="2026-11-14T12:00:00Z", ttl_seconds=1814400)
+            )
         )
 
         with _patched_jig_config(tmp_path), _chdir(tmp_path):
@@ -172,14 +175,18 @@ class TestBetaJigSecretsSet:
                     "secret-val",
                     "--description",
                     "d1",
+                    "--ttl",
+                    "3w",
                 ],
             )
         assert "Created secret apikey" in result.output
+        assert "will expire and be permanently deleted at" in result.output
         raw = cast(Call, post.calls[0]).request.content.decode()
         body = json.loads(raw)
         assert body["name"] == scoped
         assert body["value"] == "secret-val"
         assert body["description"] == "d1"
+        assert body["ttl_seconds"] == 21 * 86400
         state = json.loads((tmp_path / ".jig.json").read_text())
         assert state[_DEPLOY_NAME]["secrets"]["apikey"] == scoped
         assert result.exit_code == 0
@@ -199,10 +206,29 @@ class TestBetaJigSecretsSet:
                 ["beta", "jig", "secrets", "set", "--name", "apikey", "--value", "v2"],
             )
         assert "Updated secret apikey" in result.output
+        assert "will expire" not in result.output
         assert patch_route.called
-        raw = cast(Call, patch_route.calls[0]).request.content.decode()
-        assert json.loads(raw)["value"] == "v2"
+        body = json.loads(cast(Call, patch_route.calls[0]).request.content.decode())
+        assert body["value"] == "v2"
+        assert "ttl_seconds" not in body
         assert result.exit_code == 0
+
+    @pytest.mark.parametrize(("ttl", "days"), [("1d", 1), ("3w", 21), ("6mo", 180), (" 2MO ", 60)])
+    def test_parse_ttl(self, ttl: str, days: int) -> None:
+        assert _jig_mod._parse_ttl(ttl) == days * 86400
+
+    @pytest.mark.parametrize(
+        ("ttl", "error"),
+        [
+            ("6m", "use 6mo for months"),
+            ("0d", "between 1d and 180d"),
+            ("7mo", "between 1d and 180d"),
+            ("1h", "Invalid TTL"),
+        ],
+    )
+    def test_parse_ttl_rejects(self, ttl: str, error: str) -> None:
+        with pytest.raises(_jig_mod.JigError, match=error):
+            _jig_mod._parse_ttl(ttl)
 
 
 class TestBetaJigSecretsList:
