@@ -1971,7 +1971,7 @@ def secrets_set_cli(
     description: Annotated[str, Parameter(help="Secret description")] = "",
     ttl: Annotated[
         Optional[str],
-        Parameter(help="Days until the secret expires and is deleted, e.g. 7d (1d to 14d)"),
+        Parameter(help="Days until the secret expires and is deleted, e.g. 7d (1d to 14d, default 14d)"),
     ] = None,
     *,
     config: CLIConfigParameter,
