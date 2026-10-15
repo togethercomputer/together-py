@@ -360,8 +360,8 @@ BETA_ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Mirror live traffic to a shadow deployment:
   [primary]tg beta endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> --rate 0.1[/primary]
 
-[dim]-[/dim] Delete a deployment, experiment, rollout, or entire endpoint:
-  [primary]tg beta endpoints rm <ep_|dep_|abx_|exp_|rol_...>[/primary]
+[dim]-[/dim] Delete a deployment, adapter, experiment, rollout, or entire endpoint:
+  [primary]tg beta endpoints rm <ep_|dep_|dad_|abx_|exp_|rol_...>[/primary]
 
 [dim]-[/dim] Roll out a deployment onto live traffic:
   [primary]tg beta endpoints rollout <deployment-id> --rolling[/primary]
@@ -478,6 +478,9 @@ BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
 BETA_ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Delete a deployment:
   [primary]tg beta endpoints rm dep_xxxxxxxxxxxx[/primary]
+
+[dim]-[/dim] Detach an adapter from the deployment it belongs to:
+  [primary]tg beta endpoints rm dad_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Delete an A/B or shadow experiment:
   [primary]tg beta endpoints rm abx_xxxxxxxxxxxx[/primary]

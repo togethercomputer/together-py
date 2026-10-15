@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import contextlib
 from typing import Any
 from typing_extensions import Annotated
 
@@ -7,7 +9,8 @@ from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
 from together import APIError, AsyncClient, omit
-from together.types.beta import DeploymentAutoscalingParam
+from together.pagination import AsyncCursorPagination
+from together.types.beta import Endpoint, DeploymentAutoscalingParam
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
@@ -15,15 +18,22 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.types.beta.endpoints.ab_experiment import AbExperiment
 from together.types.beta.endpoints.shadow_experiment import ShadowExperiment
+from together.types.beta.endpoints.adapter_list_response import AdapterListResponse
 from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
 from together.lib.cli.api.beta.endpoints._utils._detach_from_experiments import (
     detach_deployment_from_experiments,
 )
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import find_endpoint_by_deployment
 
+# Bound how many deployment adapter lists run at once.
+_ADAPTER_LIST_CONCURRENCY = 16
+
 
 async def rm(
-    id: Annotated[str, Parameter(help="Resource ID to delete (ep_..., dep_..., abx_..., exp_..., or rol_...)")],
+    id: Annotated[
+        str,
+        Parameter(help="Resource ID to delete (ep_..., dep_..., dad_..., abx_..., exp_..., or rol_...)"),
+    ],
     force: Annotated[
         bool,
         Parameter(
@@ -41,6 +51,8 @@ async def rm(
         result = await _delete_endpoint(id, force=force, config=config)
     elif id.startswith("dep_"):
         result = await _delete_deployment(id, config=config)
+    elif id.startswith("dad_"):
+        result = await _delete_adapter(id, config=config)
     elif id.startswith("abx_"):
         result = await _delete_ab_experiment(id, config=config)
     elif id.startswith("exp_"):
@@ -48,7 +60,7 @@ async def rm(
     elif id.startswith("rol_"):
         result = await _delete_rollout(id, config=config)
     else:
-        raise ValueError(f"Unrecognized resource ID {id!r}. Expected a prefix of ep_, dep_, abx_, exp_, or rol_.")
+        raise ValueError(f"Unrecognized resource ID {id!r}. Expected a prefix of ep_, dep_, dad_, abx_, exp_, or rol_.")
 
     if config.json:
         console.print_json(openapi_dumps(result).decode("utf-8"))
@@ -197,6 +209,97 @@ async def _scale_down_and_ask_retry(
     )
     console.print("  Scaled min/max replicas to 0 — waiting for it to stop.")
     console.print(f"  Once stopped, retry: [primary]tg beta endpoints rm {escape_rich_markup(deployment_id)}[/primary]")
+
+
+async def _delete_adapter(adapter_id: str, *, config: CLIConfigParameter) -> dict[str, Any]:
+    endpoint_id, deployment_id, adapter = await _find_adapter(config.client, adapter_id)
+    await show_loading_status(
+        "Removing adapter...",
+        config.client.beta.endpoints.adapters.delete(
+            id=adapter.id,
+            endpoint_id=endpoint_id,
+            deployment_id=deployment_id,
+            etag=adapter.etag,
+        ),
+    )
+    return {"message": f"Deleted adapter {adapter_id}", "id": adapter_id, "type": "adapter"}
+
+
+async def _list_endpoint_page(client: AsyncClient, after: str | None) -> AsyncCursorPagination[Endpoint]:
+    # `list` returns an awaitable paginator, not a coroutine, so it cannot be passed to create_task directly.
+    return await client.beta.endpoints.list(after=after or omit)
+
+
+async def _find_adapter(
+    client: AsyncClient,
+    adapter_id: str,
+) -> tuple[str, str, AdapterListResponse]:
+    """Locate an adapter attachment by scanning deployment adapter lists concurrently."""
+    pending_page: asyncio.Task[AsyncCursorPagination[Endpoint]] | None = asyncio.create_task(
+        _list_endpoint_page(client, None)
+    )
+    try:
+        while pending_page is not None:
+            endpoints = await pending_page
+            pending_page = None
+            if endpoints.next_cursor:
+                # Fetch the next endpoint page while this page's deployments are scanned.
+                pending_page = asyncio.create_task(_list_endpoint_page(client, endpoints.next_cursor))
+            match = await _find_adapter_on_page(client, endpoints.data, adapter_id)
+            if match is not None:
+                return match
+    finally:
+        await _cancel_task(pending_page)
+    raise ValueError(f"Adapter {adapter_id} not found.")
+
+
+async def _find_adapter_on_page(
+    client: AsyncClient,
+    endpoints: list[Endpoint],
+    adapter_id: str,
+) -> tuple[str, str, AdapterListResponse] | None:
+    targets = [
+        (endpoint.id, deployment.id)
+        for endpoint in endpoints
+        for deployment in endpoint.deployments or []
+        if deployment.id
+    ]
+    if not targets:
+        return None
+
+    semaphore = asyncio.Semaphore(_ADAPTER_LIST_CONCURRENCY)
+
+    async def scan(endpoint_id: str, deployment_id: str) -> tuple[str, str, AdapterListResponse] | None:
+        async with semaphore:
+            try:
+                # Deployments that cannot host adapters reject the list call; keep scanning.
+                async for adapter in client.beta.endpoints.adapters.list(endpoint_id, deployment_id):
+                    if adapter.id == adapter_id:
+                        return endpoint_id, deployment_id, adapter
+            except APIError:
+                return None
+            return None
+
+    tasks = [asyncio.create_task(scan(endpoint_id, deployment_id)) for endpoint_id, deployment_id in targets]
+    try:
+        for finished in asyncio.as_completed(tasks):
+            match = await finished
+            if match is not None:
+                return match
+        return None
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
+async def _cancel_task(task: asyncio.Task[AsyncCursorPagination[Endpoint]] | None) -> None:
+    if task is None:
+        return
+    if not task.done():
+        task.cancel()
+    with contextlib.suppress(asyncio.CancelledError, Exception):
+        await task
 
 
 async def _delete_ab_experiment(experiment_id: str, *, config: CLIConfigParameter) -> dict[str, Any]:

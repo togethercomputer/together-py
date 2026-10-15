@@ -1030,7 +1030,7 @@ beta_endpoints_app.command(
     name="rm",
     alias="-d",
     sort_key=5,
-    help="Delete an endpoint, deployment, A/B experiment, shadow experiment, or rollout by ID",
+    help="Delete an endpoint, deployment, adapter, A/B experiment, shadow experiment, or rollout by ID",
     help_epilogue=BETA_ENDPOINTS_RM_HELP_EXAMPLES,
 )
 # Hidden `delete` alias for `tg beta endpoints delete …` (visible command is `rm`).
