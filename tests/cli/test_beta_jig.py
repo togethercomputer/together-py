@@ -158,7 +158,7 @@ class TestBetaJigSecretsSet:
         respx_mock.patch(f"/deployments/secrets/{scoped}").mock(return_value=httpx.Response(404, json={}))
         post = respx_mock.post("/deployments/secrets").mock(
             return_value=httpx.Response(
-                200, json=_secret_api_body(scoped, expires_at="2026-11-14T12:00:00Z", ttl_seconds=1814400)
+                200, json=_secret_api_body(scoped, expires_at="2026-11-14T12:00:00Z", ttl_seconds=604800)
             )
         )
 
@@ -176,7 +176,7 @@ class TestBetaJigSecretsSet:
                     "--description",
                     "d1",
                     "--ttl",
-                    "3w",
+                    "7d",
                 ],
             )
         assert "Created secret apikey" in result.output
@@ -186,7 +186,7 @@ class TestBetaJigSecretsSet:
         assert body["name"] == scoped
         assert body["value"] == "secret-val"
         assert body["description"] == "d1"
-        assert body["ttl_seconds"] == 21 * 86400
+        assert body["ttl_seconds"] == 7 * 86400
         state = json.loads((tmp_path / ".jig.json").read_text())
         assert state[_DEPLOY_NAME]["secrets"]["apikey"] == scoped
         assert result.exit_code == 0
@@ -213,21 +213,13 @@ class TestBetaJigSecretsSet:
         assert "ttl_seconds" not in body
         assert result.exit_code == 0
 
-    @pytest.mark.parametrize(("ttl", "days"), [("1d", 1), ("3w", 21), ("6mo", 180), (" 2MO ", 60)])
+    @pytest.mark.parametrize(("ttl", "days"), [("1d", 1), (" 14D ", 14)])
     def test_parse_ttl(self, ttl: str, days: int) -> None:
         assert _jig_mod._parse_ttl(ttl) == days * 86400
 
-    @pytest.mark.parametrize(
-        ("ttl", "error"),
-        [
-            ("6m", "use 6mo for months"),
-            ("0d", "between 1d and 180d"),
-            ("7mo", "between 1d and 180d"),
-            ("1h", "Invalid TTL"),
-        ],
-    )
-    def test_parse_ttl_rejects(self, ttl: str, error: str) -> None:
-        with pytest.raises(_jig_mod.JigError, match=error):
+    @pytest.mark.parametrize("ttl", ["0d", "15d", "2w", "1h"])
+    def test_parse_ttl_rejects(self, ttl: str) -> None:
+        with pytest.raises(_jig_mod.JigError, match="between 1d and 14d"):
             _jig_mod._parse_ttl(ttl)
 
 

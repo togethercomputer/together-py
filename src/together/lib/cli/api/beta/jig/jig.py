@@ -148,21 +148,15 @@ def _parse_model_ref(model: str) -> tuple[str, str | None]:
     return model_id, revision_id or None
 
 
-_TTL_UNIT_DAYS = {"d": 1, "w": 7, "mo": 30}
+_MAX_TTL_DAYS = 14
 
 
 def _parse_ttl(ttl: str) -> int:
-    """Parse a TTL like ``7d``, ``3w`` or ``6mo`` into seconds (1 to 180 days)."""
-    match = re.fullmatch(r"(\d+)(d|w|mo|m)", ttl.strip().lower())
-    if not match:
-        raise JigError(f"Invalid TTL {ttl!r}: use a number followed by d, w or mo, e.g. 7d, 3w, 6mo")
-    count, unit = match.groups()
-    if unit == "m":
-        raise JigError(f"Ambiguous TTL {ttl!r}: use {count}mo for months")
-    days = int(count) * _TTL_UNIT_DAYS[unit]
-    if not 1 <= days <= 180:
-        raise JigError(f"Invalid TTL {ttl!r}: must be between 1d and 180d (6mo)")
-    return days * 86400
+    """Parse a TTL in days like ``7d`` into seconds."""
+    match = re.fullmatch(r"(\d+)d", ttl.strip().lower())
+    if not match or not 1 <= int(match.group(1)) <= _MAX_TTL_DAYS:
+        raise JigError(f"Invalid TTL {ttl!r}: use a number of days between 1d and {_MAX_TTL_DAYS}d, e.g. 7d")
+    return int(match.group(1)) * 86400
 
 
 def _format_timestamp(iso: str) -> str:
@@ -1977,7 +1971,7 @@ def secrets_set_cli(
     description: Annotated[str, Parameter(help="Secret description")] = "",
     ttl: Annotated[
         Optional[str],
-        Parameter(help="Time until the secret expires and is deleted, e.g. 7d, 3w, 6mo (1d to 180d)"),
+        Parameter(help="Days until the secret expires and is deleted, e.g. 7d (1d to 14d)"),
     ] = None,
     *,
     config: CLIConfigParameter,
