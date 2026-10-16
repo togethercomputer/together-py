@@ -11,7 +11,7 @@ from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.training.prepare_for_fp4_inference._utils import (
     DEFAULT_POLL_INTERVAL_SECONDS,
     PollIntervalParameter,
-    AdapterRevisionParameter,
+    ModelRevisionParameter,
     CalibrationFileParameter,
     watch_job,
     report_job,
@@ -21,15 +21,15 @@ from together.lib.cli.api.training.prepare_for_fp4_inference._utils import (
     resolve_calibration_file,
 )
 
-_CONFIRMATION_MESSAGE = """You are about to merge adapter [bold]{adapter}[/bold] into its base model and prepare the result for FP4 inference.
+_CONFIRMATION_MESSAGE = """You are about to prepare fine-tuned model [bold]{model}[/bold] for FP4 inference.
 {calibration_line}{price_line}
 {warning}"""
 
 
 async def create(
-    adapter_object_id: Annotated[str, Parameter(help="Model object ID of the fine-tuned adapter to prepare")],
+    model_object_id: Annotated[str, Parameter(help="Model object ID of the fine-tuned model to prepare")],
     *,
-    adapter_revision_id: AdapterRevisionParameter = None,
+    model_revision_id: ModelRevisionParameter = None,
     calibration_file: CalibrationFileParameter = None,
     confirm: Annotated[
         bool, Parameter(alias="-y", negative=(), help="Whether to skip the launch confirmation message")
@@ -40,9 +40,13 @@ async def create(
     poll_interval: PollIntervalParameter = DEFAULT_POLL_INTERVAL_SECONDS,
     config: CLIConfigParameter,
 ) -> None:
-    """Prepare a fine-tuned adapter for FP4 inference."""
+    """Prepare a fine-tuned model for FP4 inference.
+
+    An adapter is merged into its base model and the result quantized to FP4.
+    A full model is quantized as it is.
+    """
     calibration_file_id = await resolve_calibration_file(calibration_file, config)
-    inputs = build_inputs(adapter_object_id, adapter_revision_id, calibration_file_id)
+    inputs = build_inputs(model_object_id, model_revision_id, calibration_file_id)
 
     estimate = await show_loading_status(
         "Estimating price...",
@@ -55,7 +59,7 @@ async def create(
         )
         console.print(
             _CONFIRMATION_MESSAGE.format(
-                adapter=adapter_object_id,
+                model=model_object_id,
                 calibration_line=calibration_line,
                 price_line=format_estimate(estimate),
                 warning=f"{format_credit_warning(estimate)}\n" if not estimate.allowed_to_proceed else "",

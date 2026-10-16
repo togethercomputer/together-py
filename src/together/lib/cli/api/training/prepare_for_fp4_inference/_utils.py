@@ -43,10 +43,12 @@ _MAX_RETRY_DELAY_SECONDS = 60.0
 # Consecutive failing time after which --watch gives up and prints the resume command.
 _MAX_TRANSIENT_FAILURE_SECONDS = 300.0
 
-AdapterRevisionParameter = Annotated[
+ModelRevisionParameter = Annotated[
     Optional[str],
     Parameter(
-        name="--adapter-revision-id", alias="-r", help="Adapter revision ID; defaults to the adapter's current revision"
+        name="--model-revision-id",
+        alias=("-r", "--adapter-revision-id"),
+        help="Revision ID of the model to prepare. Omit to use the model's current revision.",
     ),
 ]
 PollIntervalParameter = Annotated[
@@ -71,13 +73,13 @@ CalibrationFileParameter = Annotated[
 
 
 def build_inputs(
-    adapter_object_id: str,
-    adapter_revision_id: Optional[str],
+    model_object_id: str,
+    model_revision_id: Optional[str],
     calibration_file_id: Optional[str],
 ) -> Inputs:
-    inputs: Inputs = {"adapter_object_id": adapter_object_id}
-    if adapter_revision_id is not None:
-        inputs["adapter_revision_id"] = adapter_revision_id
+    inputs: Inputs = {"model_object_id": model_object_id}
+    if model_revision_id is not None:
+        inputs["model_revision_id"] = model_revision_id
     if calibration_file_id is not None:
         inputs["calibration_file_id"] = calibration_file_id
     return inputs

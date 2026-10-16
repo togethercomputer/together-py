@@ -9,7 +9,7 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.training.prepare_for_fp4_inference._utils import (
-    AdapterRevisionParameter,
+    ModelRevisionParameter,
     CalibrationFileParameter,
     build_inputs,
     format_estimate,
@@ -19,15 +19,15 @@ from together.lib.cli.api.training.prepare_for_fp4_inference._utils import (
 
 
 async def estimate(
-    adapter_object_id: Annotated[str, Parameter(help="Model object ID of the fine-tuned adapter to prepare")],
+    model_object_id: Annotated[str, Parameter(help="Model object ID of the fine-tuned model to prepare")],
     *,
-    adapter_revision_id: AdapterRevisionParameter = None,
+    model_revision_id: ModelRevisionParameter = None,
     calibration_file: CalibrationFileParameter = None,
     config: CLIConfigParameter,
 ) -> None:
-    """Estimate the price and duration of preparing an adapter for FP4 inference."""
+    """Estimate the price and duration of preparing a fine-tuned model for FP4 inference."""
     calibration_file_id = await resolve_calibration_file(calibration_file, config)
-    inputs = build_inputs(adapter_object_id, adapter_revision_id, calibration_file_id)
+    inputs = build_inputs(model_object_id, model_revision_id, calibration_file_id)
     response = await show_loading_status(
         "Estimating price...",
         config.client.post_training.prepare_for_fp4_inference.estimate_cost(inputs=inputs),

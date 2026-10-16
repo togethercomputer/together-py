@@ -19,7 +19,7 @@ _fp4_utils = importlib.import_module("together.lib.cli.api.training.prepare_for_
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
-_ADAPTER_ID = "ml_adapter"
+_MODEL_ID = "ml_adapter"
 _JOB_ID = "shp-quant-1"
 
 _ESTIMATE_BODY = {
@@ -49,11 +49,11 @@ def _job(status: str, events: list[dict[str, Any]] | None = None, **extra: Any) 
         "status": status,
         "user_id": "user-1",
         "params": {
-            "inputs": {"adapter_object_id": _ADAPTER_ID},
+            "inputs": {"model_object_id": _MODEL_ID},
             "configuration": {
-                "adapter_model_name": "proj/my-adapter",
-                "adapter_project_id": "proj",
-                "adapter_revision_id": "rv_adapter",
+                "model_name": "proj/my-model",
+                "model_project_id": "proj",
+                "model_revision_id": "rv_model",
                 "base_model_name": "org/base",
                 "base_object_id": "ml_base",
                 "base_revision_id": "rv_base",
@@ -86,10 +86,10 @@ class TestEstimate:
         )
         upload = AsyncMock(return_value=SimpleNamespace(id="file-uploaded"))
         with patch.object(_fp4_utils, "upload_file_with_progress", upload):
-            result = cli_runner.invoke(["training", "fp4", "estimate", _ADAPTER_ID, "-r", "rv_1", *args, "--json"])
+            result = cli_runner.invoke(["training", "fp4", "estimate", _MODEL_ID, "-r", "rv_1", *args, "--json"])
 
         assert result.exit_code == 0
-        expected_inputs = {"adapter_object_id": _ADAPTER_ID, "adapter_revision_id": "rv_1"}
+        expected_inputs = {"model_object_id": _MODEL_ID, "model_revision_id": "rv_1"}
         if expected_calibration is not None:
             expected_inputs["calibration_file_id"] = expected_calibration
         assert json.loads(cast(Call, route.calls[0]).request.content) == {"inputs": expected_inputs}
@@ -109,12 +109,13 @@ class TestCreate:
         create = respx_mock.post("/shaping/prepare-for-fp4-inference").mock(
             return_value=httpx.Response(200, json=_job("pending"))
         )
-        result = cli_runner.invoke(["training", "fp4", "create", _ADAPTER_ID, "--non-interactive"])
+        result = cli_runner.invoke(["training", "fp4", "create", _MODEL_ID, "--non-interactive"])
         output = " ".join(result.output.split())
         assert result.exit_code == 0
         assert "$12.50" in output
+        assert "fine-tuned model" in output
         assert create.called
-        assert json.loads(cast(Call, create.calls[0]).request.content) == {"inputs": {"adapter_object_id": _ADAPTER_ID}}
+        assert json.loads(cast(Call, create.calls[0]).request.content) == {"inputs": {"model_object_id": _MODEL_ID}}
         assert f"tg training fp4 get {_JOB_ID} --watch" in output
 
     @pytest.mark.respx(base_url=base_url)
@@ -125,7 +126,7 @@ class TestCreate:
         respx_mock.post("/shaping/prepare-for-fp4-inference").mock(
             return_value=httpx.Response(200, json=_job("pending"))
         )
-        result = cli_runner.invoke(["training", "fp4", "create", _ADAPTER_ID, "--json"])
+        result = cli_runner.invoke(["training", "fp4", "create", _MODEL_ID, "--json"])
         assert result.exit_code == 0
         assert json.loads(result.out_out)["id"] == _JOB_ID
 
@@ -139,13 +140,13 @@ class TestCreate:
         create = respx_mock.post("/shaping/prepare-for-fp4-inference").mock(
             return_value=httpx.Response(200, json=_job("pending"))
         )
-        result = cli_runner.invoke(["training", "fp4", "create", _ADAPTER_ID, "-c", "file-calib", "--non-interactive"])
+        result = cli_runner.invoke(["training", "fp4", "create", _MODEL_ID, "-c", "file-calib", "--non-interactive"])
         output = " ".join(result.output.split())
         assert result.exit_code == 0
         assert "exceeds your available credit (limit $100.00)" in output
         assert "Calibration file: file-calib" in output
         assert json.loads(cast(Call, create.calls[0]).request.content) == {
-            "inputs": {"adapter_object_id": _ADAPTER_ID, "calibration_file_id": "file-calib"}
+            "inputs": {"model_object_id": _MODEL_ID, "calibration_file_id": "file-calib"}
         }
 
     @pytest.mark.respx(base_url=base_url, assert_all_called=False)
@@ -154,7 +155,7 @@ class TestCreate:
     ) -> None:
         estimate = respx_mock.post("/shaping/prepare-for-fp4-inference/estimate")
         result = cli_runner.invoke(
-            ["training", "fp4", "create", _ADAPTER_ID, "-c", str(tmp_path / "missing.jsonl"), "-y"]
+            ["training", "fp4", "create", _MODEL_ID, "-c", str(tmp_path / "missing.jsonl"), "-y"]
         )
         assert result.exit_code != 0
         assert "does not exist" in " ".join(result.output.split())
@@ -178,9 +179,7 @@ class TestCreate:
                 httpx.Response(200, json=_job(final_status, [_EVENT], results=results)),
             ]
         )
-        result = cli_runner.invoke(
-            ["training", "fp4", "create", _ADAPTER_ID, "-y", "--watch", "--poll-interval", "0.01"]
-        )
+        result = cli_runner.invoke(["training", "fp4", "create", _MODEL_ID, "-y", "--watch", "--poll-interval", "0.01"])
         assert result.exit_code == exit_code
         assert result.output.count("Quantization job started") == 1
         assert f"Status: {final_status}" in result.output
@@ -204,6 +203,51 @@ class TestRetrieveAndList:
         result = cli_runner.invoke(["training", "fp4", "list", "--json"])
         assert result.exit_code == 0
         assert [job["id"] for job in json.loads(result.output)] == [_JOB_ID, "shp-quant-old"]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_prefers_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        legacy = _job("running")
+        legacy["params"]["configuration"]["model_name"] = "new-model"
+        legacy["params"]["configuration"]["adapter_model_name"] = "old-name"
+        respx_mock.get("/shaping").mock(return_value=httpx.Response(200, json={"object": "list", "data": [legacy]}))
+        result = cli_runner.invoke(["training", "fp4", "list"])
+        assert result.exit_code == 0
+        assert "new-model" in result.output
+        assert "old-name" not in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_falls_back_to_adapter_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        legacy = _job("completed")
+        configuration = legacy["params"]["configuration"]
+        configuration.pop("model_name")
+        configuration["adapter_model_name"] = "old-name"
+        respx_mock.get("/shaping").mock(return_value=httpx.Response(200, json={"object": "list", "data": [legacy]}))
+        result = cli_runner.invoke(["training", "fp4", "list"])
+        assert result.exit_code == 0
+        assert "old-name" in result.output
+
+    @pytest.mark.usefixtures("plain_cli_help")
+    def test_create_help_names_model_revision(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["training", "fp4", "create", "--help"])
+        assert result.exit_code == 0, result.output
+        assert "--model-revision-id" in result.output
+        assert "--adapter-revision-id" in result.output
+        assert "model-object-id" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_deprecated_adapter_revision_flag_sends_model_revision(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        route = respx_mock.post("/shaping/prepare-for-fp4-inference/estimate").mock(
+            return_value=httpx.Response(200, json=_ESTIMATE_BODY)
+        )
+        result = cli_runner.invoke(
+            ["training", "fp4", "estimate", _MODEL_ID, "--adapter-revision-id", "rv_legacy", "--json"]
+        )
+        assert result.exit_code == 0
+        assert json.loads(cast(Call, route.calls[0]).request.content) == {
+            "inputs": {"model_object_id": _MODEL_ID, "model_revision_id": "rv_legacy"}
+        }
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_events_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
