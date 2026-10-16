@@ -3,6 +3,8 @@
 from typing import List, Optional
 from datetime import datetime
 
+from pydantic import Field as FieldInfo
+
 from ..._models import BaseModel
 from .shaping_job_type import ShapingJobType
 from .quantization_event import QuantizationEvent
@@ -15,36 +17,45 @@ __all__ = ["QuantizationJob", "Params", "ParamsConfiguration", "ParamsInputs"]
 class ParamsConfiguration(BaseModel):
     """Server-resolved configuration for the run."""
 
-    adapter_model_name: str
-    """Qualified adapter model name."""
-
-    adapter_project_id: str
-    """Project that owns the adapter."""
-
-    adapter_revision_id: str
-    """Adapter revision selected for preparation."""
-
     base_model_name: str
     """Qualified name of the base model."""
 
     base_object_id: str
-    """Model object ID of the adapter's base model."""
+    """Model object ID of the base model the prepared model was fine-tuned from."""
 
     base_revision_id: str
-    """Revision ID of the adapter's base model."""
+    """Revision ID of that base model."""
+
+    api_model_name: str = FieldInfo(alias="model_name")
+    """Qualified name of the model, which the produced model is named after."""
+
+    api_model_project_id: str = FieldInfo(alias="model_project_id")
+    """Project the model belongs to."""
+
+    api_model_revision_id: str = FieldInfo(alias="model_revision_id")
+    """Revision of the model selected for preparation."""
 
     user_id: str
-    """User whose scope is used to fetch the adapter weights."""
+    """User whose scope is used to fetch the model weights."""
+
+    adapter_model_name: Optional[str] = None
+    """The former name of `model_name`."""
+
+    adapter_project_id: Optional[str] = None
+    """The former name of `model_project_id`."""
+
+    adapter_revision_id: Optional[str] = None
+    """The former name of `model_revision_id`."""
 
 
 class ParamsInputs(BaseModel):
-    """Adapter inputs requested by the caller."""
+    """Inputs requested by the caller."""
 
-    adapter_object_id: str
-    """Model object ID of the adapter to prepare."""
+    adapter_object_id: Optional[str] = None
+    """The former name of `model_object_id`."""
 
     adapter_revision_id: Optional[str] = None
-    """Adapter revision ID to prepare. Omit to use the adapter's current revision."""
+    """The former name of `model_revision_id`. Only valid with `adapter_object_id`."""
 
     calibration_file_id: Optional[str] = None
     """Conversation dataset file ID to use for calibration.
@@ -59,6 +70,19 @@ class ParamsInputs(BaseModel):
     purpose file is also accepted so a training file can be reused.
     """
 
+    api_model_object_id: Optional[str] = FieldInfo(alias="model_object_id", default=None)
+    """Model object ID of the model to prepare.
+
+    It names the input model; it is not the `results.model_object_id` of a job,
+    which names the model the job produced.
+    """
+
+    api_model_revision_id: Optional[str] = FieldInfo(alias="model_revision_id", default=None)
+    """Revision ID of the model to prepare.
+
+    Omit to use the model's current revision. Only valid with `model_object_id`.
+    """
+
 
 class Params(BaseModel):
     """Job specification."""
@@ -67,11 +91,11 @@ class Params(BaseModel):
     """Server-resolved configuration for the run."""
 
     inputs: ParamsInputs
-    """Adapter inputs requested by the caller."""
+    """Inputs requested by the caller."""
 
 
 class QuantizationJob(BaseModel):
-    """Quantization job that prepares an adapter for FP4 inference."""
+    """Quantization job that prepares a fine-tuned model for FP4 inference."""
 
     id: str
     """Unique shaping job ID."""

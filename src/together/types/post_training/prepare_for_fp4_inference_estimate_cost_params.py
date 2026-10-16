@@ -9,17 +9,17 @@ __all__ = ["PrepareForFp4InferenceEstimateCostParams", "Inputs"]
 
 class PrepareForFp4InferenceEstimateCostParams(TypedDict, total=False):
     inputs: Required[Inputs]
-    """Adapter inputs to prepare."""
+    """Inputs naming the fine-tuned model to prepare."""
 
 
 class Inputs(TypedDict, total=False):
-    """Adapter inputs to prepare."""
+    """Inputs naming the fine-tuned model to prepare."""
 
-    adapter_object_id: Required[str]
-    """Model object ID of the adapter to prepare."""
+    adapter_object_id: str
+    """The former name of `model_object_id`."""
 
     adapter_revision_id: str
-    """Adapter revision ID to prepare. Omit to use the adapter's current revision."""
+    """The former name of `model_revision_id`. Only valid with `adapter_object_id`."""
 
     calibration_file_id: str
     """Conversation dataset file ID to use for calibration.
@@ -32,4 +32,17 @@ class Inputs(TypedDict, total=False):
     in the request project, has finished uploading, has passed files API validation
     as a conversation dataset, is not empty, and is at most 64 MiB. A `fine-tune`
     purpose file is also accepted so a training file can be reused.
+    """
+
+    model_object_id: str
+    """Model object ID of the model to prepare.
+
+    It names the input model; it is not the `results.model_object_id` of a job,
+    which names the model the job produced.
+    """
+
+    model_revision_id: str
+    """Revision ID of the model to prepare.
+
+    Omit to use the model's current revision. Only valid with `model_object_id`.
     """

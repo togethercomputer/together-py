@@ -61,15 +61,17 @@ class PrepareForFp4InferenceResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QuantizationJob:
         """
-        Merges a fine-tuned adapter into its base model and prepares the result for FP4
-        inference. The adapter is resolved when the request is made, so a request naming
-        a model that does not exist in the project, is not an adapter, was not produced
-        by fine-tuning, has no base model to merge into, or uses an unsupported base
-        model is rejected with 400 rather than accepted and failed later. The run is
-        priced before it is created, and a project that cannot cover it is answered 402.
+        Prepares a fine-tuned model for FP4 inference: an adapter is merged into its
+        base model and the result quantized to FP4; a full model is quantized as it is.
+        The model is resolved when the request is made, so a request naming a model that
+        does not exist in the project, was not produced by fine-tuning, has no base
+        model, or uses an unsupported base model is rejected with 400 rather than
+        accepted and failed later. The request names the model by `model_object_id` (the
+        deprecated `adapter_object_id` is still accepted). The run is priced before it
+        is created, and a project that cannot cover it is answered 402.
 
         Args:
-          inputs: Adapter inputs to prepare.
+          inputs: Inputs naming the fine-tuned model to prepare.
 
           extra_headers: Send extra headers
 
@@ -191,13 +193,13 @@ class PrepareForFp4InferenceResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QuantizationEstimate:
         """
-        Reports the price and expected wall-clock time for preparing the named adapter
-        without creating a job. The request body is the same as POST
-        /shaping/prepare-for-fp4-inference, so a caller can price exactly the job it is
-        about to submit.
+        Reports the price and expected wall-clock time for preparing the model named by
+        `model_object_id` or the deprecated `adapter_object_id` without creating a job.
+        The request body is the same as POST /shaping/prepare-for-fp4-inference, so a
+        caller can price exactly the job it is about to submit.
 
         Args:
-          inputs: Adapter inputs to prepare.
+          inputs: Inputs naming the fine-tuned model to prepare.
 
           extra_headers: Send extra headers
 
@@ -287,15 +289,17 @@ class AsyncPrepareForFp4InferenceResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QuantizationJob:
         """
-        Merges a fine-tuned adapter into its base model and prepares the result for FP4
-        inference. The adapter is resolved when the request is made, so a request naming
-        a model that does not exist in the project, is not an adapter, was not produced
-        by fine-tuning, has no base model to merge into, or uses an unsupported base
-        model is rejected with 400 rather than accepted and failed later. The run is
-        priced before it is created, and a project that cannot cover it is answered 402.
+        Prepares a fine-tuned model for FP4 inference: an adapter is merged into its
+        base model and the result quantized to FP4; a full model is quantized as it is.
+        The model is resolved when the request is made, so a request naming a model that
+        does not exist in the project, was not produced by fine-tuning, has no base
+        model, or uses an unsupported base model is rejected with 400 rather than
+        accepted and failed later. The request names the model by `model_object_id` (the
+        deprecated `adapter_object_id` is still accepted). The run is priced before it
+        is created, and a project that cannot cover it is answered 402.
 
         Args:
-          inputs: Adapter inputs to prepare.
+          inputs: Inputs naming the fine-tuned model to prepare.
 
           extra_headers: Send extra headers
 
@@ -417,13 +421,13 @@ class AsyncPrepareForFp4InferenceResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QuantizationEstimate:
         """
-        Reports the price and expected wall-clock time for preparing the named adapter
-        without creating a job. The request body is the same as POST
-        /shaping/prepare-for-fp4-inference, so a caller can price exactly the job it is
-        about to submit.
+        Reports the price and expected wall-clock time for preparing the model named by
+        `model_object_id` or the deprecated `adapter_object_id` without creating a job.
+        The request body is the same as POST /shaping/prepare-for-fp4-inference, so a
+        caller can price exactly the job it is about to submit.
 
         Args:
-          inputs: Adapter inputs to prepare.
+          inputs: Inputs naming the fine-tuned model to prepare.
 
           extra_headers: Send extra headers
 

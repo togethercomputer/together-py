@@ -25,7 +25,7 @@ class TestPrepareForFp4Inference:
     @parametrize
     def test_method_create(self, client: Together) -> None:
         prepare_for_fp4_inference = client.post_training.prepare_for_fp4_inference.create(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         )
         assert_matches_type(QuantizationJob, prepare_for_fp4_inference, path=["response"])
 
@@ -33,9 +33,11 @@ class TestPrepareForFp4Inference:
     def test_method_create_with_all_params(self, client: Together) -> None:
         prepare_for_fp4_inference = client.post_training.prepare_for_fp4_inference.create(
             inputs={
-                "adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
-                "adapter_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
+                "adapter_object_id": "ml_J!Q0Ok0bzJb7",
+                "adapter_revision_id": "rv_J!Q0Ok0bzJb7",
                 "calibration_file_id": "file-5f1b0c7a-2d19-4a3e-9c60-8ab41c2f7d35",
+                "model_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
+                "model_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
             },
         )
         assert_matches_type(QuantizationJob, prepare_for_fp4_inference, path=["response"])
@@ -43,7 +45,7 @@ class TestPrepareForFp4Inference:
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
         response = client.post_training.prepare_for_fp4_inference.with_raw_response.create(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         )
 
         assert response.is_closed is True
@@ -54,7 +56,7 @@ class TestPrepareForFp4Inference:
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
         with client.post_training.prepare_for_fp4_inference.with_streaming_response.create(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -168,7 +170,7 @@ class TestPrepareForFp4Inference:
     @parametrize
     def test_method_estimate_cost(self, client: Together) -> None:
         prepare_for_fp4_inference = client.post_training.prepare_for_fp4_inference.estimate_cost(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         )
         assert_matches_type(QuantizationEstimate, prepare_for_fp4_inference, path=["response"])
 
@@ -176,9 +178,11 @@ class TestPrepareForFp4Inference:
     def test_method_estimate_cost_with_all_params(self, client: Together) -> None:
         prepare_for_fp4_inference = client.post_training.prepare_for_fp4_inference.estimate_cost(
             inputs={
-                "adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
-                "adapter_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
+                "adapter_object_id": "ml_J!Q0Ok0bzJb7",
+                "adapter_revision_id": "rv_J!Q0Ok0bzJb7",
                 "calibration_file_id": "file-5f1b0c7a-2d19-4a3e-9c60-8ab41c2f7d35",
+                "model_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
+                "model_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
             },
         )
         assert_matches_type(QuantizationEstimate, prepare_for_fp4_inference, path=["response"])
@@ -186,7 +190,7 @@ class TestPrepareForFp4Inference:
     @parametrize
     def test_raw_response_estimate_cost(self, client: Together) -> None:
         response = client.post_training.prepare_for_fp4_inference.with_raw_response.estimate_cost(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         )
 
         assert response.is_closed is True
@@ -197,7 +201,7 @@ class TestPrepareForFp4Inference:
     @parametrize
     def test_streaming_response_estimate_cost(self, client: Together) -> None:
         with client.post_training.prepare_for_fp4_inference.with_streaming_response.estimate_cost(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -254,7 +258,7 @@ class TestAsyncPrepareForFp4Inference:
     @parametrize
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         prepare_for_fp4_inference = await async_client.post_training.prepare_for_fp4_inference.create(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         )
         assert_matches_type(QuantizationJob, prepare_for_fp4_inference, path=["response"])
 
@@ -262,9 +266,11 @@ class TestAsyncPrepareForFp4Inference:
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         prepare_for_fp4_inference = await async_client.post_training.prepare_for_fp4_inference.create(
             inputs={
-                "adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
-                "adapter_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
+                "adapter_object_id": "ml_J!Q0Ok0bzJb7",
+                "adapter_revision_id": "rv_J!Q0Ok0bzJb7",
                 "calibration_file_id": "file-5f1b0c7a-2d19-4a3e-9c60-8ab41c2f7d35",
+                "model_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
+                "model_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
             },
         )
         assert_matches_type(QuantizationJob, prepare_for_fp4_inference, path=["response"])
@@ -272,7 +278,7 @@ class TestAsyncPrepareForFp4Inference:
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.post_training.prepare_for_fp4_inference.with_raw_response.create(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         )
 
         assert response.is_closed is True
@@ -283,7 +289,7 @@ class TestAsyncPrepareForFp4Inference:
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.post_training.prepare_for_fp4_inference.with_streaming_response.create(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -397,7 +403,7 @@ class TestAsyncPrepareForFp4Inference:
     @parametrize
     async def test_method_estimate_cost(self, async_client: AsyncTogether) -> None:
         prepare_for_fp4_inference = await async_client.post_training.prepare_for_fp4_inference.estimate_cost(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         )
         assert_matches_type(QuantizationEstimate, prepare_for_fp4_inference, path=["response"])
 
@@ -405,9 +411,11 @@ class TestAsyncPrepareForFp4Inference:
     async def test_method_estimate_cost_with_all_params(self, async_client: AsyncTogether) -> None:
         prepare_for_fp4_inference = await async_client.post_training.prepare_for_fp4_inference.estimate_cost(
             inputs={
-                "adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
-                "adapter_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
+                "adapter_object_id": "ml_J!Q0Ok0bzJb7",
+                "adapter_revision_id": "rv_J!Q0Ok0bzJb7",
                 "calibration_file_id": "file-5f1b0c7a-2d19-4a3e-9c60-8ab41c2f7d35",
+                "model_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
+                "model_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
             },
         )
         assert_matches_type(QuantizationEstimate, prepare_for_fp4_inference, path=["response"])
@@ -415,7 +423,7 @@ class TestAsyncPrepareForFp4Inference:
     @parametrize
     async def test_raw_response_estimate_cost(self, async_client: AsyncTogether) -> None:
         response = await async_client.post_training.prepare_for_fp4_inference.with_raw_response.estimate_cost(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         )
 
         assert response.is_closed is True
@@ -426,7 +434,7 @@ class TestAsyncPrepareForFp4Inference:
     @parametrize
     async def test_streaming_response_estimate_cost(self, async_client: AsyncTogether) -> None:
         async with async_client.post_training.prepare_for_fp4_inference.with_streaming_response.estimate_cost(
-            inputs={"adapter_object_id": "ml_CeG3fF6pyEViU8dE8pk7R"},
+            inputs={},
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
