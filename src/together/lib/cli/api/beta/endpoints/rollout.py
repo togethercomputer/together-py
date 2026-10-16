@@ -138,7 +138,10 @@ BlueGreenGroup = Group(
 )
 RollingGroup = Group(
     "Rolling Rollout",
-    help="Use [primary]`--rolling`[/primary] for a capacity-preserving batch swap.",
+    help=(
+        "Use [primary]`--rolling`[/primary] for a small-batch swap that sizes "
+        "source replicas to remaining traffic."
+    ),
     sort_key=3,
 )
 
@@ -234,7 +237,7 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
         bool,
         Parameter(
             name="--rolling",
-            help="Rolling strategy (capacity-preserving batch swap)",
+            help="Rolling strategy (small batches; source replicas shrink with remaining traffic)",
             group=(StrategyGroup, RollingGroup, ModeGroup),
         ),
     ] = False,
