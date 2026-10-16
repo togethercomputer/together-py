@@ -53,7 +53,25 @@ GpuTypeParameter = Annotated[
     ),
 ]
 ClusterTypeParameter = Annotated[Optional[Literal["KUBERNETES", "SLURM"]], Parameter(help="Cluster type")]
-VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to use for the cluster")]
+VolumeParameter = Annotated[Optional[str], Parameter(help="Existing storage volume ID to attach to the cluster")]
+SharedVolumeNameParameter = Annotated[
+    Optional[str],
+    Parameter(
+        help=(
+            "Name of a shared volume to create with the cluster. "
+            "Requires --shared-volume-size-tib and cannot be combined with --volume."
+        )
+    ),
+]
+SharedVolumeSizeParameter = Annotated[
+    Optional[int],
+    Parameter(
+        help=(
+            "Size in whole TiB of a shared volume to create with the cluster. "
+            "Requires --shared-volume-name and cannot be combined with --volume."
+        )
+    ),
+]
 AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster auto-scaling")]
 AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
 CapacityPoolIDParameter = Annotated[Optional[str], Parameter(help="Capacity pool ID to use for the cluster")]
@@ -75,6 +93,44 @@ SlurmImageParameter = Annotated[Optional[str], Parameter(help="Custom Slurm imag
 SlurmShmSizeGibParameter = Annotated[Optional[int], Parameter(help="Shared memory size in GiB for Slurm clusters")]
 
 _DEFAULT_NVIDIA_VERSION_CHOICE = 1
+
+
+def _parse_whole_number(raw: str, *, what: str, default: int) -> int:
+    """Parse an interactive prompt. Blank input keeps ``default``."""
+    text = raw.strip()
+    if not text:
+        return default
+    try:
+        return int(text)
+    except ValueError as exc:
+        raise TogetherError(f"{what} must be a whole number, got {text!r}.") from exc
+
+
+def _require_volume_id(raw: str) -> str:
+    volume_id = raw.strip()
+    if not volume_id:
+        raise TogetherError("Volume ID cannot be empty. Enter an existing volume ID, or create a new storage volume.")
+    return volume_id
+
+
+def _shared_volume_from_flags(
+    *,
+    volume: str | None,
+    shared_volume_name: str | None,
+    shared_volume_size_tib: int | None,
+    region: str | None,
+) -> CreateSharedVolume | None:
+    if shared_volume_name is None and shared_volume_size_tib is None:
+        return None
+    if volume:
+        raise TogetherError("Use either --volume or --shared-volume-name/--shared-volume-size-tib, not both.")
+    if not shared_volume_name or shared_volume_size_tib is None:
+        raise TogetherError("--shared-volume-name and --shared-volume-size-tib must be provided together.")
+    if shared_volume_size_tib < 1:
+        raise TogetherError("--shared-volume-size-tib must be a whole number of TiB greater than or equal to 1.")
+    if not region:
+        raise TogetherError("--region is required when creating a shared volume with the cluster.")
+    return CreateSharedVolume(region=region, size_tib=shared_volume_size_tib, volume_name=shared_volume_name)
 
 
 def _format_nvidia_version(version: RegionDriverVersion) -> str:
@@ -219,6 +275,8 @@ async def create(
     gpu_type: GpuTypeParameter = None,
     cluster_type: ClusterTypeParameter = None,
     volume: VolumeParameter = None,
+    shared_volume_name: SharedVolumeNameParameter = None,
+    shared_volume_size_tib: SharedVolumeSizeParameter = None,
     auto_scale: AutoScaleParameter = None,
     auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
     capacity_pool_id: CapacityPoolIDParameter = None,
@@ -309,11 +367,17 @@ async def create(
                 input(f"Clusters: Cluster region [{catalog.regions[0].name}]: ").strip() or catalog.regions[0].name
             )
         if num_gpus is None:
-            n = input("Clusters: Cluster GPUs count (8-64): ").strip()
-            params["num_gpus"] = int(n) if n else 8
+            params["num_gpus"] = _parse_whole_number(
+                input("Clusters: Cluster GPUs count (8-64): "),
+                what="GPU count",
+                default=8,
+            )
         if num_preemptible_gpus is None:
-            n = input("Clusters: Cluster preemptible GPUs count [0]: ").strip()
-            params["num_preemptible_gpus"] = int(n) if n else 0
+            params["num_preemptible_gpus"] = _parse_whole_number(
+                input("Clusters: Cluster preemptible GPUs count [0]: "),
+                what="Preemptible GPU count",
+                default=0,
+            )
         if not billing_type:
             params["billing_type"] = input("Clusters: Cluster billing type [ON_DEMAND]: ").strip() or "ON_DEMAND"
 
@@ -328,30 +392,48 @@ async def create(
         os_name=os,
     )
 
+    shared_volume = _shared_volume_from_flags(
+        volume=volume,
+        shared_volume_name=shared_volume_name,
+        shared_volume_size_tib=shared_volume_size_tib,
+        region=params.get("region"),
+    )
+    if shared_volume is not None:
+        params["shared_volume"] = shared_volume
+
     if interactive:
         if duration_days is None and params.get("billing_type") == "RESERVED":
-            d = input("Clusters: Cluster reserved duration (1-90 days) [3]: ").strip()
-            params["duration_days"] = int(d) if d else 3
+            params["duration_days"] = _parse_whole_number(
+                input("Clusters: Cluster reserved duration (1-90 days) [3]: "),
+                what="Reserved duration (days)",
+                default=3,
+            )
         if not cluster_type:
             params["cluster_type"] = input("Clusters: Cluster type [KUBERNETES]: ").strip() or "KUBERNETES"
-        if not volume and "qa" not in str(config.client.base_url):
+        if not volume and "shared_volume" not in params and "qa" not in str(config.client.base_url):
             if input("Clusters: Create a new storage volume? [y/N] ").strip().lower() in ("y", "yes"):
                 default_volume_name = f"{params['cluster_name']}-storage"
                 vol_name = (
                     input(f"Clusters: Storage volume name [{default_volume_name}]: ").strip() or default_volume_name
                 )
-                size = input("Clusters: Storage volume size (TiB) [1]: ").strip()
+                size_tib = _parse_whole_number(
+                    input("Clusters: Storage volume size (TiB) [1]: "),
+                    what="Storage volume size (TiB)",
+                    default=1,
+                )
                 params["shared_volume"] = CreateSharedVolume(
                     region=params["region"],
-                    size_tib=int(size) if size else 1,
+                    size_tib=size_tib,
                     volume_name=vol_name,
                 )
             else:
                 volumes = await config.client.clusters.storage.list()
                 if volumes.volumes:
-                    params["volume_id"] = input(
-                        f"Clusters: Which storage volume to use? ({', '.join(v.volume_id for v in volumes.volumes)}): "
-                    ).strip()
+                    params["volume_id"] = _require_volume_id(
+                        input(
+                            f"Clusters: Which storage volume to use? ({', '.join(v.volume_id for v in volumes.volumes)}): "
+                        )
+                    )
         console.print("Clusters: Creating cluster with the following parameters:")
         console.print(cast(ClusterCreateParams, params))
 
