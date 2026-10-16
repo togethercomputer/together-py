@@ -7,7 +7,17 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
+from together.types.post_training.quantization_job import ParamsConfiguration
 from together.lib.cli.api.training.prepare_for_fp4_inference._utils import format_status
+
+
+def _input_model_name(configuration: ParamsConfiguration) -> str:
+    """Qualified name of the model being prepared.
+
+    ``model_name`` replaced ``adapter_model_name``. Jobs created before that rename
+    only have the former field.
+    """
+    return configuration.api_model_name or configuration.adapter_model_name or ""
 
 
 async def list(
@@ -27,10 +37,10 @@ async def list(
         return
 
     table = ListTable(
-        empty_message="You don't have any FP4 preparation jobs yet. To start one run:\n  [dim]-[/dim] [primary]tg training fp4 create <adapter-object-id>[/primary]"
+        empty_message="You don't have any FP4 preparation jobs yet. To start one run:\n  [dim]-[/dim] [primary]tg training fp4 create <model-object-id>[/primary]"
     )
     table.add_primary_column("ID")
-    table.add_column("Adapter")
+    table.add_column("Model")
     table.add_column("Status")
     table.add_column("Prepared Model")
     table.add_column("Created At")
@@ -39,7 +49,7 @@ async def list(
         prepared_model = job.results.api_model_object_id if job.results is not None else None
         table.add_row(
             job.id,
-            job.params.configuration.adapter_model_name,
+            _input_model_name(job.params.configuration),
             format_status(job.status),
             prepared_model or "",
             format_datetime(job.created_at),
