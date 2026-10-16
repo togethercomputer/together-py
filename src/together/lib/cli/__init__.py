@@ -389,6 +389,14 @@ async def _run_launcher(
     project_id: Optional[str],
     output_json: Optional[bool],
 ) -> None:
+    # The beta endpoints app uses its retrieve command as the default to support
+    # `tg beta endpoints <id>`. With no ID, Cyclopts otherwise invokes retrieve
+    # and reports a missing argument. Treat the bare group like explicit --help,
+    # including bypassing authentication and telemetry.
+    if tokens == ("beta", "endpoints"):
+        beta_endpoints_app.help_print()
+        return
+
     resolved_json = resolve_output_json(output_json)
     use_json_mode(resolved_json)
 

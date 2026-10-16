@@ -147,6 +147,20 @@ def _mock_model_and_config(respx_mock: MockRouter) -> None:
     )
 
 
+@pytest.mark.usefixtures("plain_cli_help")
+def test_bare_beta_endpoints_shows_help_without_auth(cli_runner: CliRunner) -> None:
+    cli_runner.env.pop("TOGETHER_API_KEY")
+    cli_runner.env.pop("TOGETHER_PROJECT_ID")
+
+    result = cli_runner.invoke(["beta", "endpoints"])
+
+    assert result.exit_code == 0, result.output
+    assert "Deploy and manage dedicated inference endpoints" in result.output
+    assert "deploy" in result.output
+    assert "Missing required argument" not in result.output
+    assert "Not logged in" not in result.output
+
+
 class TestBetaEndpointsDeploy:
     @pytest.mark.parametrize("model_revision", ["rev_in_path", "rev_from_flag"])
     def test_deploy_rejects_model_path_and_revision_flag(
