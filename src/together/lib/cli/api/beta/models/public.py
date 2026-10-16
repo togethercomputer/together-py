@@ -12,6 +12,7 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
+from together.types.beta.supported_model import Pricing
 from together.lib.cli.utils._mock_pagination import AfterParameter
 
 ModalityFilter = Literal["MODALITY_TEXT", "MODALITY_IMAGE", "MODALITY_AUDIO", "MODALITY_VIDEO"]
@@ -55,11 +56,13 @@ async def public(
     table.add_primary_column("Model", ratio=3)
     table.add_column("GPUs")
     table.add_column("Parallelism")
+    table.add_column("Serverless $/1M", ratio=2)
 
     for model in response.data:
         profiles = model.deployment_profiles or []
+        pricing = _format_serverless_pricing(model.pricing)
         if not profiles:
-            table.add_row(model.name or model.id or "", "", "", "", "")
+            table.add_row(model.name or model.id or "", "", "", pricing)
             continue
 
         for profile in profiles:
@@ -73,6 +76,7 @@ async def public(
                 profile_model,
                 gpu,
                 profile.parallelism or "",
+                pricing,
             )
     console.print(table)
 
@@ -85,6 +89,23 @@ def _profile_cli_model(profile: object, fallback: str | None = None) -> str:
     return (
         getattr(profile, "api_model_name", None) or _profile_model_id(getattr(profile, "model", None)) or fallback or ""
     )
+
+
+def _format_serverless_pricing(pricing: Pricing | None) -> str:
+    if pricing is None:
+        return ""
+
+    parts = []
+    input_price = pricing.input
+    cached_input_price = pricing.cached_input
+    output_price = pricing.output
+    if input_price is not None:
+        parts.append(f"Input ${input_price:g}")
+    if cached_input_price is not None:
+        parts.append(f"Cached ${cached_input_price:g}")
+    if output_price is not None:
+        parts.append(f"Output ${output_price:g}")
+    return "\n".join(parts)
 
 
 def _profile_model_id(profile_model: str | None) -> str:
