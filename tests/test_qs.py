@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 import pytest
 
-from together._qs import Querystring, stringify
+from together._qs import Querystring, RepeatedQuery, stringify
 
 
 def test_empty() -> None:
@@ -52,6 +52,13 @@ def test_array_comma(method: str) -> None:
     assert unquote(serialise({"in": ["foo", "bar"]})) == "in=foo,bar"
     assert unquote(serialise({"a": {"b": [True, False]}})) == "a[b]=true,false"
     assert unquote(serialise({"a": {"b": [True, False, None, True]}})) == "a[b]=true,false,true"
+
+
+def test_repeated_query_uses_repeat_keys_under_comma_format() -> None:
+    serialise = Querystring(array_format="comma").stringify
+    encoded = unquote(serialise({"types": RepeatedQuery(("deployment.scaled", "condition.set"))}))
+    assert encoded == "types=deployment.scaled&types=condition.set"
+    assert unquote(serialise({"in": ["foo", "bar"]})) == "in=foo,bar"
 
 
 def test_array_repeat() -> None:
