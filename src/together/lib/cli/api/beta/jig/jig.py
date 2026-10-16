@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import json
 import time
@@ -21,7 +22,7 @@ import subprocess
 import concurrent.futures
 from typing import TYPE_CHECKING, Any, Union, Literal, Callable, Optional, Annotated
 from pathlib import Path
-from datetime import datetime as dt
+from datetime import datetime as dt, timezone, timedelta
 from functools import cached_property
 from itertools import groupby
 from dataclasses import field, asdict, dataclass, is_dataclass
@@ -145,6 +146,48 @@ def _parse_model_ref(model: str) -> tuple[str, str | None]:
     if revision_id and not revision_id.startswith("rv_"):
         raise JigError(f"Invalid model reference {model!r}: revision must be a weights revision id like rv_abc123")
     return model_id, revision_id or None
+
+
+_MAX_TTL_DAYS = 14
+
+
+def _parse_ttl(ttl: str) -> int:
+    """Parse a TTL in days like ``7d`` into seconds."""
+    match = re.fullmatch(r"(\d+)d", ttl.strip().lower())
+    if not match or not 1 <= int(match.group(1)) <= _MAX_TTL_DAYS:
+        raise JigError(f"Invalid TTL {ttl!r}: use a number of days between 1d and {_MAX_TTL_DAYS}d, e.g. 7d")
+    return int(match.group(1)) * 86400
+
+
+def _format_timestamp(iso: str) -> str:
+    try:
+        return dt.fromisoformat(iso.replace("Z", "+00:00")).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+    except ValueError:
+        return iso
+
+
+# matches the server's grace period, during which owners are warned before a secret is deleted
+_SECRET_EXPIRY_WARNING_WINDOW = timedelta(days=7)
+
+
+def _warn_expiring_secrets(deployment: Deployment) -> None:
+    """Warn about secrets the deployment references that are deleted within the warning window."""
+    soon = dt.now(timezone.utc) + _SECRET_EXPIRY_WARNING_WINDOW
+    for var in deployment.environment_variables or []:
+        # not in the generated SDK model yet
+        expires_at: str | None = getattr(var, "value_from_secret_expires_at", None)
+        if not expires_at:
+            continue
+        try:
+            expiring = dt.fromisoformat(expires_at.replace("Z", "+00:00")) <= soon
+        except ValueError:
+            continue
+        if expiring:
+            console.print(
+                f"\N{WARNING SIGN} Secret {var.name} used by this deployment will expire and be permanently "
+                f"deleted at {_format_timestamp(expires_at)}. Renew it with: "
+                f"'jig secrets set --name {var.name} --value <value> --ttl 14d'"
+            )
 
 
 @dataclass
@@ -668,20 +711,34 @@ class Jig:
         self.state._secrets_initialized = True
         self.state.save()
 
-    def set_secret(self, name: str, value: str, description: str) -> None:
-        """Set secret for the deployment (create or update)"""
+    def set_secret(self, name: str, value: str, description: str, ttl_seconds: int | None = None) -> str | None:
+        """Set secret for the deployment (create or update) and return when it expires"""
         self.sync_secrets_from_deployment()
         scoped_name = f"{self.name}-{name}"
+        # ttl_seconds is not in the generated SDK params yet
+        extra_body = {"ttl_seconds": ttl_seconds} if ttl_seconds else None
 
         try:
-            self.api.secrets.update(id=scoped_name, name=scoped_name, description=description, value=value)
+            secret = self.api.secrets.update(
+                id=scoped_name, name=scoped_name, description=description, value=value, extra_body=extra_body
+            )
             console.print(f"\N{CHECK MARK} Updated secret {name}")
         except NotFoundError:
-            self.api.secrets.create(name=scoped_name, value=value, description=description)
+            secret = self.api.secrets.create(
+                name=scoped_name, value=value, description=description, extra_body=extra_body
+            )
             console.print(f"\N{CHECK MARK} Created secret {name}")
 
         self.state.secrets[name] = scoped_name
         self.state.save()
+
+        expires_at: str | None = getattr(secret, "expires_at", None)
+        if expires_at:
+            console.print(
+                f"\N{WARNING SIGN} Secret {name} will expire and be permanently deleted at "
+                f"{_format_timestamp(expires_at)}"
+            )
+        return expires_at
 
     def delete_secret(self, name: str) -> None:
         """Delete a secret and unset it locally"""
@@ -991,6 +1048,8 @@ class Jig:
                 if "already exists" in e.message:
                     raise JigError(f"Deployment name must be unique. Tip: {self.config._unique_name_hint}") from None
                 raise
+
+        _warn_expiring_secrets(response)
 
         if detach or no_track:
             console.print_json(openapi_dumps(response).decode("utf-8"))
@@ -1481,9 +1540,9 @@ def list_deployments(jig: Jig) -> Any:
     return jig.api.with_raw_response.list()
 
 
-def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
+def secrets_set(jig: Jig, name: str, value: str, description: str, ttl: str | None = None) -> str | None:
     """Set a secret (create or update)"""
-    jig.set_secret(name, value, description)
+    return jig.set_secret(name, value, description, _parse_ttl(ttl) if ttl else None)
 
 
 def secrets_unset(jig: Jig, name: str) -> None:
@@ -1936,6 +1995,10 @@ def secrets_set_cli(
     name: Annotated[str, Parameter(name="--name", help="Secret name")],
     value: Annotated[str, Parameter(name="--value", help="Secret value")],
     description: Annotated[str, Parameter(help="Secret description")] = "",
+    ttl: Annotated[
+        Optional[str],
+        Parameter(help="Days until the secret expires and is deleted, between 1d and 14d, e.g. 7d. Optional"),
+    ] = None,
     *,
     config: CLIConfigParameter,
     toml_config: TomlConfigParameter = None,
@@ -1943,8 +2006,8 @@ def secrets_set_cli(
     """Set a secret (create or update)."""
 
     def inner(jig: Jig) -> Any:
-        secrets_set(jig, name, value, description)
-        return _json_action("set", name=name)
+        expires_at = secrets_set(jig, name, value, description, ttl)
+        return _json_action("set", name=name, expires_at=expires_at)
 
     _run_jig_cmd(config, toml_config, inner)
 

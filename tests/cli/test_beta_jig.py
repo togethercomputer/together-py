@@ -5,6 +5,7 @@ import json
 from types import SimpleNamespace
 from typing import Any, cast
 from pathlib import Path
+from datetime import datetime, timezone, timedelta
 from contextlib import contextmanager
 from unittest.mock import patch
 
@@ -126,12 +127,13 @@ def test_volume_upload_failure_exit_preserves_diagnostic(tmp_path: Path) -> None
     assert str(exc_info.value) == "Volume upload failed after the volume was created"
 
 
-def _secret_api_body(name: str) -> dict[str, object]:
+def _secret_api_body(name: str, **extra: object) -> dict[str, object]:
     return {
         "id": "sec-1",
         "name": name,
         "object": "secret",
         "description": "",
+        **extra,
     }
 
 
@@ -156,7 +158,9 @@ class TestBetaJigSecretsSet:
         respx_mock.get(f"/deployments/{_DEPLOY_NAME}").mock(return_value=httpx.Response(404, json={}))
         respx_mock.patch(f"/deployments/secrets/{scoped}").mock(return_value=httpx.Response(404, json={}))
         post = respx_mock.post("/deployments/secrets").mock(
-            return_value=httpx.Response(200, json=_secret_api_body(scoped))
+            return_value=httpx.Response(
+                200, json=_secret_api_body(scoped, expires_at="2026-11-14T12:00:00Z", ttl_seconds=604800)
+            )
         )
 
         with _patched_jig_config(tmp_path), _chdir(tmp_path):
@@ -172,14 +176,18 @@ class TestBetaJigSecretsSet:
                     "secret-val",
                     "--description",
                     "d1",
+                    "--ttl",
+                    "7d",
                 ],
             )
         assert "Created secret apikey" in result.output
+        assert "will expire and be permanently deleted at" in result.output
         raw = cast(Call, post.calls[0]).request.content.decode()
         body = json.loads(raw)
         assert body["name"] == scoped
         assert body["value"] == "secret-val"
         assert body["description"] == "d1"
+        assert body["ttl_seconds"] == 7 * 86400
         state = json.loads((tmp_path / ".jig.json").read_text())
         assert state[_DEPLOY_NAME]["secrets"]["apikey"] == scoped
         assert result.exit_code == 0
@@ -199,10 +207,21 @@ class TestBetaJigSecretsSet:
                 ["beta", "jig", "secrets", "set", "--name", "apikey", "--value", "v2"],
             )
         assert "Updated secret apikey" in result.output
+        assert "will expire" not in result.output
         assert patch_route.called
-        raw = cast(Call, patch_route.calls[0]).request.content.decode()
-        assert json.loads(raw)["value"] == "v2"
+        body = json.loads(cast(Call, patch_route.calls[0]).request.content.decode())
+        assert body["value"] == "v2"
+        assert "ttl_seconds" not in body
         assert result.exit_code == 0
+
+    @pytest.mark.parametrize(("ttl", "days"), [("1d", 1), (" 14D ", 14)])
+    def test_parse_ttl(self, ttl: str, days: int) -> None:
+        assert _jig_mod._parse_ttl(ttl) == days * 86400
+
+    @pytest.mark.parametrize("ttl", ["0d", "15d", "2w", "1h"])
+    def test_parse_ttl_rejects(self, ttl: str) -> None:
+        with pytest.raises(_jig_mod.JigError, match="between 1d and 14d"):
+            _jig_mod._parse_ttl(ttl)
 
 
 class TestBetaJigSecretsList:
@@ -577,7 +596,7 @@ class TestBetaJigModelMounts:
         class _Api:
             def update(self, _id: str, **kwargs: Any) -> SimpleNamespace:
                 calls.append(kwargs)
-                return SimpleNamespace(status="Updating")
+                return SimpleNamespace(status="Updating", environment_variables=[])
 
         deploy = _jig_mod.DeployConfig(
             model_mounts=[_jig_mod.ModelMount(model="ml_abc123@rv_xyz789", mount_path="/models")]
@@ -602,6 +621,40 @@ class TestBetaJigModelMounts:
         ]
         assert "extra_body" not in calls[0]
 
+    def test_deploy_warns_about_secrets_expiring_soon(self, capsys: pytest.CaptureFixture[str]) -> None:
+        def expires_in(days: int) -> str:
+            return (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+
+        class _Api:
+            def update(self, _id: str, **_kwargs: Any) -> SimpleNamespace:
+                return SimpleNamespace(
+                    status="Updating",
+                    environment_variables=[
+                        SimpleNamespace(name="SOON", value_from_secret_expires_at=expires_in(2)),
+                        SimpleNamespace(name="LATER", value_from_secret_expires_at=expires_in(10)),
+                        SimpleNamespace(name="PLAIN"),
+                    ],
+                )
+
+        jig = SimpleNamespace(
+            api=_Api(),
+            config=SimpleNamespace(deploy=_jig_mod.DeployConfig(), experimental=_jig_mod.ExperimentalConfig()),
+            name=_DEPLOY_NAME,
+            registry=lambda: "registry.together.ai/test/",
+            state=SimpleNamespace(secrets={"TOGETHER_API_KEY": f"{_DEPLOY_NAME}-TOGETHER_API_KEY"}),
+            sync_secrets_from_deployment=lambda: None,
+            validate_model_mounts=lambda: None,
+            validate_volumes=lambda: None,
+            track=_noop_track,
+            together=SimpleNamespace(api_key="test-key", base_url=httpx.URL(base_url)),
+        )
+
+        _jig_mod.Jig.deploy(cast(Any, jig), existing_image="example.com/acme/app:tag")
+
+        out = capsys.readouterr().out
+        assert "Secret SOON used by this deployment will expire" in out
+        assert "LATER" not in out
+
     def test_deployment_api_key_uses_an_explicit_key_without_the_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
         save_stored_credentials(StoredCredentials(access_token="opaque-login-token"))
@@ -621,7 +674,7 @@ class TestBetaJigModelMounts:
         class _Api:
             def update(self, _id: str, **kwargs: Any) -> SimpleNamespace:
                 calls.append(kwargs)
-                return SimpleNamespace(status="Updating")
+                return SimpleNamespace(status="Updating", environment_variables=[])
 
         jig = SimpleNamespace(
             api=_Api(),
