@@ -37,6 +37,9 @@ NUM_BYTES_IN_GB = 2**30
 # maximum number of GB sized files we support finetuning for
 MAX_FILE_SIZE_GB = 50.1
 
+# Calibration files are validated and stored by the files API for FP4 calibration.
+MAX_CALIBRATION_FILE_SIZE_BYTES = 64 * 1024 * 1024
+
 # Multimodal limits
 MAX_IMAGES_PER_EXAMPLE = 10
 MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10MB

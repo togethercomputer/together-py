@@ -280,6 +280,26 @@ class TestFilesUpload:
         upload_mock.assert_called_once()
         assert "uploaded-id" in result.output
 
+    def test_upload_calibration_jsonl_passes_purpose(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        f = tmp_path / "calibration.jsonl"
+        f.write_text('{"messages": [{"role": "user", "content": "hello"}]}\n')
+        uploaded = _file_response(id="uploaded-id", purpose="calibration")
+        with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
+            upload_mock.return_value = uploaded
+            result = cli_runner.invoke(["files", "upload", str(f), "--purpose", "calibration"])
+        assert result.exit_code == 0
+        assert upload_mock.call_args.kwargs["purpose"] == "calibration"
+        assert "uploaded-id" in result.output
+
+    def test_upload_calibration_rejects_parquet(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        f = tmp_path / "calibration.parquet"
+        f.write_bytes(b"not a parquet file")
+        with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
+            result = cli_runner.invoke(["files", "upload", str(f), "--purpose", "calibration"])
+        assert result.exit_code == 1
+        assert "Only JSONL files are supported" in result.output.replace("\n", "")
+        upload_mock.assert_not_called()
+
     def test_upload_does_not_check_if_disabled(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         f = tmp_path / "data.jsonl"
         f.write_text("{}\n")
