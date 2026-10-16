@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import cast
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -378,6 +379,81 @@ async def test_aput_file_content_replays_body_on_redirect(status: int, respx_moc
     assert second.call_count == 1
     assert cast(Call, first.calls[0]).request.content == payload
     assert cast(Call, second.calls[0]).request.content == payload
+
+
+@pytest.mark.respx
+def test_put_file_content_retries_transport_error(
+    mocker: MockerFixture, respx_mock: MockRouter, tmp_path: Path
+) -> None:
+    file = tmp_path / "valid.jsonl"
+    payload = b'{"text": "hello"}\n'
+    file.write_bytes(payload)
+    upload = respx_mock.put("https://s3.amazonaws.com/upload").mock(
+        side_effect=[httpx.ReadError("connection reset"), httpx.Response(200)]
+    )
+    sleep = mocker.patch("together.lib.resources.files.time.sleep")
+
+    with httpx.Client() as client:
+        response = _put_file_content(
+            client,
+            "https://s3.amazonaws.com/upload",
+            file,
+            file_size=len(payload),
+        )
+
+    assert response.status_code == 200
+    assert upload.call_count == 2
+    assert cast(Call, upload.calls[0]).request.content == payload
+    assert cast(Call, upload.calls[1]).request.content == payload
+    sleep.assert_called_once_with(0.5)
+
+
+@pytest.mark.respx
+async def test_aput_file_content_retries_transport_error(
+    mocker: MockerFixture, respx_mock: MockRouter, tmp_path: Path
+) -> None:
+    file = tmp_path / "valid.jsonl"
+    payload = b'{"text": "hello"}\n'
+    file.write_bytes(payload)
+    upload = respx_mock.put("https://s3.amazonaws.com/upload").mock(
+        side_effect=[httpx.ReadError("connection reset"), httpx.Response(200)]
+    )
+    sleep = mocker.patch("together.lib.resources.files.asyncio.sleep", new_callable=AsyncMock)
+
+    async with httpx.AsyncClient() as client:
+        response = await _aput_file_content(
+            client,
+            "https://s3.amazonaws.com/upload",
+            file,
+            file_size=len(payload),
+        )
+
+    assert response.status_code == 200
+    assert upload.call_count == 2
+    assert cast(Call, upload.calls[0]).request.content == payload
+    assert cast(Call, upload.calls[1]).request.content == payload
+    sleep.assert_awaited_once_with(0.5)
+
+
+@pytest.mark.respx
+def test_put_file_content_stops_after_transport_retries(
+    mocker: MockerFixture, respx_mock: MockRouter, tmp_path: Path
+) -> None:
+    file = tmp_path / "valid.jsonl"
+    file.write_bytes(b'{"text": "hello"}\n')
+    upload = respx_mock.put("https://s3.amazonaws.com/upload").mock(side_effect=httpx.ReadError("connection reset"))
+    sleep = mocker.patch("together.lib.resources.files.time.sleep")
+
+    with httpx.Client() as client, pytest.raises(httpx.ReadError, match="connection reset"):
+        _put_file_content(
+            client,
+            "https://s3.amazonaws.com/upload",
+            file,
+            file_size=file.stat().st_size,
+        )
+
+    assert upload.call_count == 3
+    assert [call.args[0] for call in sleep.call_args_list] == [0.5, 1.0]
 
 
 @pytest.mark.respx
