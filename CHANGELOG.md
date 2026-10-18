@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.42.0](https://github.com/togethercomputer/together-py/compare/v2.41.0...v2.42.0) (2026-10-18)
+
+
+### Features
+
+* **cli:** delete adapter attachments with `tg beta endpoints rm dad_*` ([#647](https://github.com/togethercomputer/together-py/issues/647)) ([d2bc986](https://github.com/togethercomputer/together-py/commit/d2bc986275d54f2b7dd5e9d16347b1b50288dc5f))
+* **cli:** name FP4 inputs with model object ids ([#650](https://github.com/togethercomputer/together-py/issues/650)) ([3b60477](https://github.com/togethercomputer/together-py/commit/3b604777e4daea39fe6a46c2c550f5421bb738ab))
+
+
+### Bug Fixes
+
+* **cli:** upgrade with the together[cli] extra ([#645](https://github.com/togethercomputer/together-py/issues/645)) ([5f22a56](https://github.com/togethercomputer/together-py/commit/5f22a566d22d135dccfcbb76901bca69bfdf0222))
+
+
+### Performance Improvements
+
+* **post-training:** Remove poll backoff ([#642](https://github.com/togethercomputer/together-py/issues/642)) ([690d6e7](https://github.com/togethercomputer/together-py/commit/690d6e79e27d43d2b6b40679ff4c216fd776e690))
+
 ## [2.41.0](https://github.com/togethercomputer/together-py/compare/v2.40.0...v2.41.0) (2026-10-12)
 
 
