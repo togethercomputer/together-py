@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.42.0](https://github.com/togethercomputer/together-py/compare/v2.41.0...v2.42.0) (2026-10-18)
+
+
+### Features
+
+* **cli:** delete adapter attachments with `tg beta endpoints rm dad_*` ([#647](https://github.com/togethercomputer/together-py/issues/647)) ([d2bc986](https://github.com/togethercomputer/together-py/commit/d2bc986275d54f2b7dd5e9d16347b1b50288dc5f))
+* **cli:** name FP4 inputs with model object ids ([#650](https://github.com/togethercomputer/together-py/issues/650)) ([3b60477](https://github.com/togethercomputer/together-py/commit/3b604777e4daea39fe6a46c2c550f5421bb738ab))
+* fix: sync RL checkpoint OpenAPI schemas; feat: document shaping calibration files; feat: expose RL checkpoint registry artifacts; internal: Duplicate RL spec to non-beta to prep migration; Internal: Remove beta duplicate config for RL; feat: add RL model resource queue position; fix: sync adapter attachment ids in OpenAPI; fix(docs): remove substrate wording from GPU cluster descriptions ([6741fc5](https://github.com/togethercomputer/together-py/commit/6741fc5aa4b9d1c59995851b6b8f3799d843f41e))
+* fix: sync RL checkpoint OpenAPI schemas; feat: document shaping calibration files; feat: expose RL checkpoint registry artifacts; internal: Duplicate RL spec to non-beta to prep migration; Internal: Remove beta duplicate config for RL; feat: add RL model resource queue position; fix: sync adapter attachment ids in OpenAPI; fix(docs): remove substrate wording from GPU cluster descriptions; fix: stop offering H100-80GB for RL model resources ([006e319](https://github.com/togethercomputer/together-py/commit/006e3191dec8ba56efbd7babc69d5e46daa9c6aa))
+* fix: sync RL checkpoint OpenAPI schemas; feat: document shaping calibration files; feat: expose RL checkpoint registry artifacts; internal: Duplicate RL spec to non-beta to prep migration; Internal: Remove beta duplicate config for RL; feat: add RL model resource queue position; fix: sync adapter attachment ids in OpenAPI; fix(docs): remove substrate wording from GPU cluster descriptions; fix: stop offering H100-80GB for RL model resources; MOSH-5642: rename prepare-for-fp4-inference adapter_* fields to model_* ([bc83651](https://github.com/togethercomputer/together-py/commit/bc836517e3980d349f5a3453c49517b9402836e2))
+
+
+### Bug Fixes
+
+* **cli:** upgrade with the together[cli] extra ([#645](https://github.com/togethercomputer/together-py/issues/645)) ([5f22a56](https://github.com/togethercomputer/together-py/commit/5f22a566d22d135dccfcbb76901bca69bfdf0222))
+
+
+### Performance Improvements
+
+* **post-training:** Remove poll backoff ([#642](https://github.com/togethercomputer/together-py/issues/642)) ([690d6e7](https://github.com/togethercomputer/together-py/commit/690d6e79e27d43d2b6b40679ff4c216fd776e690))
+
 ## [2.41.0](https://github.com/togethercomputer/together-py/compare/v2.40.0...v2.41.0) (2026-10-12)
 
 
