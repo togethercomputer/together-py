@@ -783,8 +783,8 @@ TRAINING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Fetch a model resource, training session, or checkpoint by ID:
   [primary]tg training get <id>[/primary]
 
-[dim]-[/dim] Prepare a fine-tuned adapter for FP4 inference:
-  [primary]tg training fp4 create <adapter-object-id>[/primary]
+[dim]-[/dim] Prepare a fine-tuned model for FP4 inference:
+  [primary]tg training fp4 create <model-object-id>[/primary]
 """
 
 ## Beta > Jig commands
@@ -937,11 +937,11 @@ JIG_VOLUMES_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 """
 
 TRAINING_FP4_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Estimate the price of preparing an adapter:
-  [primary]tg training fp4 estimate <adapter-object-id>[/primary]
+[dim]-[/dim] Estimate the price of preparing a fine-tuned model:
+  [primary]tg training fp4 estimate <model-object-id>[/primary]
 
-[dim]-[/dim] Prepare an adapter and wait for the job to finish:
-  [primary]tg training fp4 create <adapter-object-id> --watch[/primary]
+[dim]-[/dim] Prepare a model and wait for the job to finish:
+  [primary]tg training fp4 create <model-object-id> --watch[/primary]
 
 [dim]-[/dim] Follow a running job:
   [primary]tg training fp4 get <job-id> --watch[/primary]
@@ -951,9 +951,9 @@ TRAINING_FP4_HELP_EXAMPLES = """[dim]Examples:[/dim]
 """
 
 TRAINING_FP4_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Prepare the adapter's current revision:
-  [primary]tg training fp4 create <adapter-object-id>[/primary]
+[dim]-[/dim] Prepare the model's current revision:
+  [primary]tg training fp4 create <model-object-id>[/primary]
 
 [dim]-[/dim] Prepare a specific revision without the confirmation prompt, and wait for it:
-  [primary]tg training fp4 create <adapter-object-id> -r <revision-id> -y --watch[/primary]
+  [primary]tg training fp4 create <model-object-id> -r <revision-id> -y --watch[/primary]
 """

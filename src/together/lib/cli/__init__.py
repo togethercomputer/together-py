@@ -774,7 +774,7 @@ training_fp4_app = training_app.command(
     App(
         name="prepare-for-fp4-inference",
         alias="fp4",
-        help="Merge fine-tuned adapters into their base model and prepare them for FP4 inference",
+        help="Prepare fine-tuned models for FP4 inference",
         help_epilogue=TRAINING_FP4_HELP_EXAMPLES,
         sort_key=5,
     )
