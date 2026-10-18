@@ -7,7 +7,6 @@
 
 * **cli:** delete adapter attachments with `tg beta endpoints rm dad_*` ([#647](https://github.com/togethercomputer/together-py/issues/647)) ([d2bc986](https://github.com/togethercomputer/together-py/commit/d2bc986275d54f2b7dd5e9d16347b1b50288dc5f))
 * **cli:** name FP4 inputs with model object ids ([#650](https://github.com/togethercomputer/together-py/issues/650)) ([3b60477](https://github.com/togethercomputer/together-py/commit/3b604777e4daea39fe6a46c2c550f5421bb738ab))
-* fix: sync RL checkpoint OpenAPI schemas; feat: document shaping calibration files; feat: expose RL checkpoint registry artifacts; internal: Duplicate RL spec to non-beta to prep migration; Internal: Remove beta duplicate config for RL; feat: add RL model resource queue position; fix: sync adapter attachment ids in OpenAPI; fix(docs): remove substrate wording from GPU cluster descriptions ([6741fc5](https://github.com/togethercomputer/together-py/commit/6741fc5aa4b9d1c59995851b6b8f3799d843f41e))
 
 
 ### Bug Fixes
