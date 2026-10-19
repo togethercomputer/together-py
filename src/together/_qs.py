@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Tuple, Union, Mapping, TypeVar
+from typing import Any, List, Tuple, Union, Mapping, TypeVar, Iterable
 from urllib.parse import parse_qs, urlencode
 from typing_extensions import get_args
 
@@ -9,10 +9,22 @@ from ._utils import flatten
 
 _T = TypeVar("_T")
 
+
+class RepeatedQuery(tuple[str, ...]):
+    """Sequence encoded as repeated query keys, ignoring ``array_format``.
+
+    The client comma-joins arrays. Some APIs validate each value as a single
+    token and require ``key=a&key=b`` instead of ``key=a,b``.
+    """
+
+    def __new__(cls, values: Iterable[str]) -> RepeatedQuery:
+        return super().__new__(cls, tuple(values))
+
+
 PrimitiveData = Union[str, int, float, bool, None]
 # this should be Data = Union[PrimitiveData, "List[Data]", "Tuple[Data]", "Mapping[str, Data]"]
 # https://github.com/microsoft/pyright/issues/3555
-Data = Union[PrimitiveData, List[Any], Tuple[Any], "Mapping[str, Any]"]
+Data = Union[PrimitiveData, List[Any], Tuple[Any], RepeatedQuery, "Mapping[str, Any]"]
 Params = Mapping[str, Data]
 
 
@@ -81,6 +93,12 @@ class Querystring:
                     )
                 )
             return items
+
+        if isinstance(value, RepeatedQuery):
+            repeated: list[tuple[str, str]] = []
+            for item in value:
+                repeated.extend(self._stringify_item(key, item, opts))
+            return repeated
 
         if isinstance(value, (list, tuple)):
             array_format = opts.array_format

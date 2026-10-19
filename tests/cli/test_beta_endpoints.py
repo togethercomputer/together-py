@@ -1506,7 +1506,7 @@ class TestBetaEndpointsListEvents:
         assert query["since"] == ["2026-01-01T00:00:00+00:00"]
         assert "sourceKinds" not in query
         assert query["subjectId"] == ["rollout_1"]
-        assert query["types"] == ["deployment.scaled,condition.set"]
+        assert query["types"] == ["deployment.scaled", "condition.set"]
         assert query["until"] == ["2026-01-02T00:00:00+00:00"]
         payload = json.loads(result.output)
         assert payload["data"][0]["id"] == "evt_1"
