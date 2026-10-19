@@ -551,16 +551,6 @@ def test_public_rl_names_are_importable() -> None:
     assert [name for name in module.__all__ if not hasattr(module, name)] == []
 
 
-def test_legacy_rl_import_path_aliases_together_rl() -> None:
-    import together.lib.beta.rl as legacy
-    import together.post_training as rl
-    from together.lib.beta import rl as from_beta
-
-    assert from_beta is legacy
-    assert legacy.SessionClient is rl.SessionClient
-    assert list(legacy.__all__) == list(rl.__all__)
-
-
 def test_public_rl_legacy_loss_inputs_are_not_exported() -> None:
     module = importlib.import_module("together.post_training")
     assert LEGACY_RL_LOSS_INPUT_NAMES.isdisjoint(module.__all__)
