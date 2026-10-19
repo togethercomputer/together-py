@@ -12,7 +12,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.api.models._utils import print_configs_table
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model_reference
+from together.lib.cli.api.endpoints._utils._resolve_model import resolve_model_reference
 
 
 async def list(

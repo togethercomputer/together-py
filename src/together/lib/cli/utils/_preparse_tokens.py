@@ -13,11 +13,10 @@ _COMMAND_ID_IDENTIFIERS = {
     "files": re.compile(r"^file-"),
     "evals": re.compile(r"^eval-"),
     "batches": re.compile(r"^batch"),
-    "endpoints": re.compile(r"^endpoint-"),
     "models configs": re.compile(r"^ep_"),
-    # `beta endpoints` uses App.default(retrieve) instead of token rewriting.
+    # `endpoints` uses App.default(retrieve) instead of token rewriting.
     "models": re.compile(r"^ml_"),
-    "beta endpoints deployments": re.compile(r"^dep_"),
+    "endpoints deployments": re.compile(r"^dep_"),
     "clusters": _UUID_RE,
     "clusters storage": _UUID_RE,
     "clusters remediations": _UUID_RE,
@@ -38,7 +37,7 @@ def _expand_implicit_retrieve_tokens(app: App, *tokens: str) -> list[str]:
     When this happens, we need to expand the tokens to include the retrieve command.
     For example, if the user runs "tg ft ft-12345678-90ab", we need to expand it to "tg ft retrieve ft-12345678-90ab".
 
-    ``beta endpoints`` is intentionally excluded: it registers retrieve via ``App.default``, so cyclopts
+    ``endpoints`` is intentionally excluded: it registers retrieve via ``App.default``, so cyclopts
     binds leftover tokens without rewriting argv.
     """
 
@@ -71,7 +70,7 @@ def _telemetry_command_for_default(
 ) -> str:
     """
     When a command-group App has ``default_command`` and leftover non-flag args, cyclopts will run
-    that default (e.g. ``tg beta endpoints <name>`` → retrieve). Attribute telemetry to that default.
+    that default (e.g. ``tg endpoints <name>`` → retrieve). Attribute telemetry to that default.
     """
     if not apps or not rest_after_chain:
         return parsed_command
@@ -166,7 +165,7 @@ def preparse_tokens(app: App, tokens: list[str]) -> tuple[str, list[str], bool, 
         parsed_command = legacy_cmd
         is_beta_command = legacy_beta
 
-    # App.default handlers (e.g. beta endpoints retrieve) don't rewrite argv; still tag telemetry.
+    # App.default handlers (e.g. endpoints retrieve) don't rewrite argv; still tag telemetry.
     parsed_command = _telemetry_command_for_default(parsed_command, apps, rest_after_chain)
 
     explicit_args: list[str] = []

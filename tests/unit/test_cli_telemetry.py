@@ -365,37 +365,37 @@ def test_parse_command_and_flags_inserts_implicit_retrieve_for_ft_job_id() -> No
     assert is_beta is False
 
 
-def test_parse_command_and_flags_attributes_beta_endpoints_default_retrieve_for_deployment_id() -> None:
+def test_parse_command_and_flags_attributes_endpoints_default_retrieve_for_deployment_id() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
     # App.default handles implicit get — argv is not rewritten to insert `retrieve`.
-    cmd, flags, is_beta, argv = preparse_tokens(app, ["beta", "endpoints", "dep_control", "--json"])
+    cmd, flags, is_beta, argv = preparse_tokens(app, ["endpoints", "dep_control", "--json"])
     assert cmd == "endpoints retrieve"
     assert "id" in flags
-    assert is_beta is True
-    assert argv == ["beta", "endpoints", "dep_control", "--json"]
+    assert is_beta is False
+    assert argv == ["endpoints", "dep_control", "--json"]
 
 
-def test_parse_command_and_flags_attributes_beta_endpoints_default_retrieve_for_name() -> None:
+def test_parse_command_and_flags_attributes_endpoints_default_retrieve_for_name() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta, argv = preparse_tokens(app, ["beta", "endpoints", "my-endpoint", "--json"])
+    cmd, flags, is_beta, argv = preparse_tokens(app, ["endpoints", "my-endpoint", "--json"])
     assert cmd == "endpoints retrieve"
     assert "id" in flags
-    assert is_beta is True
-    assert argv == ["beta", "endpoints", "my-endpoint", "--json"]
+    assert is_beta is False
+    assert argv == ["endpoints", "my-endpoint", "--json"]
 
 
-def test_parse_command_and_flags_does_not_treat_beta_endpoints_subcommand_as_retrieve() -> None:
+def test_parse_command_and_flags_does_not_treat_endpoints_subcommand_as_retrieve() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, _, is_beta, argv = preparse_tokens(app, ["beta", "endpoints", "deploy", "ml_1", "--endpoint", "e"])
+    cmd, _, is_beta, argv = preparse_tokens(app, ["endpoints", "deploy", "ml_1", "--endpoint", "e"])
     assert cmd == "endpoints deploy"
-    assert is_beta is True
-    assert argv == ["beta", "endpoints", "deploy", "ml_1", "--endpoint", "e"]
+    assert is_beta is False
+    assert argv == ["endpoints", "deploy", "ml_1", "--endpoint", "e"]
 
 
 def test_parse_command_and_flags_models_deploy_alias() -> None:
@@ -443,40 +443,30 @@ def test_parse_command_and_flags_normalizes_minus_d_alias_to_delete() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "-d", "ep-1", "--json", "--yes"])
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "-d", "ep_1", "--json"])
     assert cmd == "endpoints delete"
-    assert "endpoint_id" in flags
     assert is_beta is False
+    assert "json" in flags
 
 
 def test_parse_command_and_flags_normalizes_rm_alias_to_delete() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "endpoints", "rm", "ep_1", "--json"])
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "rm", "ep_1", "--json"])
     assert cmd == "endpoints delete"
-    assert is_beta is True
-    assert "json" in flags
-
-
-def test_parse_command_and_flags_keeps_beta_endpoints_delete_alias() -> None:
-    from together.lib.cli import app
-    from together.lib.cli.utils._preparse_tokens import preparse_tokens
-
-    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "endpoints", "delete", "ep_1", "--json"])
-    assert cmd == "endpoints delete"
-    assert is_beta is True
-    assert "json" in flags
-
-
-def test_parse_command_and_flags_normalizes_minus_c_alias_to_create() -> None:
-    from together.lib.cli import app
-    from together.lib.cli.utils._preparse_tokens import preparse_tokens
-
-    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "-c", "--model", "model-1"])
-    assert cmd == "endpoints create"
-    assert "model" in flags
     assert is_beta is False
+    assert "json" in flags
+
+
+def test_parse_command_and_flags_keeps_endpoints_delete_alias() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "delete", "ep_1", "--json"])
+    assert cmd == "endpoints delete"
+    assert is_beta is False
+    assert "json" in flags
 
 
 def test_parse_command_and_flags_positionals_are_argument_names_not_command_tokens() -> None:

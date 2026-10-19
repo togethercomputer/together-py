@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from together.lib.cli.utils.config import CLIConfig
-from together.types.beta.supported_model import SupportedModel
+from together.types.supported_model import SupportedModel
 from together.lib.cli.api.models._resolve_base_model import resolve_base_model_id
-from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
+from together.types.supported_model_deployment_profile import SupportedModelDeploymentProfile
 
 
 def _profile(**overrides: Any) -> SupportedModelDeploymentProfile:

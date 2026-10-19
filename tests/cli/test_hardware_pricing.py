@@ -7,8 +7,8 @@ import pytest
 
 from together.types.models.config import Config
 from together.lib.cli.utils.config import CLIConfig
-from together.types.beta.endpoints.inference_instance_type import InferenceInstanceType
-from together.lib.cli.api.beta.endpoints._utils._hardware_pricing import (
+from together.types.endpoints.inference_instance_type import InferenceInstanceType
+from together.lib.cli.api.endpoints._utils._hardware_pricing import (
     format_gpu_label,
     prettify_hardware,
     find_instance_type,
@@ -80,7 +80,7 @@ def test_find_instance_type_exact_and_normalized() -> None:
 @pytest.mark.asyncio
 async def test_resolve_hardware_pricing_happy_path() -> None:
     client = MagicMock()
-    client.beta.endpoints.hardware.list = AsyncMock(
+    client.endpoints.hardware.list = AsyncMock(
         return_value=MagicMock(data=[_instance()]),
     )
     cli = CLIConfig(client=client, non_interactive=True, json=False, project_id="proj")
@@ -91,14 +91,14 @@ async def test_resolve_hardware_pricing_happy_path() -> None:
     assert pricing.hardware_id == "1xnvidia-h100-80gb"
     assert pricing.gpu_label == "1x H100 80GB"
     assert pricing.estimated_price_label == "$24.00/hr - $48.00/hr"
-    client.beta.endpoints.hardware.list.assert_awaited_once()
+    client.endpoints.hardware.list.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 async def test_resolve_hardware_pricing_fetches_config_when_selectors_missing() -> None:
     client = MagicMock()
     client.models.configs.retrieve = AsyncMock(return_value=_config())
-    client.beta.endpoints.hardware.list = AsyncMock(
+    client.endpoints.hardware.list = AsyncMock(
         return_value=MagicMock(data=[_instance()]),
     )
     cli = CLIConfig(client=client, non_interactive=True, json=False, project_id="proj")
@@ -122,4 +122,4 @@ async def test_resolve_hardware_pricing_returns_none_without_hardware_selectors(
     pricing = await resolve_hardware_pricing(cli, _config(selectors=[]), min_replicas=1, max_replicas=1)
 
     assert pricing is None
-    client.beta.endpoints.hardware.list.assert_not_called()
+    client.endpoints.hardware.list.assert_not_called()

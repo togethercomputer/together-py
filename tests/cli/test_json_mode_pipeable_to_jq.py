@@ -15,7 +15,6 @@ from tests.cli.utils import CliRunner
 from tests.cli.test_files import FILE_ROW_NEWER, _file_response
 from tests.cli.test_batches import _BATCH_JOB, _BATCH_CREATE
 from tests.cli.test_clusters import _VOLUME_BODY, _REGIONS_BODY, _cluster_body
-from tests.cli.test_endpoints import DEDICATED_EP, ENDPOINT_LIST_ITEM, model_data
 from tests.cli.test_fine_tuning import (
     _FT_EVENT,
     _FT_LIST_ITEM,
@@ -45,12 +44,6 @@ def _ok(body: object) -> httpx.Response:
 def _mock_json_mode_http(respx_mock: MockRouter) -> None:
     """Deterministic HTTP for in-process CLI JSON-mode tests (no live API key)."""
     respx_mock.get("/clusters/availability-zones").mock(return_value=_ok({"avzones": ["us-east-1a"]}))
-    respx_mock.post("/endpoints").mock(return_value=_ok(DEDICATED_EP))
-    respx_mock.delete("/endpoints/endpoint-123").mock(return_value=_ok({"id": "endpoint-123", "deleted": True}))
-    respx_mock.get("/hardware").mock(return_value=_ok(model_data))
-    respx_mock.get("/endpoints").mock(return_value=_ok({"object": "list", "data": [ENDPOINT_LIST_ITEM]}))
-    respx_mock.get("/endpoints/endpoint-123").mock(return_value=_ok(DEDICATED_EP))
-    respx_mock.patch("/endpoints/endpoint-123").mock(return_value=_ok(DEDICATED_EP))
 
     respx_mock.post("/batches").mock(return_value=_ok(_BATCH_CREATE))
     respx_mock.get("/batches").mock(return_value=_ok([_BATCH_JOB]))
@@ -115,23 +108,6 @@ class TestJSONMode:
     @pytest.fixture(autouse=True)
     def _http(self, respx_mock: MockRouter) -> None:
         _mock_json_mode_http(respx_mock)
-
-    def test_endpoints_json_mode(self, cli_runner: CliRunner) -> None:
-        endpoints = JSONValidator("endpoints", cli_runner)
-        endpoints.run_and_assert("availability-zones")
-        endpoints.run_and_assert("create --model deepseek-ai/DeepSeek-R1 --hardware 1x_nvidia_a100_80gb_sxm")
-        endpoints.run_and_assert("delete endpoint-123")
-        endpoints.run_and_assert("hardware")
-        endpoints.run_and_assert("hardware --model deepseek-ai/DeepSeek-R1")
-        endpoints.run_and_assert("list")
-        endpoints.run_and_assert("list --type dedicated")
-        endpoints.run_and_assert("list --usage-type on-demand")
-        endpoints.run_and_assert("list --usage-type reserved")
-        endpoints.run_and_assert("list --mine")
-        endpoints.run_and_assert("retrieve endpoint-123")
-        endpoints.run_and_assert("start endpoint-123")
-        endpoints.run_and_assert("stop endpoint-123")
-        endpoints.run_and_assert("update endpoint-123 --min-replicas 2 --max-replicas 4 --inactive-timeout 60")
 
     def test_evals_json_mode(self, cli_runner: CliRunner) -> None:
         evals = JSONValidator("evals", cli_runner)

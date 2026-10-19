@@ -9,8 +9,8 @@ from together import NotFoundError
 from together.types import Model, EndpointDeployment
 from together.types.models.config import Config
 from together.lib.cli.utils.config import CLIConfig
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import load_model
-from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
+from together.lib.cli.api.endpoints._utils._resolve_model import load_model
+from together.lib.cli.api.endpoints._utils._adapter_deploy import (
     is_adapter_model,
     select_lora_config,
     config_adapter_mode,
@@ -186,8 +186,8 @@ async def test_adapter_rollback_text_is_omitted_in_json_mode(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    from together.types.beta import Endpoint
-    from together.lib.cli.api.beta.endpoints import deploy as deploy_mod
+    from together.types import Endpoint
+    from together.lib.cli.api.endpoints import deploy as deploy_mod
 
     base = _model()
     selected = _config(selectors=[{"key": "adapter_mode", "value": "dynamic"}])
@@ -221,9 +221,9 @@ async def test_adapter_rollback_text_is_omitted_in_json_mode(
     monkeypatch.setattr(deploy_mod, "show_loading_status", _passthrough)
 
     client = MagicMock()
-    client.beta.endpoints.delete = AsyncMock()
-    client.beta.endpoints.deployments.delete = AsyncMock()
-    client.beta.endpoints.deployments.create = AsyncMock(side_effect=RuntimeError("create failed"))
+    client.endpoints.delete = AsyncMock()
+    client.endpoints.deployments.delete = AsyncMock()
+    client.endpoints.deployments.create = AsyncMock(side_effect=RuntimeError("create failed"))
     cli = _cli(client, project_id="proj")
     cli.json = True
 
@@ -251,8 +251,8 @@ async def test_adapter_rollback_text_is_omitted_in_json_mode(
 
     assert "Rolling back" not in capsys.readouterr().out
 
-    client.beta.endpoints.deployments.create = AsyncMock(return_value=deployment)
-    client.beta.endpoints.adapters.create = AsyncMock(side_effect=RuntimeError("attach failed"))
+    client.endpoints.deployments.create = AsyncMock(return_value=deployment)
+    client.endpoints.adapters.create = AsyncMock(side_effect=RuntimeError("attach failed"))
 
     with pytest.raises(RuntimeError, match="attach failed"):
         await deploy_mod._deploy_adapter(

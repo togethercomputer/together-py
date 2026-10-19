@@ -12,12 +12,12 @@ from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._whoami import WhoamiApiKey, WhoamiProject, WhoamiOrganization, WhoamiProjectApiKey
 from together.types.supported_model import SupportedModel
 from together.types.supported_model_deployment_profile import SupportedModelDeploymentProfile
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
+from together.lib.cli.api.endpoints._utils._resolve_model import (
     construct_model_path,
     resolve_model_and_config,
     resolve_model_display_name,
 )
-from together.lib.cli.api.beta.endpoints._utils._resolve_config import construct_config_path
+from together.lib.cli.api.endpoints._utils._resolve_config import construct_config_path
 
 
 def _whoami(slug: str = "my-slug") -> WhoamiProjectApiKey:

@@ -14,7 +14,7 @@ from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.types.model_list_files_response import ModelListFilesResponse
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model_display_name
+from together.lib.cli.api.endpoints._utils._resolve_model import resolve_model_display_name
 
 _DETAIL_LABEL_WIDTH = 17
 

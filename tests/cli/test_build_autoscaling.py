@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
+from together.lib.cli.api.endpoints._utils._build_autoscaling import (
     build_autoscaling,
     normalize_duration,
     build_scaling_metrics,

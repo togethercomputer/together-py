@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from together.lib.cli.api.beta.endpoints._utils._build_rollout_metric import build_rollout_metrics
+from together.lib.cli.api.endpoints._utils._build_rollout_metric import build_rollout_metrics
 
 
 def test_none_when_omitted() -> None:

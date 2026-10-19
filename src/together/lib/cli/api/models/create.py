@@ -13,7 +13,7 @@ from together.lib.cli.api.models._utils import print_model_detail
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.models._resolve_base_model import resolve_base_model_id
 from together.lib.cli.utils._assert_explicit_project_id import assert_explicit_project_id
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
+from together.lib.cli.api.endpoints._utils._resolve_model import MODEL_PATH_RE
 
 
 class PromptBaseModel(PromptParameter):

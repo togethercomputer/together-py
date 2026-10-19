@@ -63,15 +63,18 @@ from together.lib.cli.utils._help_examples import (
     JIG_DESTROY_HELP_EXAMPLES,
     JIG_SECRETS_HELP_EXAMPLES,
     JIG_VOLUMES_HELP_EXAMPLES,
+    ENDPOINTS_AB_HELP_EXAMPLES,
+    ENDPOINTS_LS_HELP_EXAMPLES,
+    ENDPOINTS_RM_HELP_EXAMPLES,
     EVALS_CREATE_HELP_EXAMPLES,
     FILES_UPLOAD_HELP_EXAMPLES,
     TRAINING_FP4_HELP_EXAMPLES,
+    ENDPOINTS_GET_HELP_EXAMPLES,
     MODELS_CREATE_HELP_EXAMPLES,
     MODELS_PUBLIC_HELP_EXAMPLES,
     MODELS_UPDATE_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
     BATCHES_SUBMIT_HELP_EXAMPLES,
-    BETA_ENDPOINTS_HELP_EXAMPLES,
     JIG_JOB_STATUS_HELP_EXAMPLES,
     MODELS_CONFIGS_HELP_EXAMPLES,
     CLUSTERS_CREATE_HELP_EXAMPLES,
@@ -80,14 +83,11 @@ from together.lib.cli.utils._help_examples import (
     MODELS_DOWNLOAD_HELP_EXAMPLES,
     BATCHES_DOWNLOAD_HELP_EXAMPLES,
     CLUSTERS_STORAGE_HELP_EXAMPLES,
-    ENDPOINTS_CREATE_HELP_EXAMPLES,
+    ENDPOINTS_DEPLOY_HELP_EXAMPLES,
+    ENDPOINTS_SHADOW_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
-    BETA_ENDPOINTS_AB_HELP_EXAMPLES,
-    BETA_ENDPOINTS_LS_HELP_EXAMPLES,
-    BETA_ENDPOINTS_RM_HELP_EXAMPLES,
+    ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
     JIG_SECRETS_UNSET_HELP_EXAMPLES,
-    BETA_ENDPOINTS_GET_HELP_EXAMPLES,
-    ENDPOINTS_HARDWARE_HELP_EXAMPLES,
     FINE_TUNING_CREATE_HELP_EXAMPLES,
     JIG_SECRETS_DELETE_HELP_EXAMPLES,
     JIG_VOLUMES_CREATE_HELP_EXAMPLES,
@@ -95,12 +95,8 @@ from together.lib.cli.utils._help_examples import (
     FINE_TUNING_PREVIEW_HELP_EXAMPLES,
     TRAINING_FP4_CREATE_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
-    BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
-    BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
-    BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
     CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
     MODELS_REMOTE_UPLOADS_HELP_EXAMPLES,
-    BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
     CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
     CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
@@ -796,12 +792,12 @@ models_app = app.command(
         help_epilogue=MODELS_HELP_EXAMPLES,
     )
 )
-# `tg models deploy` is the same command as `tg beta endpoints deploy`.
+# `tg models deploy` is the same command as `tg endpoints deploy`.
 models_app.command(
-    (f"{_CLI}.beta.endpoints.deploy:deploy"),
+    (f"{_CLI}.endpoints.deploy:deploy"),
     help="Create a deployment on a new or existing endpoint",
-    help_epilogue=BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES.replace(
-        "tg beta endpoints deploy",
+    help_epilogue=ENDPOINTS_DEPLOY_HELP_EXAMPLES.replace(
+        "tg endpoints deploy",
         "tg models deploy",
     ),
 )
@@ -883,41 +879,86 @@ models_app.command(
 )
 
 ## Endpoints API commands
-endpoints_app = app.command(App(name="endpoints", help="Deploy and manage dedicated endpoints"))
-endpoints_app.command(
-    (f"{_CLI}.endpoints.hardware:hardware"),
-    help="List available hardware configurations for deploying models",
-    help_epilogue=ENDPOINTS_HARDWARE_HELP_EXAMPLES,
+endpoints_app = app.command(
+    App(
+        name="endpoints",
+        help="Deploy and manage dedicated inference endpoints",
+        help_epilogue=ENDPOINTS_HELP_EXAMPLES,
+    )
 )
 endpoints_app.command(
-    (f"{_CLI}.endpoints.create:create"),
-    alias="-c",
-    help="Create a new endpoint",
-    help_epilogue=ENDPOINTS_CREATE_HELP_EXAMPLES,
-)
-endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), alias="get", help="Get endpoint details")
-endpoints_app.command((f"{_CLI}.endpoints.stop:stop"), help="Stop an endpoint")
-endpoints_app.command((f"{_CLI}.endpoints.start:start"), help="Start an endpoint")
-endpoints_app.command((f"{_CLI}.endpoints.delete:delete"), alias="-d", help="Delete an endpoint")
-endpoints_app.command((f"{_CLI}.endpoints.list:list"), alias="ls", help="List your endpoints")
-endpoints_app.command(
-    (f"{_CLI}.endpoints.update:update"), help="Update an endpoint", help_epilogue=ENDPOINTS_UPDATE_HELP_EXAMPLES
+    (f"{_CLI}.endpoints.deploy:deploy"),
+    help="Create a deployment on a new or existing endpoint",
+    help_epilogue=ENDPOINTS_DEPLOY_HELP_EXAMPLES,
+    sort_key=1,
 )
 endpoints_app.command(
-    (f"{_CLI}.endpoints.availability_zones:availability_zones"),
-    help="List availability zones for deploying models",
+    (f"{_CLI}.endpoints.list:list"),
+    name="ls",
+    help="List project, organization, or public endpoints",
+    help_epilogue=ENDPOINTS_LS_HELP_EXAMPLES,
+    sort_key=2,
 )
-endpoint_adapters_app = endpoints_app.command(
-    App(name="adapters", help="Manage LoRA adapters bound to dedicated endpoints", group="Subcommands")
+# Hidden `list` alias for `tg endpoints list …` (visible command is `ls`).
+endpoints_app.command(
+    (f"{_CLI}.endpoints.list:list"),
+    name="list",
+    show=False,
 )
-endpoint_adapters_app.command(
-    (f"{_CLI}.endpoints.adapters.list:list"), alias="ls", help="List adapters for an endpoint"
+endpoints_app.command(
+    (f"{_CLI}.endpoints.retrieve:retrieve"),
+    name="get",
+    help="Get endpoint or deployment details by name or ID",
+    help_epilogue=ENDPOINTS_GET_HELP_EXAMPLES,
+    sort_key=3,
 )
-endpoint_adapters_app.command((f"{_CLI}.endpoints.adapters.add:add"), help="Bind an adapter to an endpoint")
-endpoint_adapters_app.command(
-    (f"{_CLI}.endpoints.adapters.remove:remove"),
-    alias=("delete", "rm"),
-    help="Remove an adapter binding from an endpoint",
+# Explicit `retrieve` stays registered (hidden) for `tg endpoints retrieve …`.
+endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), show=False)
+# Implicit get: `tg endpoints <name-or-id>` — cyclopts App.default, not token rewriting.
+# (Nested meta.default is not invoked by the root meta launcher's parse_known_args.)
+endpoints_app.default(endpoints_app["retrieve"].default_command)
+endpoints_app.command(
+    (f"{_CLI}.endpoints.update:update"),
+    help="Update a deployment's name, autoscaling, traffic weight, or A/B percent",
+    help_epilogue=ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    sort_key=4,
+)
+endpoints_app.command(
+    (f"{_CLI}.endpoints.rm:rm"),
+    name="rm",
+    alias="-d",
+    sort_key=5,
+    help="Delete an endpoint, deployment, A/B experiment, shadow experiment, or rollout by ID",
+    help_epilogue=ENDPOINTS_RM_HELP_EXAMPLES,
+)
+# Hidden `delete` alias for `tg endpoints delete …` (visible command is `rm`).
+endpoints_app.command(
+    (f"{_CLI}.endpoints.rm:rm"),
+    name="delete",
+    show=False,
+)
+endpoints_app.command(
+    (f"{_CLI}.endpoints.events:events"),
+    help="List endpoint audit and lifecycle events",
+    sort_key=6,
+)
+endpoints_app.command(
+    (f"{_CLI}.endpoints.rollout:rollout"),
+    help="Roll out a model to receive traffic over another model",
+    help_epilogue=ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
+    sort_key=9999,
+)
+endpoints_app.command(
+    (f"{_CLI}.endpoints.shadow:shadow"),
+    help="Mirror sampled live traffic to a new deployment without serving its responses",
+    help_epilogue=ENDPOINTS_SHADOW_HELP_EXAMPLES,
+    sort_key=9999,
+)
+endpoints_app.command(
+    (f"{_CLI}.endpoints.ab:ab"),
+    help="Create a variant deployment and split live traffic from a control deployment",
+    help_epilogue=ENDPOINTS_AB_HELP_EXAMPLES,
+    sort_key=9999,
 )
 
 ## Evals API commands
@@ -1064,90 +1105,6 @@ remediations_app.command(
 remediations_app.command(
     (f"{_CLI}.clusters.remediations.reject:reject"),
     help="Reject a pending remediation",
-)
-
-### Beta Endpoints API commands
-
-beta_endpoints_app = beta_app.command(
-    App(
-        name="endpoints",
-        help="Deploy and manage dedicated inference endpoints",
-        help_epilogue=BETA_ENDPOINTS_HELP_EXAMPLES,
-    )
-)
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.deploy:deploy"),
-    help="Create a deployment on a new or existing endpoint",
-    help_epilogue=BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
-    sort_key=1,
-)
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.list:list"),
-    name="ls",
-    help="List project, organization, or public endpoints",
-    help_epilogue=BETA_ENDPOINTS_LS_HELP_EXAMPLES,
-    sort_key=2,
-)
-# Hidden `list` alias for `tg beta endpoints list …` (visible command is `ls`).
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.list:list"),
-    name="list",
-    show=False,
-)
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.retrieve:retrieve"),
-    name="get",
-    help="Get endpoint or deployment details by name or ID",
-    help_epilogue=BETA_ENDPOINTS_GET_HELP_EXAMPLES,
-    sort_key=3,
-)
-# Explicit `retrieve` stays registered (hidden) for `tg beta endpoints retrieve …`.
-beta_endpoints_app.command((f"{_CLI}.beta.endpoints.retrieve:retrieve"), show=False)
-# Implicit get: `tg beta endpoints <name-or-id>` — cyclopts App.default, not token rewriting.
-# (Nested meta.default is not invoked by the root meta launcher's parse_known_args.)
-beta_endpoints_app.default(beta_endpoints_app["retrieve"].default_command)
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.update:update"),
-    help="Update a deployment's name, autoscaling, traffic weight, or A/B percent",
-    help_epilogue=BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
-    sort_key=4,
-)
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.rm:rm"),
-    name="rm",
-    alias="-d",
-    sort_key=5,
-    help="Delete an endpoint, deployment, adapter, A/B experiment, shadow experiment, or rollout by ID",
-    help_epilogue=BETA_ENDPOINTS_RM_HELP_EXAMPLES,
-)
-# Hidden `delete` alias for `tg beta endpoints delete …` (visible command is `rm`).
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.rm:rm"),
-    name="delete",
-    show=False,
-)
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.events:events"),
-    help="List endpoint audit and lifecycle events",
-    sort_key=6,
-)
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.rollout:rollout"),
-    help="Roll out a model to receive traffic over another model",
-    help_epilogue=BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
-    sort_key=9999,
-)
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.shadow:shadow"),
-    help="Mirror sampled live traffic to a new deployment without serving its responses",
-    help_epilogue=BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
-    sort_key=9999,
-)
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.ab:ab"),
-    help="Create a variant deployment and split live traffic from a control deployment",
-    help_epilogue=BETA_ENDPOINTS_AB_HELP_EXAMPLES,
-    sort_key=9999,
 )
 
 ### Jig commands
@@ -1304,7 +1261,6 @@ def _pin_root_help_tail(root: App) -> None:
 _pin_root_help_tail(app)
 
 app.help_epilogue = TOP_LEVEL_HELP_EXAMPLES
-endpoints_app.help_epilogue = ENDPOINTS_HELP_EXAMPLES
 
 
 def main() -> None:
@@ -1312,9 +1268,6 @@ def main() -> None:
 
     # Shown in the root help page, but not a functional command
     BETA_GROUP_TITLE = "Beta Commands"
-    app.command(
-        App(name="beta endpoints", help="Deploy and manage dedicated inference endpoints", group=BETA_GROUP_TITLE)
-    )
     app.command(App(name="beta jig", help="Container deployment", group=BETA_GROUP_TITLE))
     beta_root_app.show = False
     _pin_root_help_tail(app)

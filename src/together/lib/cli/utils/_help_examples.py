@@ -7,7 +7,7 @@ TOP_LEVEL_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Deploy a model to a dedicated endpoint:
   [dim]Create an endpoint and deploy the model to it.
   After the endpoint is created, you can run inference against it with the fully qualified endpoint name.[/dim]
-  [primary]tg beta endpoints deploy Qwen/Qwen2.5-7B --endpoint my-custom-endpoint-name[/primary]
+  [primary]tg endpoints deploy Qwen/Qwen2.5-7B --endpoint my-custom-endpoint-name[/primary]
 
 [dim]-[/dim] Upload an external model to Together:
   [dim]First create a model record and reference compatible base model.
@@ -156,61 +156,6 @@ FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg ft download-tokenized-dataset <ft-job-id> --output-dir ./tokenized --json[/primary]
 """
 
-## Endpoints API commands
-
-ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Create a new endpoint:
-  [primary]tg endpoints create --model Qwen/Qwen2.5-7B --hardware 2x_nvidia_h100_80gb_sxm --wait[/primary]
-
-[dim]-[/dim] Lookup available hardware for a model:
-  [primary]tg endpoints hardware --model Qwen/Qwen2.5-7B --available[/primary]
-
-[dim]-[/dim] List your endpoints:
-  [primary]tg endpoints list[/primary]
-
-[dim]-[/dim] Get details of an endpoint:
-  [primary]tg endpoints retrieve <endpoint-id>[/primary]
-
-[dim]-[/dim] Stop an endpoint:
-  [primary]tg endpoints stop <endpoint-id>[/primary]
-
-[dim]-[/dim] Change the autoscaling configuration for an endpoint:
-  [primary]tg endpoints update <endpoint-id> --min-replicas 4 --max-replicas 8[/primary]
-"""
-
-ENDPOINTS_HARDWARE_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] List all hardware configurations:
-  [primary]tg endpoints hardware[/primary]
-
-[dim]-[/dim] List all hardware configurations for a model:
-  [primary]tg endpoints hardware --model Qwen/Qwen2.5-7B[/primary]
-
-[dim]-[/dim] List all available hardware configurations for a model:
-  [primary]tg endpoints hardware --model Qwen/Qwen2.5-7B --available[/primary]
-
-[dim]-[/dim] Grab the cheapest hardware configuration for a model:
-  [primary]tg endpoints hardware --model meta-llama/Meta-Llama-3-8B-Instruct --available --json | jq -r 'sort_by(.pricing.cents_per_minute) | .[0].id'[/primary]
-"""
-
-ENDPOINTS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Deploy your model with specific autoscaling configuration:
-  [primary]tg endpoints create --model MODEL --hardware HARDWARE --min-replicas 2 --max-replicas 4[/primary]
-
-[dim]-[/dim] Deploy your fine tuned model:
-  [primary]tg endpoints create --model $(tg ft $MY_FT_JOB_ID --json | jq -r '.model_output_name') --hardware HARDWARE[/primary]
-
-[dim]-[/dim] Create an endpoint to be started later:
-  [primary]tg endpoints create --model MODEL --hardware HARDWARE --no-auto-start[/primary]
-"""
-
-ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Change the autoscaling configuration for an endpoint:
-  [primary]tg endpoints update ENDPOINT_ID --min-replicas 4 --max-replicas 8[/primary]
-
-[dim]-[/dim] Change the auto-stop timeout for an endpoint:
-  [primary]tg endpoints update ENDPOINT_ID --inactive-timeout 30[/primary]
-"""
-
 ## Batches API commands
 
 BATCHES_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -316,186 +261,186 @@ EVALS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --disable-position-bias-correction[/primary]
 """
 
-## Beta endpoints API commands
+## Endpoints API commands
 
-BETA_ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Deploy a public model to a new dedicated endpoint:
   [dim]Note: This command can be used to create a new endpoint or add a deployment to an existing endpoint.[/dim]
-  [primary]tg beta endpoints deploy Qwen/Qwen2.5-7B --endpoint my-endpoint[/primary]
+  [primary]tg endpoints deploy Qwen/Qwen2.5-7B --endpoint my-endpoint[/primary]
 
 [dim]-[/dim] List endpoints in the current project:
-  [primary]tg beta endpoints ls[/primary]
+  [primary]tg endpoints ls[/primary]
 
 [dim]-[/dim] Inspect an endpoint or deployment:
-  [primary]tg beta endpoints <endpoint-or-deployment-name-or-id>[/primary]
+  [primary]tg endpoints <endpoint-or-deployment-name-or-id>[/primary]
 
 [dim]-[/dim] Scale a deployment and adjust its traffic weight:
-  [primary]tg beta endpoints update <deployment-id> --min-replicas 2 --max-replicas 8 --traffic-weight 1[/primary]
+  [primary]tg endpoints update <deployment-id> --min-replicas 2 --max-replicas 8 --traffic-weight 1[/primary]
 
 [dim]-[/dim] Split live traffic to a new variant (A/B):
-  [primary]tg beta endpoints ab Qwen/Qwen2.5-7B --control <deployment-id> --percent 10[/primary]
+  [primary]tg endpoints ab Qwen/Qwen2.5-7B --control <deployment-id> --percent 10[/primary]
 
 [dim]-[/dim] Mirror live traffic to a shadow deployment:
-  [primary]tg beta endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> --rate 0.1[/primary]
+  [primary]tg endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> --rate 0.1[/primary]
 
 [dim]-[/dim] Delete a deployment, adapter, experiment, rollout, or entire endpoint:
-  [primary]tg beta endpoints rm <ep_|dep_|dad_|abx_|exp_|rol_...>[/primary]
+  [primary]tg endpoints rm <ep_|dep_|dad_|abx_|exp_|rol_...>[/primary]
 
 [dim]-[/dim] Roll out a deployment onto live traffic:
-  [primary]tg beta endpoints rollout <deployment-id> --rolling[/primary]
+  [primary]tg endpoints rollout <deployment-id> --rolling[/primary]
 """
 
-BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES = """[dim]Examples:[/dim]
+ENDPOINTS_ROLLOUT_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Rolling (capacity-preserving batch swap):
-  [primary]tg beta endpoints rollout my-deployment --rolling[/primary]
+  [primary]tg endpoints rollout my-deployment --rolling[/primary]
 
 [dim]-[/dim] Blue-green cutover:
-  [primary]tg beta endpoints rollout my-deployment --blue-green[/primary]
+  [primary]tg endpoints rollout my-deployment --blue-green[/primary]
 
 [dim]-[/dim] Canary (server-default steps/interval):
-  [primary]tg beta endpoints rollout my-deployment --canary[/primary]
+  [primary]tg endpoints rollout my-deployment --canary[/primary]
 
 [dim]-[/dim] Canary with custom steps and interval:
-  [primary]tg beta endpoints rollout my-deployment --canary \\
+  [primary]tg endpoints rollout my-deployment --canary \\
     --steps 5,25,50,100 --interval 30s[/primary]
 
 [dim]-[/dim] Canary with a metric gate (threshold or regression):
-  [primary]tg beta endpoints rollout my-deployment --canary \\
+  [primary]tg endpoints rollout my-deployment --canary \\
     --metric router_latency --metric-stat p99 \\
     --metric-threshold 500 --metric-operator lte[/primary]
-  [primary]tg beta endpoints rollout my-deployment --canary \\
+  [primary]tg endpoints rollout my-deployment --canary \\
     --metric router_error_rate --metric-direction higher-is-worse[/primary]
 
 [dim]-[/dim] Roll out a deployment from an active shadow or a/b experiment:
-  [primary]tg beta endpoints rollout shadow-deployment --rolling --detach[/primary]
+  [primary]tg endpoints rollout shadow-deployment --rolling --detach[/primary]
 
 [dim]-[/dim] Control an in-progress rollout (endpoint ID preferred; also accepts
   endpoint name, deployment ID/name, or rollout ID — one active rollout per endpoint):
-  [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --pause[/primary]
-  [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --resume[/primary]
-  [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --promote[/primary]
-  [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --cancel --reason "freezing mid-canary"[/primary]
-  [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --cancel revert[/primary]
+  [primary]tg endpoints rollout ep_xxxxxxxxxxxx --pause[/primary]
+  [primary]tg endpoints rollout ep_xxxxxxxxxxxx --resume[/primary]
+  [primary]tg endpoints rollout ep_xxxxxxxxxxxx --promote[/primary]
+  [primary]tg endpoints rollout ep_xxxxxxxxxxxx --cancel --reason "freezing mid-canary"[/primary]
+  [primary]tg endpoints rollout ep_xxxxxxxxxxxx --cancel revert[/primary]
 """
 
-BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES = """[dim]Examples:[/dim]
+ENDPOINTS_DEPLOY_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Deploy a public model onto a new endpoint:
-  [primary]tg beta endpoints deploy Qwen/Qwen2.5-7B --endpoint my-endpoint[/primary]
+  [primary]tg endpoints deploy Qwen/Qwen2.5-7B --endpoint my-endpoint[/primary]
 
 [dim]-[/dim] Deploy a private model by ID onto an existing endpoint:
-  [primary]tg beta endpoints deploy ml_xxxxxxxxxxxx --endpoint ep_yyyyyyyyyyyy[/primary]
+  [primary]tg endpoints deploy ml_xxxxxxxxxxxx --endpoint ep_yyyyyyyyyyyy[/primary]
 
 [dim]-[/dim] Deploy a LoRA adapter onto a dynamic (preferred) or fixed base-model deployment:
-  [primary]tg beta endpoints deploy ml_adapter --endpoint my-endpoint[/primary]
+  [primary]tg endpoints deploy ml_adapter --endpoint my-endpoint[/primary]
 
 [dim]-[/dim] Pin a config and start with autoscaling:
-  [primary]tg beta endpoints deploy Qwen/Qwen2.5-7B --endpoint my-endpoint \\
+  [primary]tg endpoints deploy Qwen/Qwen2.5-7B --endpoint my-endpoint \\
     --config cr_xxxxxxxxxxxx --min-replicas 1 --max-replicas 4 \\
     --scaling-metric inflight_requests --scaling-target 10[/primary]
 
 [dim]-[/dim] Deploy with no live traffic yet:
-  [primary]tg beta endpoints deploy ml_xxxxxxxxxxxx --endpoint my-endpoint \\
+  [primary]tg endpoints deploy ml_xxxxxxxxxxxx --endpoint my-endpoint \\
     --traffic-weight 0[/primary]
 
 [dim]-[/dim] Create the endpoint stopped (scale later with update):
-  [primary]tg beta endpoints deploy Qwen/Qwen2.5-7B --endpoint my-endpoint \\
+  [primary]tg endpoints deploy Qwen/Qwen2.5-7B --endpoint my-endpoint \\
     --min-replicas 0 --max-replicas 0[/primary]
 """
 
-BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Change replica bounds:
-  [primary]tg beta endpoints update <deployment-id> --min-replicas 2 --max-replicas 8[/primary]
+  [primary]tg endpoints update <deployment-id> --min-replicas 2 --max-replicas 8[/primary]
 
 [dim]-[/dim] Stop a deployment (scale to zero):
-  [primary]tg beta endpoints update <deployment-id> --min-replicas 0 --max-replicas 0[/primary]
+  [primary]tg endpoints update <deployment-id> --min-replicas 0 --max-replicas 0[/primary]
 
 [dim]-[/dim] Set autoscaling on TTFT p95:
-  [primary]tg beta endpoints update <deployment-id> \\
+  [primary]tg endpoints update <deployment-id> \\
     --scaling-metric ttft --scaling-target 200 --scaling-percentile p95[/primary]
 
 [dim]-[/dim] Shift live traffic weight (relative to other deployments):
-  [primary]tg beta endpoints update <deployment-id> --traffic-weight 2[/primary]
+  [primary]tg endpoints update <deployment-id> --traffic-weight 2[/primary]
 
 [dim]-[/dim] Set an A/B variant percent (takes from or returns to control):
-  [primary]tg beta endpoints update <variant-deployment-id> --ab-percent 20[/primary]
+  [primary]tg endpoints update <variant-deployment-id> --ab-percent 20[/primary]
 """
 
-BETA_ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
+ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Send 10% of live traffic to a new variant of a public model:
-  [primary]tg beta endpoints ab Qwen/Qwen2.5-7B --control <deployment-id> --percent 10[/primary]
+  [primary]tg endpoints ab Qwen/Qwen2.5-7B --control <deployment-id> --percent 10[/primary]
 
 [dim]-[/dim] A/B a private model with an explicit config:
-  [primary]tg beta endpoints ab ml_xxxxxxxxxxxx --control <deployment-id> \\
+  [primary]tg endpoints ab ml_xxxxxxxxxxxx --control <deployment-id> \\
     --percent 25 --config cr_yyyyyyyyyyyy[/primary]
 
 [dim]-[/dim] Name the variant deployment:
-  [primary]tg beta endpoints ab ml_xxxxxxxxxxxx --control <deployment-id> \\
+  [primary]tg endpoints ab ml_xxxxxxxxxxxx --control <deployment-id> \\
     --percent 5 --name my-variant[/primary]
 """
 
-BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
+ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Mirror 10% of live requests to a shadow deployment:
-  [primary]tg beta endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> \\
+  [primary]tg endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> \\
     --rate 0.1[/primary]
 
 [dim]-[/dim] Adaptive sampling to a target QPS:
-  [primary]tg beta endpoints shadow zai-org/GLM-5.1 --endpoint <endpoint-name-or-id> \\
+  [primary]tg endpoints shadow zai-org/GLM-5.1 --endpoint <endpoint-name-or-id> \\
     --target-qps 5[/primary]
 
 [dim]-[/dim] Sticky key-based sampling on a request field:
-  [primary]tg beta endpoints shadow deepseek-ai/DeepSeek-V4-Flash --endpoint <endpoint-name-or-id> \\
+  [primary]tg endpoints shadow deepseek-ai/DeepSeek-V4-Flash --endpoint <endpoint-name-or-id> \\
     --rate 0.2 --key user_id[/primary]
 
 [dim]-[/dim] Shadow a private model with an explicit config:
-  [primary]tg beta endpoints shadow ml_xxxxxxxxxxxx --endpoint <endpoint-name-or-id> \\
+  [primary]tg endpoints shadow ml_xxxxxxxxxxxx --endpoint <endpoint-name-or-id> \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
 
 [dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
 """
 
-BETA_ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]
+ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Delete a deployment:
-  [primary]tg beta endpoints rm dep_xxxxxxxxxxxx[/primary]
+  [primary]tg endpoints rm dep_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Detach an adapter from the deployment it belongs to:
-  [primary]tg beta endpoints rm dad_xxxxxxxxxxxx[/primary]
+  [primary]tg endpoints rm dad_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Delete an A/B or shadow experiment:
-  [primary]tg beta endpoints rm abx_xxxxxxxxxxxx[/primary]
-  [primary]tg beta endpoints rm exp_xxxxxxxxxxxx[/primary]
+  [primary]tg endpoints rm abx_xxxxxxxxxxxx[/primary]
+  [primary]tg endpoints rm exp_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Delete a rollout:
-  [primary]tg beta endpoints rm rol_xxxxxxxxxxxx[/primary]
+  [primary]tg endpoints rm rol_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Delete an empty endpoint:
-  [primary]tg beta endpoints rm ep_xxxxxxxxxxxx[/primary]
+  [primary]tg endpoints rm ep_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Force-delete an endpoint and all child deployments:
-  [primary]tg beta endpoints rm ep_xxxxxxxxxxxx --force[/primary]
+  [primary]tg endpoints rm ep_xxxxxxxxxxxx --force[/primary]
 """
 
-BETA_ENDPOINTS_LS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+ENDPOINTS_LS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] List endpoints in the current project:
-  [primary]tg beta endpoints ls[/primary]
+  [primary]tg endpoints ls[/primary]
 
 [dim]-[/dim] List org-scoped endpoints:
-  [primary]tg beta endpoints ls --org[/primary]
+  [primary]tg endpoints ls --org[/primary]
 
 [dim]-[/dim] Paginate:
-  [primary]tg beta endpoints ls --after <cursor>[/primary]
+  [primary]tg endpoints ls --after <cursor>[/primary]
 """
 
-BETA_ENDPOINTS_GET_HELP_EXAMPLES = """[dim]Examples:[/dim]
+ENDPOINTS_GET_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Get endpoint details by name or ID (includes deployments and traffic split):
-  [primary]tg beta endpoints my-endpoint[/primary]
-  [primary]tg beta endpoints ep_xxxxxxxxxxxx[/primary]
+  [primary]tg endpoints my-endpoint[/primary]
+  [primary]tg endpoints ep_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Get a single deployment by name or ID:
-  [primary]tg beta endpoints control[/primary]
-  [primary]tg beta endpoints dep_xxxxxxxxxxxx[/primary]
+  [primary]tg endpoints control[/primary]
+  [primary]tg endpoints dep_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Machine-readable output:
-  [primary]tg beta endpoints my-endpoint --json[/primary]
+  [primary]tg endpoints my-endpoint --json[/primary]
 """
 
 ## Models API commands

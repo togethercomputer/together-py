@@ -1,0 +1,120 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal, Optional, Annotated
+from typing_extensions import override
+
+from cyclopts import Group, Parameter
+
+if TYPE_CHECKING:
+    from cyclopts.argument import ArgumentCollection
+
+from together.lib.cli.utils.config import CLIConfig
+from together.lib.cli.utils._prompt import PromptParameter
+from together.types.deployment_placement_config_param import DeploymentPlacementConfigParam
+from together.types.endpoints.deployment_create_params import (
+    Placement,
+    PlacementInline,
+)
+from together.lib.cli.api.endpoints._utils._resolve_model import MODEL_PATH_RE
+
+
+class PlacementModel:
+    regions: Optional[str] = None
+    constraint: Optional[Literal["required", "preferred"]] = None
+    hipaa: Optional[bool] = None
+
+    def __init__(
+        self,
+        regions: Annotated[Optional[str], Parameter(help="Comma-separated inline placement regions")] = None,
+        constraint: Annotated[
+            Optional[Literal["required", "preferred"]], Parameter(help="Inline placement enforcement")
+        ] = None,
+        hipaa: Annotated[Optional[bool], Parameter(help="Require HIPAA-eligible placement", negative=())] = None,
+    ):
+        self.regions = regions
+        self.constraint = constraint
+        self.hipaa = hipaa
+
+    def to_json(self) -> Placement | None:
+        if self.regions is None and self.constraint is None and self.hipaa is None:
+            return None
+
+        inline: DeploymentPlacementConfigParam = {}
+
+        if self.regions:
+            inline["regions"] = self.regions.split(",")
+        if self.constraint:
+            inline["constraint"] = "ENFORCEMENT_REQUIRED" if self.constraint == "required" else "ENFORCEMENT_PREFERRED"
+        if self.hipaa is not None:
+            inline["compliance_policy"] = {"hipaa": self.hipaa}
+
+        return PlacementInline(inline=inline)
+
+
+placement_model = PlacementModel()
+
+
+def exclusive_profile_or_inline(arguments: ArgumentCollection) -> None:
+    """Treat a placement profile as exclusive with inline flags.
+
+    Cyclopts flattens ``PlacementModel`` fields into the same group, so
+    ``mutually_exclusive`` would also forbid combining ``--placement.regions``,
+    ``--placement.constraint``, and ``--placement.hipaa``.
+    """
+    leaves = [argument for argument in arguments.filter_by(value_set=True) if not argument.children]
+    has_profile = any(argument.field_info.name == "placement_id" for argument in leaves)
+    has_inline = any(argument.keys for argument in leaves)
+    if has_profile and has_inline:
+        raise ValueError("Use either --placement or inline placement options, not both.")
+
+
+PlacementGroup = Group(validator=exclusive_profile_or_inline)
+
+
+class ModelPromptParameter(PromptParameter):
+    message = "Model:"
+    instructions = "What model would you like to shadow traffic to?"
+
+    @override
+    async def preprompt(self, config: CLIConfig) -> None:
+        self.choices = []
+
+        list_supported_request = config.client.models.list_supported()
+
+        async for project_model in config.client.models.list():
+            self.choices.append(("/".join(project_model.name.split("/")[1:]), project_model.id))
+
+        async for supported_model in list_supported_request:
+            for profile in supported_model.deployment_profiles or []:
+                match = MODEL_PATH_RE.match(profile.model)
+                if match:
+                    model_id = match.group(2)
+                    profile_name = getattr(profile, "api_model_name", None) or supported_model.name
+                    self.choices.append((profile_name, model_id))
+
+
+ModelParameter = Annotated[
+    str,
+    Parameter(
+        help="""Model to deploy. Accepted forms:
+
+- Public model name (for example, zai-org/GLM-5.2).
+- Private model name, with or without the project slug.
+- Private model ID (ml_...).
+- Fully qualified model resource path returned by the API."""
+    ),
+    ModelPromptParameter(instructions="What model would you like to deploy to this endpoint?", message="Model"),
+]
+
+
+class EndpointPromptParameter(PromptParameter):
+    message = "Endpoint ID:"
+    instructions = "What endpoint are we adding a shadow to?"
+
+    @override
+    async def preprompt(self, config: CLIConfig) -> None:
+        endpoints = await config.client.endpoints.list()
+        show_more = endpoints.next_cursor is not None
+        self.choices = [("/".join(endpoint.name.split("/")[1:]), endpoint.id) for endpoint in endpoints.data]
+        if show_more:
+            self.choices.append(("Show more", "show_more"))
