@@ -57,7 +57,7 @@ CLI_CLIENT_ID = "app_CfXyxzEgNqQmH1PJEr2Xw"
 _CLIENT_ID_ENV = "OIDC_ID"
 DEFAULT_CREDENTIALS_NAME = "default"
 
-_PRODUCTION_API_BASE_URL = "https://api.together.ai/v1"
+_PRODUCTION_API_BASE_URL = "https://api.together.ai"
 _CONFIG_DIR_NAME = "together"
 _CREDENTIALS_FILE_NAME = "credentials.json"
 _FILE_VERSION = 1
@@ -103,10 +103,14 @@ class StoredCredentials:
 
     @property
     def api_base_url(self) -> Optional[str]:
-        """API base URL of the environment whose issuer minted these credentials (`{issuer}/v1`)."""
+        """API base URL of the environment whose issuer minted these credentials (the issuer itself).
+
+        The client base URL no longer includes a trailing `/v1`; versioned paths live on each
+        method. The issuer and API root are the same host.
+        """
         if not self.issuer:
             return None
-        return self.issuer.rstrip("/") + "/v1"
+        return self.issuer.rstrip("/")
 
     def require_issuer(self) -> str:
         """The issuer that minted these credentials. Stored tokens are only ever sent back to it."""
@@ -262,7 +266,7 @@ def save_stored_credentials(credentials: StoredCredentials) -> Path:
 def load_stored_base_url() -> Optional[str]:
     """API base URL implied by the current entry's issuer, or None when it is production.
 
-    Returning None for production keeps the SDK default (and its non-overridden v2 routing).
+    Returning None for production keeps the SDK default base URL.
     """
     stored = load_stored_credentials()
     base_url = stored.api_base_url if stored is not None else None
@@ -272,9 +276,11 @@ def load_stored_base_url() -> Optional[str]:
 
 
 def issuer_from_base_url(base_url: str) -> str:
-    """OIDC issuer for an API base URL: the base URL without its trailing `/v1`.
+    """OIDC issuer for an API base URL.
 
-    Inverse of `StoredCredentials.api_base_url`, which maps a stored issuer back to `{issuer}/v1`.
+    The client base URL is the API root (no trailing `/v1`), so the issuer is normally the
+    base URL itself. A legacy trailing `/v1` is still stripped so old `--base-url` /
+    `TOGETHER_BASE_URL` values keep working.
     """
     parsed = urllib.parse.urlparse(base_url)
     if not parsed.scheme or not parsed.netloc:

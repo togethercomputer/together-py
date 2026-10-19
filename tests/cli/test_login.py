@@ -294,7 +294,7 @@ def test_login_switches_when_there_is_one_project(
 
     monkeypatch.setattr(TogetherAuth, "login", fake_login)
     monkeypatch.setattr(TogetherAuth, "switch", switch)
-    respx_mock.get("/projects").mock(return_value=httpx.Response(200, json=_project_page("proj")))
+    respx_mock.get("/v1/projects").mock(return_value=httpx.Response(200, json=_project_page("proj")))
 
     result = cli_runner.invoke(["login", "--no-browser"])
     assert result.exit_code == 0, result.output
@@ -317,7 +317,7 @@ def test_login_json_reports_the_only_project(
 
     monkeypatch.setattr(TogetherAuth, "login", fake_login)
     monkeypatch.setattr(TogetherAuth, "switch", switch)
-    respx_mock.get("/projects").mock(return_value=httpx.Response(200, json=_project_page("proj")))
+    respx_mock.get("/v1/projects").mock(return_value=httpx.Response(200, json=_project_page("proj")))
 
     result = cli_runner.invoke(["login", "--no-browser", "--json"])
     assert result.exit_code == 0, result.output

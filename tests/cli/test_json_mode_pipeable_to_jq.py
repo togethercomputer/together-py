@@ -43,38 +43,36 @@ def _ok(body: object) -> httpx.Response:
 
 def _mock_json_mode_http(respx_mock: MockRouter) -> None:
     """Deterministic HTTP for in-process CLI JSON-mode tests (no live API key)."""
-    respx_mock.get("/clusters/availability-zones").mock(return_value=_ok({"avzones": ["us-east-1a"]}))
+    respx_mock.post("/v1/batches").mock(return_value=_ok(_BATCH_CREATE))
+    respx_mock.get("/v1/batches").mock(return_value=_ok([_BATCH_JOB]))
+    respx_mock.get("/v1/batches/batch_job_abc123def456").mock(return_value=_ok(_BATCH_JOB))
+    respx_mock.post("/v1/batches/batch_job_abc123def456/cancel").mock(return_value=_ok(_BATCH_JOB))
 
-    respx_mock.post("/batches").mock(return_value=_ok(_BATCH_CREATE))
-    respx_mock.get("/batches").mock(return_value=_ok([_BATCH_JOB]))
-    respx_mock.get("/batches/batch_job_abc123def456").mock(return_value=_ok(_BATCH_JOB))
-    respx_mock.post("/batches/batch_job_abc123def456/cancel").mock(return_value=_ok(_BATCH_JOB))
+    respx_mock.delete("/v1/files/file-123").mock(return_value=_ok({"id": "file-123", "deleted": True}))
+    respx_mock.get("/v1/files").mock(return_value=_ok({"data": [FILE_ROW_NEWER]}))
+    respx_mock.get("/v1/files/file-123").mock(return_value=_ok(FILE_ROW_NEWER))
 
-    respx_mock.delete("/files/file-123").mock(return_value=_ok({"id": "file-123", "deleted": True}))
-    respx_mock.get("/files").mock(return_value=_ok({"data": [FILE_ROW_NEWER]}))
-    respx_mock.get("/files/file-123").mock(return_value=_ok(FILE_ROW_NEWER))
-
-    respx_mock.get("/fine-tunes").mock(return_value=_ok({"data": [_FT_LIST_ITEM]}))
-    respx_mock.get("/fine-tunes/ft-123").mock(return_value=_ok(_FT_RUNNING))
-    respx_mock.post("/fine-tunes/ft-123/cancel").mock(return_value=_ok(_FT_RUNNING))
-    respx_mock.delete("/fine-tunes/ft-123").mock(return_value=_ok({"message": "deleted"}))
-    respx_mock.get("/fine-tunes/ft-123/events").mock(return_value=_ok({"data": [_FT_EVENT]}))
-    respx_mock.get("/fine-tunes/ft-123/checkpoints").mock(return_value=_ok({"data": [_FT_CHECKPOINT]}))
-    respx_mock.post("/fine-tunes/preview").mock(return_value=_ok(_FT_PREVIEW_BODY))
+    respx_mock.get("/v1/fine-tunes").mock(return_value=_ok({"data": [_FT_LIST_ITEM]}))
+    respx_mock.get("/v1/fine-tunes/ft-123").mock(return_value=_ok(_FT_RUNNING))
+    respx_mock.post("/v1/fine-tunes/ft-123/cancel").mock(return_value=_ok(_FT_RUNNING))
+    respx_mock.delete("/v1/fine-tunes/ft-123").mock(return_value=_ok({"message": "deleted"}))
+    respx_mock.get("/v1/fine-tunes/ft-123/events").mock(return_value=_ok({"data": [_FT_EVENT]}))
+    respx_mock.get("/v1/fine-tunes/ft-123/checkpoints").mock(return_value=_ok({"data": [_FT_CHECKPOINT]}))
+    respx_mock.post("/v1/fine-tunes/preview").mock(return_value=_ok(_FT_PREVIEW_BODY))
 
     cluster = _cluster_body("cluster-123", "together-py-testing-suite")
-    respx_mock.post("/compute/clusters").mock(return_value=_ok(cluster))
-    respx_mock.get("/compute/clusters").mock(return_value=_ok({"clusters": [cluster]}))
-    respx_mock.get("/compute/clusters/cluster-123").mock(return_value=_ok(cluster))
-    respx_mock.put("/compute/clusters/cluster-123").mock(return_value=_ok(cluster))
-    respx_mock.delete("/compute/clusters/cluster-123").mock(return_value=_ok({"cluster_id": "cluster-123"}))
-    respx_mock.get("/compute/regions").mock(return_value=_ok(_REGIONS_BODY))
+    respx_mock.post("/v1/compute/clusters").mock(return_value=_ok(cluster))
+    respx_mock.get("/v1/compute/clusters").mock(return_value=_ok({"clusters": [cluster]}))
+    respx_mock.get("/v1/compute/clusters/cluster-123").mock(return_value=_ok(cluster))
+    respx_mock.put("/v1/compute/clusters/cluster-123").mock(return_value=_ok(cluster))
+    respx_mock.delete("/v1/compute/clusters/cluster-123").mock(return_value=_ok({"cluster_id": "cluster-123"}))
+    respx_mock.get("/v1/compute/regions").mock(return_value=_ok(_REGIONS_BODY))
 
-    respx_mock.post("/compute/clusters/storage/volumes").mock(return_value=_ok(_VOLUME_BODY))
-    respx_mock.put("/compute/clusters/storage/volumes").mock(return_value=_ok(_VOLUME_BODY))
-    respx_mock.get("/compute/clusters/storage/volumes").mock(return_value=_ok({"volumes": [_VOLUME_BODY]}))
-    respx_mock.get("/compute/clusters/storage/volumes/storage-123").mock(return_value=_ok(_VOLUME_BODY))
-    respx_mock.delete("/compute/clusters/storage/volumes/storage-123").mock(return_value=_ok({"success": True}))
+    respx_mock.post("/v1/compute/clusters/storage/volumes").mock(return_value=_ok(_VOLUME_BODY))
+    respx_mock.put("/v1/compute/clusters/storage/volumes").mock(return_value=_ok(_VOLUME_BODY))
+    respx_mock.get("/v1/compute/clusters/storage/volumes").mock(return_value=_ok({"volumes": [_VOLUME_BODY]}))
+    respx_mock.get("/v1/compute/clusters/storage/volumes/storage-123").mock(return_value=_ok(_VOLUME_BODY))
+    respx_mock.delete("/v1/compute/clusters/storage/volumes/storage-123").mock(return_value=_ok({"success": True}))
 
 
 class JSONValidator:

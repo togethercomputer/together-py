@@ -771,7 +771,7 @@ def _remediation_list_body(*remediations: dict[str, Any]) -> dict[str, Any]:
 class TestClustersList:
     @pytest.mark.respx(base_url=base_url)
     def test_list_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/compute/clusters").mock(
+        respx_mock.get("/v1/compute/clusters").mock(
             return_value=httpx.Response(
                 200,
                 json={"clusters": [_cluster_body("a", "alpha"), _cluster_body("b", "beta")]},
@@ -786,10 +786,11 @@ class TestClustersList:
     @pytest.mark.respx(base_url=base_url)
     def test_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         payload = {"clusters": [_cluster_body()]}
-        respx_mock.get("/compute/clusters").mock(return_value=httpx.Response(200, json=payload))
+        respx_mock.get("/v1/compute/clusters").mock(return_value=httpx.Response(200, json=payload))
         result = cli_runner.invoke(["clusters", "list", "--json"])
         assert json.loads(result.output) == payload
         assert result.exit_code == 0
+
 
 class TestClustersHelp:
     def test_clusters_is_top_level_not_under_beta(self, cli_runner: CliRunner) -> None:
@@ -812,7 +813,7 @@ class TestClustersHelp:
 class TestClustersListRegions:
     @pytest.mark.respx(base_url=base_url)
     def test_list_regions_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
+        respx_mock.get("/v1/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
         result = cli_runner.invoke(["clusters", "list-regions", "--json"])
         assert json.loads(result.output) == _REGIONS_BODY
         assert result.exit_code == 0
@@ -831,7 +832,7 @@ class TestClustersListRegions:
             "console",
             Console(theme=build_theme(), highlight=False, width=160, height=40, force_terminal=True),
         )
-        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
+        respx_mock.get("/v1/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
 
         result = cli_runner.invoke(["clusters", "list-regions"])
 
@@ -1028,7 +1029,7 @@ class TestClustersRetrieve:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         c = _cluster_body()
-        respx_mock.get("/compute/clusters/cluster-1").mock(return_value=httpx.Response(200, json=c))
+        respx_mock.get("/v1/compute/clusters/cluster-1").mock(return_value=httpx.Response(200, json=c))
         result = cli_runner.invoke(["clusters", "retrieve", "cluster-1", "--json"])
         assert json.loads(result.output) == c
         assert result.exit_code == 0
@@ -1076,7 +1077,7 @@ class TestClustersCreate:
     @pytest.mark.respx(base_url=base_url)
     def test_create_non_interactive_posts_expected_body(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         created = _cluster_body("new-id", "together-py-testing-suite")
-        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        route = respx_mock.post("/v1/compute/clusters").mock(return_value=httpx.Response(200, json=created))
         result = cli_runner.invoke(
             [
                 "clusters",
@@ -1117,7 +1118,7 @@ class TestClustersCreate:
     @pytest.mark.respx(base_url=base_url)
     def test_create_direct_nvidia_version_id_posts_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         created = _cluster_body("new-id", "direct-id")
-        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        route = respx_mock.post("/v1/compute/clusters").mock(return_value=httpx.Response(200, json=created))
         result = cli_runner.invoke(
             [
                 "clusters",
@@ -1151,9 +1152,9 @@ class TestClustersCreate:
     def test_create_semantic_nvidia_selection_posts_resolved_id(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
+        respx_mock.get("/v1/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
         created = _cluster_body("new-id", "semantic-selection")
-        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        route = respx_mock.post("/v1/compute/clusters").mock(return_value=httpx.Response(200, json=created))
         result = cli_runner.invoke(
             [
                 "clusters",
@@ -1189,7 +1190,7 @@ class TestClustersCreate:
     @pytest.mark.respx(base_url=base_url)
     def test_create_accepts_new_cluster_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         created = _cluster_body("new-id", "scheduled")
-        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        route = respx_mock.post("/v1/compute/clusters").mock(return_value=httpx.Response(200, json=created))
         result = cli_runner.invoke(
             [
                 "clusters",
@@ -1274,8 +1275,8 @@ class TestClustersUpdate:
     @pytest.mark.respx(base_url=base_url)
     def test_update_json_triggers_put_and_second_get(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         updated = _cluster_body("c1", num_gpus=16, cluster_type="SLURM")
-        put = respx_mock.put("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=updated))
-        get = respx_mock.get("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=updated))
+        put = respx_mock.put("/v1/compute/clusters/c1").mock(return_value=httpx.Response(200, json=updated))
+        get = respx_mock.get("/v1/compute/clusters/c1").mock(return_value=httpx.Response(200, json=updated))
         result = cli_runner.invoke(
             ["clusters", "update", "c1", "--num-gpus", "16", "--cluster-type", "SLURM", "--json"],
         )
@@ -1290,7 +1291,7 @@ class TestClustersUpdate:
     @pytest.mark.respx(base_url=base_url)
     def test_update_accepts_new_cluster_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         updated = _cluster_body("c1", num_gpus=16)
-        put = respx_mock.put("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=updated))
+        put = respx_mock.put("/v1/compute/clusters/c1").mock(return_value=httpx.Response(200, json=updated))
         result = cli_runner.invoke(
             [
                 "clusters",
@@ -1324,7 +1325,7 @@ class TestClustersUpdate:
 class TestClustersDelete:
     @pytest.mark.respx(base_url=base_url)
     def test_delete_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.delete("/compute/clusters/c-del").mock(
+        respx_mock.delete("/v1/compute/clusters/c-del").mock(
             return_value=httpx.Response(200, json={"cluster_id": "c-del"})
         )
         result = cli_runner.invoke(["clusters", "delete", "c-del", "--json"])
@@ -1333,7 +1334,7 @@ class TestClustersDelete:
 
     @pytest.mark.respx(base_url=base_url)
     def test_delete_force_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.delete("/compute/clusters/c1").mock(return_value=httpx.Response(200, json={"cluster_id": "c1"}))
+        respx_mock.delete("/v1/compute/clusters/c1").mock(return_value=httpx.Response(200, json={"cluster_id": "c1"}))
 
         result = cli_runner.invoke(["clusters", "delete", "c1", "--force"])
 
@@ -1342,7 +1343,7 @@ class TestClustersDelete:
 
     @pytest.mark.respx(base_url=base_url)
     def test_delete_non_interactive_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.delete("/compute/clusters/c1").mock(
+        route = respx_mock.delete("/v1/compute/clusters/c1").mock(
             return_value=httpx.Response(200, json={"cluster_id": "c1"})
         )
 
@@ -1358,7 +1359,7 @@ class TestClustersGetCredentials:
     def test_get_credentials_stdout(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         cfg = "apiVersion: v1\nkind: Config\n"
         c = _cluster_body(kube_config=base64.b64encode(cfg.encode()).decode("ascii"))
-        respx_mock.get("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=c))
+        respx_mock.get("/v1/compute/clusters/c1").mock(return_value=httpx.Response(200, json=c))
         result = cli_runner.invoke(["clusters", "get-credentials", "c1", "--file", "-"])
         assert result.output.strip() == cfg.strip()
         assert result.exit_code == 0
@@ -1368,14 +1369,14 @@ class TestClustersStorage:
     @pytest.mark.respx(base_url=base_url)
     def test_storage_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         payload = {"volumes": [_VOLUME_BODY]}
-        respx_mock.get("/compute/clusters/storage/volumes").mock(return_value=httpx.Response(200, json=payload))
+        respx_mock.get("/v1/compute/clusters/storage/volumes").mock(return_value=httpx.Response(200, json=payload))
         result = cli_runner.invoke(["clusters", "storage", "list", "--json"])
         assert json.loads(result.output) == payload
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
     def test_storage_create_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.post("/compute/clusters/storage/volumes").mock(
+        route = respx_mock.post("/v1/compute/clusters/storage/volumes").mock(
             return_value=httpx.Response(200, json=_VOLUME_BODY)
         )
         result = cli_runner.invoke(
@@ -1406,7 +1407,7 @@ class TestClustersStorage:
 
     @pytest.mark.respx(base_url=base_url)
     def test_storage_update_allows_omitting_size(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.put("/compute/clusters/storage/volumes").mock(
+        route = respx_mock.put("/v1/compute/clusters/storage/volumes").mock(
             return_value=httpx.Response(200, json=_VOLUME_BODY)
         )
         result = cli_runner.invoke(["clusters", "storage", "update", "vol-1", "--json"])
@@ -1416,7 +1417,7 @@ class TestClustersStorage:
 
     @pytest.mark.respx(base_url=base_url)
     def test_storage_retrieve_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/compute/clusters/storage/volumes/vol-1").mock(
+        respx_mock.get("/v1/compute/clusters/storage/volumes/vol-1").mock(
             return_value=httpx.Response(200, json=_VOLUME_BODY)
         )
         result = cli_runner.invoke(["clusters", "storage", "retrieve", "vol-1", "--json"])
@@ -1425,7 +1426,7 @@ class TestClustersStorage:
 
     @pytest.mark.respx(base_url=base_url)
     def test_storage_delete_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.delete("/compute/clusters/storage/volumes/vol-1").mock(
+        respx_mock.delete("/v1/compute/clusters/storage/volumes/vol-1").mock(
             return_value=httpx.Response(200, json={"success": True})
         )
         result = cli_runner.invoke(["clusters", "storage", "delete", "vol-1", "--json"])
@@ -1436,7 +1437,7 @@ class TestClustersStorage:
     def test_storage_delete_non_interactive_skips_confirmation(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        route = respx_mock.delete("/compute/clusters/storage/volumes/vol-1").mock(
+        route = respx_mock.delete("/v1/compute/clusters/storage/volumes/vol-1").mock(
             return_value=httpx.Response(200, json={"success": True})
         )
 
@@ -1450,7 +1451,7 @@ class TestClustersStorage:
 class TestClustersRemediations:
     @pytest.mark.respx(base_url=base_url)
     def test_remediations_create_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.post("/compute/clusters/c1/instances/i1/remediations").mock(
+        route = respx_mock.post("/v1/compute/clusters/c1/instances/i1/remediations").mock(
             return_value=httpx.Response(200, json=_remediation_body("rem-created", state="PENDING"))
         )
         result = cli_runner.invoke(
@@ -1484,31 +1485,31 @@ class TestClustersRemediations:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         payload = _remediation_list_body(_remediation_body())
-        route = respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+        route = respx_mock.get("/v1/compute/clusters/c1/instances/-/remediations").mock(
             return_value=httpx.Response(200, json=payload)
         )
         result = cli_runner.invoke(["clusters", "remediations", "list", "c1", "--json"])
 
         assert json.loads(result.output) == payload
-        assert cast(Call, route.calls[0]).request.url.path == "/compute/clusters/c1/instances/-/remediations"
+        assert cast(Call, route.calls[0]).request.url.path == "/v1/compute/clusters/c1/instances/-/remediations"
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
     def test_remediations_list_accepts_instance_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         payload = _remediation_list_body(_remediation_body())
-        route = respx_mock.get("/compute/clusters/c1/instances/i1/remediations").mock(
+        route = respx_mock.get("/v1/compute/clusters/c1/instances/i1/remediations").mock(
             return_value=httpx.Response(200, json=payload)
         )
         result = cli_runner.invoke(["clusters", "remediations", "list", "c1", "i1", "--json"])
 
         assert json.loads(result.output) == payload
-        assert cast(Call, route.calls[0]).request.url.path == "/compute/clusters/c1/instances/i1/remediations"
+        assert cast(Call, route.calls[0]).request.url.path == "/v1/compute/clusters/c1/instances/i1/remediations"
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
     def test_remediations_list_table_uses_instance_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         payload = _remediation_list_body(_remediation_body(instance_name="gpu-node-a"))
-        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+        respx_mock.get("/v1/compute/clusters/c1/instances/-/remediations").mock(
             return_value=httpx.Response(200, json=payload)
         )
 
@@ -1522,7 +1523,7 @@ class TestClustersRemediations:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         payload = _remediation_list_body(_remediation_body())
-        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+        respx_mock.get("/v1/compute/clusters/c1/instances/-/remediations").mock(
             return_value=httpx.Response(200, json=payload)
         )
 
@@ -1534,7 +1535,7 @@ class TestClustersRemediations:
     @pytest.mark.respx(base_url=base_url)
     def test_remediations_list_accepts_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         payload = _remediation_list_body(_remediation_body())
-        route = respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+        route = respx_mock.get("/v1/compute/clusters/c1/instances/-/remediations").mock(
             return_value=httpx.Response(200, json=payload)
         )
         result = cli_runner.invoke(
@@ -1571,33 +1572,35 @@ class TestClustersRemediations:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         body = _remediation_body("rem-get", state="RUNNING")
-        respx_mock.get("/compute/clusters").mock(
+        respx_mock.get("/v1/compute/clusters").mock(
             return_value=httpx.Response(200, json={"clusters": [_cluster_body("c1")]})
         )
-        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+        respx_mock.get("/v1/compute/clusters/c1/instances/-/remediations").mock(
             return_value=httpx.Response(200, json=_remediation_list_body(_remediation_body("rem-get")))
         )
-        route = respx_mock.get("/compute/clusters/c1/instances/i1/remediations/rem-get").mock(
+        route = respx_mock.get("/v1/compute/clusters/c1/instances/i1/remediations/rem-get").mock(
             return_value=httpx.Response(200, json=body)
         )
 
         result = cli_runner.invoke(["clusters", "remediations", "get", "rem-get", "--json"])
 
         assert json.loads(result.output) == body
-        assert cast(Call, route.calls[0]).request.url.path == "/compute/clusters/c1/instances/i1/remediations/rem-get"
+        assert (
+            cast(Call, route.calls[0]).request.url.path == "/v1/compute/clusters/c1/instances/i1/remediations/rem-get"
+        )
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
     def test_remediations_approve_resolves_cluster_and_instance(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/compute/clusters").mock(
+        respx_mock.get("/v1/compute/clusters").mock(
             return_value=httpx.Response(200, json={"clusters": [_cluster_body("c1")]})
         )
-        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+        respx_mock.get("/v1/compute/clusters/c1/instances/-/remediations").mock(
             return_value=httpx.Response(200, json=_remediation_list_body(_remediation_body("rem-approve")))
         )
-        route = respx_mock.post("/compute/clusters/c1/instances/i1/remediations/rem-approve/approve").mock(
+        route = respx_mock.post("/v1/compute/clusters/c1/instances/i1/remediations/rem-approve/approve").mock(
             return_value=httpx.Response(200, json=_remediation_body("rem-approve", state="PENDING"))
         )
 
@@ -1626,13 +1629,13 @@ class TestClustersRemediations:
     def test_remediations_cancel_resolves_cluster_and_instance(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/compute/clusters").mock(
+        respx_mock.get("/v1/compute/clusters").mock(
             return_value=httpx.Response(200, json={"clusters": [_cluster_body("c1")]})
         )
-        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+        respx_mock.get("/v1/compute/clusters/c1/instances/-/remediations").mock(
             return_value=httpx.Response(200, json=_remediation_list_body(_remediation_body("rem-cancel")))
         )
-        route = respx_mock.post("/compute/clusters/c1/instances/i1/remediations/rem-cancel/cancel").mock(
+        route = respx_mock.post("/v1/compute/clusters/c1/instances/i1/remediations/rem-cancel/cancel").mock(
             return_value=httpx.Response(200, json=_remediation_body("rem-cancel", state="CANCELLED"))
         )
 
@@ -1646,13 +1649,13 @@ class TestClustersRemediations:
     def test_remediations_reject_resolves_cluster_and_instance(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/compute/clusters").mock(
+        respx_mock.get("/v1/compute/clusters").mock(
             return_value=httpx.Response(200, json={"clusters": [_cluster_body("c1")]})
         )
-        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+        respx_mock.get("/v1/compute/clusters/c1/instances/-/remediations").mock(
             return_value=httpx.Response(200, json=_remediation_list_body(_remediation_body("rem-reject")))
         )
-        route = respx_mock.post("/compute/clusters/c1/instances/i1/remediations/rem-reject/reject").mock(
+        route = respx_mock.post("/v1/compute/clusters/c1/instances/i1/remediations/rem-reject/reject").mock(
             return_value=httpx.Response(200, json=_remediation_body("rem-reject", state="CANCELLED"))
         )
 

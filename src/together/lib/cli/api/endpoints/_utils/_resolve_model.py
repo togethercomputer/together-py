@@ -7,7 +7,7 @@ from together import NotFoundError
 from together.types import Model, Endpoint
 from together.types.models.config import Config
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.lib.cli.utils._whoami import project_of, fetch_whoami
+from together.lib.cli.utils._whoami import project_of
 from together.types.supported_model import SupportedModel
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._json_mode import is_json_mode
@@ -65,7 +65,7 @@ async def resolve_model_reference(config: CLIConfigParameter, model_input: str) 
     if "/" not in model_input:
         return ResolvedModelReference(None, model_input)
 
-    project = project_of(await fetch_whoami(config.client))
+    project = project_of(await config.client.whoami())
     prefix, _, _name = model_input.partition("/")
     if project is not None and prefix == project.slug:
         model = await _find_private_model_by_name(config, model_input)
@@ -148,7 +148,7 @@ async def load_model(config: CLIConfigParameter, model_input: str) -> Model | No
         except (NotFoundError, ValueError):
             return None
 
-    project = project_of(await fetch_whoami(config.client))
+    project = project_of(await config.client.whoami())
     project_slug = project.slug if project is not None else None
     prefix, _, _name = model_input.partition("/")
     if project_slug is None or prefix != project_slug:
@@ -564,7 +564,7 @@ async def resolve_endpoint(config: CLIConfigParameter, endpoint_id_or_name: str)
     # Exact name filter avoids missing endpoints beyond the first list page.
     endpoints = await config.client.endpoints.list(filter=f'name="{bare_name}"')
 
-    project = project_of(await fetch_whoami(config.client))
+    project = project_of(await config.client.whoami())
     slug = project.slug if project is not None else None
     qualified_name = (
         endpoint_id_or_name

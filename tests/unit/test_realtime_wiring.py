@@ -45,11 +45,16 @@ def test_url_and_header_derivation() -> None:
     from together.lib.realtime._connection import build_realtime_url, build_realtime_headers
 
     url = build_realtime_url(
-        httpx.URL("https://api.together.ai/v1/"),
+        httpx.URL("https://api.together.ai/"),
         model="openai/whisper-large-v3",
         turn_detection={"type": "server_vad", "min_silence_duration_ms": 400},
     )
     assert url.startswith("wss://api.together.ai/v1/realtime?")
+    # Legacy base URLs that still end in `/v1` must not double-prefix.
+    assert build_realtime_url(
+        httpx.URL("https://api.together.ai/v1/"),
+        model="openai/whisper-large-v3",
+    ).startswith("wss://api.together.ai/v1/realtime?")
     assert "model=openai%2Fwhisper-large-v3" in url or "model=openai/whisper-large-v3" in url
     assert "input_audio_format=pcm_s16le_16000" in url
     assert "turn_detection=server_vad" in url
@@ -69,7 +74,7 @@ def test_url_language_query_param() -> None:
 
     from together.lib.realtime._connection import build_realtime_url
 
-    base = httpx.URL("https://api.together.ai/v1/")
+    base = httpx.URL("https://api.together.ai/")
 
     url = build_realtime_url(base, model="openai/whisper-large-v3", language="es")
     assert parse_qs(urlsplit(url).query)["language"] == ["es"]

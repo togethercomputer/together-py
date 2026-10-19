@@ -234,7 +234,7 @@ class AsyncRealtimeTranscriptionSession:
             raise RealtimeConnectionError(
                 f"could not open realtime connection to {self._client.base_url} ({detail}); "
                 "check that base_url / TOGETHER_BASE_URL points at an API root that "
-                "serves /realtime, e.g. https://api.together.ai/v1",
+                "serves /v1/realtime, e.g. https://api.together.ai",
                 cause=exc,
             ) from exc
         try:

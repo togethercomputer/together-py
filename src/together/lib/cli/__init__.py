@@ -37,7 +37,7 @@ from together.lib.cli.utils._debug import (
 )
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
-from together.lib.cli.utils._whoami import project_of, fetch_whoami
+from together.lib.cli.utils._whoami import project_of
 from together.lib.cli.utils._console import CliBrokenPipeError, console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._json_mode import emit_json, is_json_mode, use_json_mode, resolve_output_json
@@ -138,7 +138,7 @@ _NO_AUTH_ROOT_COMMANDS = frozenset({"login", "logout", "switch"})
 
 
 async def _resolve_project_id(client: AsyncTogether) -> Optional[str]:
-    project = project_of(await fetch_whoami(client))
+    project = project_of(await client.whoami())
     return project.id if project is not None else None
 
 

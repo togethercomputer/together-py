@@ -5,7 +5,7 @@ from cyclopts import Parameter
 from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.lib.cli.utils._whoami import fetch_whoami, organization_of
+from together.lib.cli.utils._whoami import organization_of
 from together.lib.cli.utils._console import console
 from together.lib.cli.api.models._utils import print_models_table
 from together.lib.cli.components.loader import show_loading_status
@@ -18,7 +18,7 @@ async def org(
     limit: Annotated[Optional[int], Parameter(help="Maximum models to return")] = None,
     after: AfterParameter = None,
 ) -> None:
-    organization = organization_of(await fetch_whoami(config.client))
+    organization = organization_of(await config.client.whoami())
     if organization is None:
         raise ValueError("This credential has no organization. Run `tg whoami` to see the current identity.")
 

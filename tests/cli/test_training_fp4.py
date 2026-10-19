@@ -81,7 +81,7 @@ class TestEstimate:
         local_path = tmp_path / "calib.jsonl"
         local_path.write_text('{"messages": [{"role": "user", "content": "hi"}]}\n')
         args = [str(local_path) if arg == "LOCAL_PATH" else arg for arg in calibration_args]
-        route = respx_mock.post("/shaping/prepare-for-fp4-inference/estimate").mock(
+        route = respx_mock.post("/v1/shaping/prepare-for-fp4-inference/estimate").mock(
             return_value=httpx.Response(200, json=_ESTIMATE_BODY)
         )
         upload = AsyncMock(return_value=SimpleNamespace(id="file-uploaded"))
@@ -103,10 +103,10 @@ class TestEstimate:
 class TestCreate:
     @pytest.mark.respx(base_url=base_url)
     def test_create_estimates_then_submits(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.post("/shaping/prepare-for-fp4-inference/estimate").mock(
+        respx_mock.post("/v1/shaping/prepare-for-fp4-inference/estimate").mock(
             return_value=httpx.Response(200, json=_ESTIMATE_BODY)
         )
-        create = respx_mock.post("/shaping/prepare-for-fp4-inference").mock(
+        create = respx_mock.post("/v1/shaping/prepare-for-fp4-inference").mock(
             return_value=httpx.Response(200, json=_job("pending"))
         )
         result = cli_runner.invoke(["training", "fp4", "create", _MODEL_ID, "--non-interactive"])
@@ -120,10 +120,10 @@ class TestCreate:
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_json_emits_only_the_job(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.post("/shaping/prepare-for-fp4-inference/estimate").mock(
+        respx_mock.post("/v1/shaping/prepare-for-fp4-inference/estimate").mock(
             return_value=httpx.Response(200, json=_ESTIMATE_BODY)
         )
-        respx_mock.post("/shaping/prepare-for-fp4-inference").mock(
+        respx_mock.post("/v1/shaping/prepare-for-fp4-inference").mock(
             return_value=httpx.Response(200, json=_job("pending"))
         )
         result = cli_runner.invoke(["training", "fp4", "create", _MODEL_ID, "--json"])
@@ -134,10 +134,10 @@ class TestCreate:
     def test_create_warns_but_submits_when_estimate_not_allowed(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.post("/shaping/prepare-for-fp4-inference/estimate").mock(
+        respx_mock.post("/v1/shaping/prepare-for-fp4-inference/estimate").mock(
             return_value=httpx.Response(200, json={**_ESTIMATE_BODY, "allowed_to_proceed": False})
         )
-        create = respx_mock.post("/shaping/prepare-for-fp4-inference").mock(
+        create = respx_mock.post("/v1/shaping/prepare-for-fp4-inference").mock(
             return_value=httpx.Response(200, json=_job("pending"))
         )
         result = cli_runner.invoke(["training", "fp4", "create", _MODEL_ID, "-c", "file-calib", "--non-interactive"])
@@ -153,7 +153,7 @@ class TestCreate:
     def test_create_rejects_missing_local_calibration_file(
         self, respx_mock: MockRouter, cli_runner: CliRunner, tmp_path: Path
     ) -> None:
-        estimate = respx_mock.post("/shaping/prepare-for-fp4-inference/estimate")
+        estimate = respx_mock.post("/v1/shaping/prepare-for-fp4-inference/estimate")
         result = cli_runner.invoke(
             ["training", "fp4", "create", _MODEL_ID, "-c", str(tmp_path / "missing.jsonl"), "-y"]
         )
@@ -166,14 +166,14 @@ class TestCreate:
     def test_create_watch_follows_to_terminal_status(
         self, respx_mock: MockRouter, cli_runner: CliRunner, final_status: str, exit_code: int
     ) -> None:
-        respx_mock.post("/shaping/prepare-for-fp4-inference/estimate").mock(
+        respx_mock.post("/v1/shaping/prepare-for-fp4-inference/estimate").mock(
             return_value=httpx.Response(200, json=_ESTIMATE_BODY)
         )
-        respx_mock.post("/shaping/prepare-for-fp4-inference").mock(
+        respx_mock.post("/v1/shaping/prepare-for-fp4-inference").mock(
             return_value=httpx.Response(200, json=_job("pending"))
         )
         results = {"model_object_id": "ml_prepared", "model_revision_id": "rv_prepared"}
-        respx_mock.get(f"/shaping/{_JOB_ID}").mock(
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}").mock(
             side_effect=[
                 httpx.Response(200, json=_job("running", [_EVENT])),
                 httpx.Response(200, json=_job(final_status, [_EVENT], results=results)),
@@ -189,7 +189,7 @@ class TestCreate:
 class TestRetrieveAndList:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get(f"/shaping/{_JOB_ID}").mock(return_value=httpx.Response(200, json=_job("running", [_EVENT])))
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}").mock(return_value=httpx.Response(200, json=_job("running", [_EVENT])))
         result = cli_runner.invoke(["training", "fp4", "get", _JOB_ID, "--json"])
         assert result.exit_code == 0
         assert json.loads(result.output)["status"] == "running"
@@ -197,7 +197,7 @@ class TestRetrieveAndList:
     @pytest.mark.respx(base_url=base_url)
     def test_list_sorts_newest_first(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         older = {**_job("completed"), "id": "shp-quant-old", "created_at": "2025-01-01T00:00:00Z"}
-        respx_mock.get("/shaping").mock(
+        respx_mock.get("/v1/shaping").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [older, _job("running")]})
         )
         result = cli_runner.invoke(["training", "fp4", "list", "--json"])
@@ -205,26 +205,13 @@ class TestRetrieveAndList:
         assert [job["id"] for job in json.loads(result.output)] == [_JOB_ID, "shp-quant-old"]
 
     @pytest.mark.respx(base_url=base_url)
-    def test_list_prefers_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        legacy = _job("running")
-        legacy["params"]["configuration"]["model_name"] = "new-model"
-        legacy["params"]["configuration"]["adapter_model_name"] = "old-name"
-        respx_mock.get("/shaping").mock(return_value=httpx.Response(200, json={"object": "list", "data": [legacy]}))
+    def test_list_shows_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        job = _job("running")
+        job["params"]["configuration"]["model_name"] = "new-model"
+        respx_mock.get("/v1/shaping").mock(return_value=httpx.Response(200, json={"object": "list", "data": [job]}))
         result = cli_runner.invoke(["training", "fp4", "list"])
         assert result.exit_code == 0
         assert "new-model" in result.output
-        assert "old-name" not in result.output
-
-    @pytest.mark.respx(base_url=base_url)
-    def test_list_falls_back_to_adapter_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        legacy = _job("completed")
-        configuration = legacy["params"]["configuration"]
-        configuration.pop("model_name")
-        configuration["adapter_model_name"] = "old-name"
-        respx_mock.get("/shaping").mock(return_value=httpx.Response(200, json={"object": "list", "data": [legacy]}))
-        result = cli_runner.invoke(["training", "fp4", "list"])
-        assert result.exit_code == 0
-        assert "old-name" in result.output
 
     @pytest.mark.usefixtures("plain_cli_help")
     def test_create_help_names_model_revision(self, cli_runner: CliRunner) -> None:
@@ -238,7 +225,7 @@ class TestRetrieveAndList:
     def test_deprecated_adapter_revision_flag_sends_model_revision(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        route = respx_mock.post("/shaping/prepare-for-fp4-inference/estimate").mock(
+        route = respx_mock.post("/v1/shaping/prepare-for-fp4-inference/estimate").mock(
             return_value=httpx.Response(200, json=_ESTIMATE_BODY)
         )
         result = cli_runner.invoke(
@@ -251,7 +238,7 @@ class TestRetrieveAndList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_events_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get(f"/shaping/{_JOB_ID}/events").mock(
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}/events").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [_EVENT]})
         )
         result = cli_runner.invoke(["training", "fp4", "list-events", _JOB_ID, "--json"])
@@ -265,7 +252,7 @@ class TestWatch:
     def test_watch_retries_transient_errors(
         self, respx_mock: MockRouter, cli_runner: CliRunner, json_mode: bool
     ) -> None:
-        respx_mock.get(f"/shaping/{_JOB_ID}").mock(
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}").mock(
             side_effect=[
                 httpx.Response(503, json={"error": {"message": "unavailable"}}),
                 httpx.Response(200, json=_job("completed")),
@@ -289,7 +276,7 @@ class TestWatch:
     def test_watch_honors_retry_after(
         self, respx_mock: MockRouter, cli_runner: CliRunner, retry_after_ms: str, expected_wait: str
     ) -> None:
-        respx_mock.get(f"/shaping/{_JOB_ID}").mock(
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}").mock(
             side_effect=[
                 httpx.Response(
                     429, headers={"retry-after-ms": retry_after_ms}, json={"error": {"message": "slow down"}}
@@ -305,7 +292,7 @@ class TestWatch:
     @pytest.mark.respx(base_url=base_url)
     def test_watch_resets_failure_streak_after_success(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         unavailable = httpx.Response(503, json={"error": {"message": "unavailable"}})
-        respx_mock.get(f"/shaping/{_JOB_ID}").mock(
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}").mock(
             side_effect=[
                 unavailable,
                 unavailable,
@@ -324,7 +311,7 @@ class TestWatch:
 
     @pytest.mark.respx(base_url=base_url)
     def test_watch_prints_resume_hint_on_fatal_error(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get(f"/shaping/{_JOB_ID}").mock(
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}").mock(
             side_effect=[
                 httpx.Response(200, json=_job("running")),
                 httpx.Response(403, json={"error": {"message": "forbidden"}}),
@@ -336,7 +323,7 @@ class TestWatch:
 
     @pytest.mark.respx(base_url=base_url)
     def test_watch_omits_resume_hint_when_job_never_read(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get(f"/shaping/{_JOB_ID}").mock(
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}").mock(
             return_value=httpx.Response(404, json={"error": {"message": "not found"}})
         )
         result = cli_runner.invoke(["training", "fp4", "get", _JOB_ID, "--watch", "--poll-interval", "0.01"])
@@ -347,7 +334,7 @@ class TestWatch:
     def test_watch_gives_up_after_sustained_transient_errors(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get(f"/shaping/{_JOB_ID}").mock(
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}").mock(
             side_effect=[
                 httpx.Response(200, json=_job("running")),
                 httpx.Response(503, json={"error": {"message": "unavailable"}}),
@@ -367,8 +354,8 @@ class TestWatch:
 class TestCancel:
     @pytest.mark.respx(base_url=base_url, assert_all_called=False)
     def test_cancel_not_cancellable(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get(f"/shaping/{_JOB_ID}").mock(return_value=httpx.Response(200, json=_job("completed")))
-        cancel = respx_mock.post(f"/shaping/{_JOB_ID}/cancel")
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}").mock(return_value=httpx.Response(200, json=_job("completed")))
+        cancel = respx_mock.post(f"/v1/shaping/{_JOB_ID}/cancel")
         result = cli_runner.invoke(["training", "fp4", "cancel", _JOB_ID, "-y"])
         assert result.exit_code == 1
         assert "not currently cancellable" in result.output
@@ -376,8 +363,8 @@ class TestCancel:
 
     @pytest.mark.respx(base_url=base_url)
     def test_cancel_force_calls_api(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get(f"/shaping/{_JOB_ID}").mock(return_value=httpx.Response(200, json=_job("running")))
-        cancel = respx_mock.post(f"/shaping/{_JOB_ID}/cancel").mock(
+        respx_mock.get(f"/v1/shaping/{_JOB_ID}").mock(return_value=httpx.Response(200, json=_job("running")))
+        cancel = respx_mock.post(f"/v1/shaping/{_JOB_ID}/cancel").mock(
             return_value=httpx.Response(200, json=_job("cancel_requested"))
         )
         result = cli_runner.invoke(["training", "fp4", "cancel", _JOB_ID, "-y"])

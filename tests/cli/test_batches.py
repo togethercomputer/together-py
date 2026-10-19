@@ -85,7 +85,7 @@ class TestBatchesSubmit:
 
     @pytest.mark.respx(base_url=base_url)
     def test_submit_positional_args(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        route = respx_mock.post("/v1/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
         result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions"])
         assert result.exit_code == 0
         assert "batch_job_created" in result.output
@@ -96,7 +96,7 @@ class TestBatchesSubmit:
 
     @pytest.mark.respx(base_url=base_url)
     def test_submit_flag_args(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        route = respx_mock.post("/v1/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
         result = cli_runner.invoke(
             [
                 "batches",
@@ -113,7 +113,7 @@ class TestBatchesSubmit:
 
     @pytest.mark.respx(base_url=base_url)
     def test_submit_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        respx_mock.post("/v1/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
         result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions", "--json"])
         assert result.exit_code == 0
         body = json.loads(result.output)
@@ -123,7 +123,7 @@ class TestBatchesSubmit:
     def test_submit_uploads_local_file(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         sample = tmp_path / "requests.jsonl"
         sample.write_text('{"custom_id": "1"}\n', encoding="utf-8")
-        create = respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        create = respx_mock.post("/v1/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
         with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
             upload_mock.return_value = _file_response(id="file-uploaded")
             result = cli_runner.invoke(["batches", "submit", str(sample), "chat.completions"])
@@ -141,7 +141,7 @@ class TestBatchesSubmit:
     ) -> None:
         sample = tmp_path / "requests.jsonl"
         sample.write_text('{"custom_id": "1"}\n', encoding="utf-8")
-        create = respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        create = respx_mock.post("/v1/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
         with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
             upload_mock.return_value = _file_response(id="file-uploaded")
             result = cli_runner.invoke(["batches", "submit", str(sample), "chat.completions", "--json"])
@@ -162,7 +162,7 @@ class TestBatchesSubmit:
 
     @pytest.mark.respx(base_url=base_url)
     def test_submit_null_job_exits_nonzero(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.post("/batches").mock(
+        respx_mock.post("/v1/batches").mock(
             return_value=httpx.Response(200, json={"job": None, "warning": "validation failed: missing [/close] tag"})
         )
         with patch("together.lib.cli.track_cli") as track_cli:
@@ -176,7 +176,7 @@ class TestBatchesSubmit:
 
     @pytest.mark.respx(base_url=base_url)
     def test_submit_null_job_json_exits_nonzero(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.post("/batches").mock(return_value=httpx.Response(200, json={"job": None, "warning": "nope"}))
+        respx_mock.post("/v1/batches").mock(return_value=httpx.Response(200, json={"job": None, "warning": "nope"}))
         result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions", "--json"])
         assert result.exit_code == 1
         body = json.loads(result.output)
@@ -185,7 +185,7 @@ class TestBatchesSubmit:
 
     @pytest.mark.respx(base_url=base_url)
     def test_submit_does_not_print_x_model_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        respx_mock.post("/v1/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
         result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions"])
         assert result.exit_code == 0
         assert "X Model Id" not in result.output
@@ -195,7 +195,7 @@ class TestBatchesSubmit:
 class TestBatchesList:
     @pytest.mark.respx(base_url=base_url)
     def test_list_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches").mock(return_value=httpx.Response(200, json=[_BATCH_JOB_OLDER, _BATCH_JOB]))
+        respx_mock.get("/v1/batches").mock(return_value=httpx.Response(200, json=[_BATCH_JOB_OLDER, _BATCH_JOB]))
         result = cli_runner.invoke(["batches", "list"])
         assert result.exit_code == 0
         assert "batch_job_newer" in result.output
@@ -205,7 +205,7 @@ class TestBatchesList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches").mock(return_value=httpx.Response(200, json=[_BATCH_JOB_OLDER, _BATCH_JOB]))
+        respx_mock.get("/v1/batches").mock(return_value=httpx.Response(200, json=[_BATCH_JOB_OLDER, _BATCH_JOB]))
         result = cli_runner.invoke(["batches", "list", "--json"])
         assert result.exit_code == 0
         parsed = json.loads(result.output)
@@ -213,7 +213,7 @@ class TestBatchesList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_ls_alias(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches").mock(return_value=httpx.Response(200, json=[]))
+        respx_mock.get("/v1/batches").mock(return_value=httpx.Response(200, json=[]))
         result = cli_runner.invoke(["batches", "ls"])
         assert result.exit_code == 0
         assert "tg batches submit" in result.output
@@ -222,7 +222,7 @@ class TestBatchesList:
 class TestBatchesRetrieve:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
         result = cli_runner.invoke(["batches", "retrieve", "batch_job_newer", "--json"])
         assert result.exit_code == 0
         body = json.loads(result.output)
@@ -232,14 +232,14 @@ class TestBatchesRetrieve:
 
     @pytest.mark.respx(base_url=base_url)
     def test_get_alias(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
         result = cli_runner.invoke(["batches", "get", "batch_job_newer", "--json"])
         assert result.exit_code == 0
         assert json.loads(result.output)["id"] == "batch_job_newer"
 
     @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_bare_job_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
         result = cli_runner.invoke(["batches", "batch_job_newer", "--json"])
         assert result.exit_code == 0
         assert json.loads(result.output)["id"] == "batch_job_newer"
@@ -248,7 +248,7 @@ class TestBatchesRetrieve:
     def test_retrieve_shows_curated_fields_and_download_hint(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
         result = cli_runner.invoke(["batches", "get", "batch_job_newer"])
         assert result.exit_code == 0
         assert "Batch job details:" in result.output
@@ -263,7 +263,7 @@ class TestBatchesRetrieve:
 
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_shows_progress_when_in_progress(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches/batch_job_older").mock(return_value=httpx.Response(200, json=_BATCH_JOB_OLDER))
+        respx_mock.get("/v1/batches/batch_job_older").mock(return_value=httpx.Response(200, json=_BATCH_JOB_OLDER))
         result = cli_runner.invoke(["batches", "get", "batch_job_older"])
         assert result.exit_code == 0
         assert "In_progress" in result.output
@@ -285,7 +285,7 @@ class TestBatchesRetrieve:
         self, status: str, expected: str, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         job = {**_BATCH_JOB, "status": status, "error": None, "error_file_id": None}
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
         result = cli_runner.invoke(["batches", "get", "batch_job_newer"])
         assert result.exit_code == 0
         assert any(line.strip() == expected for line in result.output.splitlines())
@@ -296,7 +296,7 @@ class TestBatchesRetrieve:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         job = {**_BATCH_JOB_OLDER, "progress": None}
-        respx_mock.get("/batches/batch_job_older").mock(return_value=httpx.Response(200, json=job))
+        respx_mock.get("/v1/batches/batch_job_older").mock(return_value=httpx.Response(200, json=job))
         result = cli_runner.invoke(["batches", "get", "batch_job_older"])
         assert result.exit_code == 0
         assert "In_progress" in result.output
@@ -310,7 +310,7 @@ class TestBatchesRetrieve:
             "error": "boom",
             "error_file_id": "file-err",
         }
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
         result = cli_runner.invoke(["batches", "get", "batch_job_newer"])
         assert result.exit_code == 0
         assert result.output.count("An error occurred") == 1
@@ -320,7 +320,7 @@ class TestBatchesRetrieve:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_escapes_error_markup(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         job = {**_BATCH_JOB, "status": "FAILED", "error": "validation failed: missing [/close] tag"}
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
         result = cli_runner.invoke(["batches", "get", "batch_job_newer"])
         assert result.exit_code == 0
         assert "MarkupError" not in result.output
@@ -331,7 +331,7 @@ class TestBatchesCancel:
     @pytest.mark.respx(base_url=base_url)
     def test_cancel(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         cancelled = {**_BATCH_JOB, "status": "CANCELLED"}
-        respx_mock.post("/batches/batch_job_newer/cancel").mock(return_value=httpx.Response(200, json=cancelled))
+        respx_mock.post("/v1/batches/batch_job_newer/cancel").mock(return_value=httpx.Response(200, json=cancelled))
         result = cli_runner.invoke(["batches", "cancel", "batch_job_newer"])
         assert result.exit_code == 0
         assert "Cancelled" in result.output
@@ -341,7 +341,7 @@ class TestBatchesCancel:
     @pytest.mark.respx(base_url=base_url)
     def test_cancel_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         cancelled = {**_BATCH_JOB, "status": "CANCELLED"}
-        respx_mock.post("/batches/batch_job_newer/cancel").mock(return_value=httpx.Response(200, json=cancelled))
+        respx_mock.post("/v1/batches/batch_job_newer/cancel").mock(return_value=httpx.Response(200, json=cancelled))
         result = cli_runner.invoke(["batches", "cancel", "batch_job_newer", "--json"])
         assert result.exit_code == 0
         assert json.loads(result.output)["status"] == "CANCELLED"
@@ -350,7 +350,7 @@ class TestBatchesCancel:
 class TestBatchesDownload:
     @pytest.mark.respx(base_url=base_url)
     def test_download_not_ready(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches/batch_job_older").mock(return_value=httpx.Response(200, json=_BATCH_JOB_OLDER))
+        respx_mock.get("/v1/batches/batch_job_older").mock(return_value=httpx.Response(200, json=_BATCH_JOB_OLDER))
         with patch("together.lib.cli.track_cli") as track_cli:
             result = cli_runner.invoke(["batches", "download", "batch_job_older", "--output", str(tmp_path)])
         assert result.exit_code == 1
@@ -361,10 +361,10 @@ class TestBatchesDownload:
     @pytest.mark.respx(base_url=base_url)
     def test_download_output_to_directory(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         job = {**_BATCH_JOB, "error_file_id": "file-err"}
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
-        respx_mock.get("/files/file-out/content").mock(return_value=httpx.Response(200, content=b'{"ok":true}\n'))
-        respx_mock.get("/files/file-err/content").mock(return_value=httpx.Response(200, content=b'{"err":true}\n'))
-        respx_mock.get("/files/file-out").mock(
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        respx_mock.get("/v1/files/file-out/content").mock(return_value=httpx.Response(200, content=b'{"ok":true}\n'))
+        respx_mock.get("/v1/files/file-err/content").mock(return_value=httpx.Response(200, content=b'{"err":true}\n'))
+        respx_mock.get("/v1/files/file-out").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -401,10 +401,12 @@ class TestBatchesDownload:
             "Processed": True,
             "purpose": "batch-api",
         }
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
-        respx_mock.get("/files/file-out/content").mock(return_value=httpx.Response(200, content=b'{"ok":true}\n'))
-        respx_mock.get("/files/file-err/content").mock(return_value=httpx.Response(200, content=b'{"err":true}\n'))
-        respx_mock.get("/files/file-out").mock(return_value=httpx.Response(200, json={"id": "file-out", **file_meta}))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        respx_mock.get("/v1/files/file-out/content").mock(return_value=httpx.Response(200, content=b'{"ok":true}\n'))
+        respx_mock.get("/v1/files/file-err/content").mock(return_value=httpx.Response(200, content=b'{"err":true}\n'))
+        respx_mock.get("/v1/files/file-out").mock(
+            return_value=httpx.Response(200, json={"id": "file-out", **file_meta})
+        )
 
         result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--output", str(tmp_path), "--json"])
         assert result.exit_code == 0
@@ -419,9 +421,9 @@ class TestBatchesDownload:
     @pytest.mark.respx(base_url=base_url)
     def test_download_output_to_file(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         job = {**_BATCH_JOB, "error_file_id": "file-err"}
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
-        respx_mock.get("/files/file-out/content").mock(return_value=httpx.Response(200, content=b'{"ok":true}\n'))
-        respx_mock.get("/files/file-err/content").mock(return_value=httpx.Response(200, content=b'{"err":true}\n'))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        respx_mock.get("/v1/files/file-out/content").mock(return_value=httpx.Response(200, content=b'{"ok":true}\n'))
+        respx_mock.get("/v1/files/file-err/content").mock(return_value=httpx.Response(200, content=b'{"err":true}\n'))
 
         out = tmp_path / "results.jsonl"
         result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--output", str(out)])
@@ -433,17 +435,17 @@ class TestBatchesDownload:
 
     @pytest.mark.respx(base_url=base_url)
     def test_download_defaults_to_stdout(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
-        respx_mock.get("/files/file-out/content").mock(return_value=httpx.Response(200, content=b"stdout-batch\n"))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        respx_mock.get("/v1/files/file-out/content").mock(return_value=httpx.Response(200, content=b"stdout-batch\n"))
         result = cli_runner.invoke(["batches", "download", "batch_job_newer"])
         assert result.exit_code == 0
         assert "stdout-batch" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_download_json(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
-        respx_mock.get("/files/file-out/content").mock(return_value=httpx.Response(200, content=b"line\n"))
-        respx_mock.get("/files/file-out").mock(
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        respx_mock.get("/v1/files/file-out/content").mock(return_value=httpx.Response(200, content=b"line\n"))
+        respx_mock.get("/v1/files/file-out").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -472,8 +474,8 @@ class TestBatchesDownload:
     ) -> None:
         out = tmp_path / "results"
         out.write_bytes(b"stale")
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
-        respx_mock.get("/files/file-out/content").mock(return_value=httpx.Response(200, content=b'{"ok":true}\n'))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        respx_mock.get("/v1/files/file-out/content").mock(return_value=httpx.Response(200, content=b'{"ok":true}\n'))
         result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--output", str(out)])
         assert result.exit_code == 0
         assert out.is_file()
@@ -481,7 +483,7 @@ class TestBatchesDownload:
 
     @pytest.mark.respx(base_url=base_url)
     def test_download_not_ready_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/batches/batch_job_older").mock(return_value=httpx.Response(200, json=_BATCH_JOB_OLDER))
+        respx_mock.get("/v1/batches/batch_job_older").mock(return_value=httpx.Response(200, json=_BATCH_JOB_OLDER))
         result = cli_runner.invoke(["batches", "download", "batch_job_older", "--json"])
         assert result.exit_code == 1
         body = json.loads(result.output)
@@ -490,7 +492,7 @@ class TestBatchesDownload:
     @pytest.mark.respx(base_url=base_url)
     def test_download_no_files_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         job = {**_BATCH_JOB, "output_file_id": None, "error_file_id": None}
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
         result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--json"])
         assert result.exit_code == 1
         body = json.loads(result.output)
@@ -500,7 +502,7 @@ class TestBatchesDownload:
     def test_download_json_without_output_requires_output_flag(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
         result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--json"])
         assert result.exit_code == 1
         body = json.loads(result.output)
@@ -510,7 +512,7 @@ class TestBatchesDownload:
     @pytest.mark.respx(base_url=base_url)
     def test_download_stdout_no_output_file_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         job = {**_BATCH_JOB, "output_file_id": None, "error_file_id": "file-err"}
-        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        respx_mock.get("/v1/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
         result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--json"])
         assert result.exit_code == 1
         body = json.loads(result.output)

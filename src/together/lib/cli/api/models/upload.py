@@ -302,7 +302,7 @@ async def _upload_model_files(
         dict[str, Any],
         await config.client.post(
             path_template(
-                "/projects/{project_id}/models/upload/create",
+                "/v2/projects/{project_id}/models/upload/create",
                 project_id=config.client._get_project_id_path_param(),
             ),
             cast_to=object,
@@ -331,7 +331,7 @@ async def _upload_model_files(
         dict[str, Any],
         await config.client.post(
             path_template(
-                "/projects/{project_id}/models/upload/complete",
+                "/v2/projects/{project_id}/models/upload/complete",
                 project_id=config.client._get_project_id_path_param(),
             ),
             cast_to=object,
@@ -355,9 +355,6 @@ async def upload(
     await assert_explicit_project_id(config)
 
     source = Path(local_path)
-
-    # Ensure we use the v2 apis for this
-    config.client.base_url = "https://api.together.ai/v2"
 
     if config.json:
         revision_id = await _upload_model_files(

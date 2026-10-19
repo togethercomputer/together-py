@@ -146,7 +146,7 @@ async def _upload_payload(
     upload_info = cast(
         Mapping[str, Any],
         await client.post(
-            f"/rl/training-sessions/{session_id}/payloads/upload-url",
+            f"/v1/rl/training-sessions/{session_id}/payloads/upload-url",
             cast_to=object,
             options={"max_retries": _MAX_RETRIES},
         ),
@@ -178,7 +178,7 @@ async def _download_payload(
     download_info = cast(
         Mapping[str, Any],
         await client.post(
-            f"/rl/training-sessions/{session_id}/payloads/{payload_id}/download-url",
+            f"/v1/rl/training-sessions/{session_id}/payloads/{payload_id}/download-url",
             cast_to=object,
             options={"max_retries": _MAX_RETRIES},
         ),

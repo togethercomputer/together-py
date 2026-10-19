@@ -144,7 +144,7 @@ def _update_args(*extra: str) -> list[str]:
 
 
 def _mock_endpoint_list(respx_mock: MockRouter) -> None:
-    respx_mock.get("/projects/proj/endpoints").mock(
+    respx_mock.get("/v2/projects/proj/endpoints").mock(
         return_value=httpx.Response(
             200,
             json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
@@ -156,7 +156,7 @@ class TestBetaEndpointsUpdate:
     @pytest.mark.respx(base_url=base_url)
     def test_update_by_deployment_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)
-        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+        route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
             return_value=httpx.Response(200, json=_deployment_body())
         )
 
@@ -172,7 +172,7 @@ class TestBetaEndpointsUpdate:
     @pytest.mark.respx(base_url=base_url)
     def test_update_accepts_active_sessions_scaling_metric(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)
-        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+        route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
             return_value=httpx.Response(200, json=_deployment_body())
         )
 
@@ -198,7 +198,7 @@ class TestBetaEndpointsUpdate:
     @pytest.mark.respx(base_url=base_url)
     def test_update_inactive_timeout(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)
-        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+        route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
             return_value=httpx.Response(200, json=_deployment_body())
         )
 
@@ -216,7 +216,7 @@ class TestBetaEndpointsUpdate:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint_list(respx_mock)
-        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+        route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
             return_value=httpx.Response(200, json=_deployment_body())
         )
 
@@ -230,7 +230,7 @@ class TestBetaEndpointsUpdate:
     @pytest.mark.respx(base_url=base_url)
     def test_update_idle_deployment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)
-        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_idle").mock(
+        route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_idle").mock(
             return_value=httpx.Response(200, json=_deployment_body(id="dep_idle", name="idle"))
         )
 
@@ -433,13 +433,13 @@ class TestBetaEndpointsUpdateAbPercent:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint_list(respx_mock)
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
             )
         )
-        update_ab = respx_mock.patch("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+        update_ab = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
             return_value=httpx.Response(
                 200,
                 json=_ab_experiment_body(
@@ -497,7 +497,7 @@ class TestBetaEndpointsUpdateAbPercent:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint_list(respx_mock)
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -527,7 +527,7 @@ class TestBetaEndpointsUpdateAbPercent:
                 },
             )
         )
-        update_ab = respx_mock.patch("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+        update_ab = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
             return_value=httpx.Response(
                 200,
                 json=_ab_experiment_body(
@@ -583,16 +583,16 @@ class TestBetaEndpointsUpdateAbPercent:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint_list(respx_mock)
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
             )
         )
-        update_dep = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
+        update_dep = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
             return_value=httpx.Response(200, json=_deployment_body(id="dep_variant", name="renamed"))
         )
-        update_ab = respx_mock.patch("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+        update_ab = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
             return_value=httpx.Response(200, json=_ab_experiment_body())
         )
 
@@ -623,7 +623,7 @@ class TestBetaEndpointsUpdateAbPercent:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint_list(respx_mock)
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [], "next_cursor": None},
@@ -642,7 +642,7 @@ class TestBetaEndpointsUpdateAbPercent:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint_list(respx_mock)
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [], "next_cursor": None},
@@ -673,7 +673,7 @@ class TestBetaEndpointsUpdateAbPercent:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint_list(respx_mock)
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
@@ -692,7 +692,7 @@ class TestBetaEndpointsUpdateAbPercent:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint_list(respx_mock)
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
@@ -714,16 +714,16 @@ class TestBetaEndpointsUpdateAbPercent:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint_list(respx_mock)
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
             )
         )
-        respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
+        respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
             return_value=httpx.Response(200, json=_deployment_body(id="dep_variant", name="renamed"))
         )
-        respx_mock.patch("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+        respx_mock.patch("/v2/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
             return_value=httpx.Response(
                 200,
                 json=_ab_experiment_body(
@@ -773,10 +773,10 @@ class TestBetaEndpointsUpdateAbPercent:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint_list(respx_mock)
-        respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
+        respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
             return_value=httpx.Response(200, json=_deployment_body(id="dep_variant", name="renamed"))
         )
-        respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
+        respx_mock.patch("/v2/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(
                 200,
                 json=_endpoint_body(

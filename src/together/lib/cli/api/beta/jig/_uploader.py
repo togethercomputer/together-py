@@ -172,7 +172,7 @@ class Uploader:
         """Upload a single file using simple upload"""
         async with self.semaphore:
             response = self.client._client.post(
-                "/storage/upload-request",
+                "/v1/storage/upload-request",
                 json={"filename": remote_path},
                 headers=self.client.auth_headers,
             )
@@ -203,7 +203,7 @@ class Uploader:
         parts_count = (file_size + self.chunk_size - 1) // self.chunk_size
 
         response = self.client._client.post(
-            "/storage/multipart/init",
+            "/v1/storage/multipart/init",
             json={"filename": remote_path, "parts_count": parts_count},
             headers=self.client.auth_headers,
         )
@@ -217,7 +217,7 @@ class Uploader:
             completed_parts = await self._upload_parts(file_path, part_urls)
 
             self.client._client.post(
-                "/storage/multipart/complete",
+                "/v1/storage/multipart/complete",
                 json={
                     "filename": remote_path,
                     "upload_id": upload_id,
@@ -230,7 +230,7 @@ class Uploader:
         except Exception:
             try:
                 self.client._client.post(
-                    "/storage/multipart/abort",
+                    "/v1/storage/multipart/abort",
                     json={"filename": remote_path, "upload_id": upload_id},
                     headers=self.client.auth_headers,
                 )

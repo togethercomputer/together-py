@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from together.lib.cli.utils.config import CLIConfig
+from together.types.supported_model import SupportedModel
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.supported_model import SupportedModel
+from together.types.supported_model_deployment_profile import SupportedModelDeploymentProfile
 from together.lib.cli.api.endpoints._utils._resolve_model import MODEL_PATH_RE
-from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
 
 
 def _profile_model_id(profile: SupportedModelDeploymentProfile) -> str | None:

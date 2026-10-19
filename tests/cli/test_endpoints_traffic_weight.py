@@ -126,8 +126,8 @@ class TestUpsertTrafficWeight:
 
 
 def _mock_model_and_config(respx_mock: MockRouter) -> None:
-    respx_mock.get("/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
-    respx_mock.get("/projects/proj/configs").mock(
+    respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
+    respx_mock.get("/v2/projects/proj/configs").mock(
         return_value=httpx.Response(
             200,
             json={"object": "list", "data": [_config_body()], "next_cursor": None},
@@ -143,13 +143,13 @@ class TestDeployTrafficWeight:
         cli_runner: CliRunner,
     ) -> None:
         _mock_model_and_config(respx_mock)
-        respx_mock.post("/projects/proj/endpoints").mock(
+        respx_mock.post("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(200, json=_endpoint_body(trafficSplit=[], deployments=[], etag="etag-new"))
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(200, json=_deployment_body())
         )
-        update_route = respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
+        update_route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(
                 200,
                 json=_endpoint_body(
@@ -161,7 +161,6 @@ class TestDeployTrafficWeight:
 
         result = cli_runner.invoke(
             [
-                "beta",
                 "endpoints",
                 "deploy",
                 "--project",
@@ -195,11 +194,11 @@ class TestDeployTrafficWeight:
         cli_runner: CliRunner,
     ) -> None:
         _mock_model_and_config(respx_mock)
-        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
-        respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(200, json=_deployment_body())
         )
-        update_route = respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
+        update_route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(
                 200,
                 json=_endpoint_body(
@@ -213,7 +212,6 @@ class TestDeployTrafficWeight:
 
         result = cli_runner.invoke(
             [
-                "beta",
                 "endpoints",
                 "deploy",
                 "--project",
@@ -248,14 +246,13 @@ class TestDeployTrafficWeight:
         cli_runner: CliRunner,
     ) -> None:
         _mock_model_and_config(respx_mock)
-        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
-        respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(200, json=_deployment_body())
         )
 
         result = cli_runner.invoke(
             [
-                "beta",
                 "endpoints",
                 "deploy",
                 "--project",
@@ -282,7 +279,7 @@ class TestUpdateTrafficWeight:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -325,7 +322,7 @@ class TestUpdateTrafficWeight:
                 },
             )
         )
-        update_route = respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
+        update_route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(
                 200,
                 json=_endpoint_body(
@@ -339,7 +336,6 @@ class TestUpdateTrafficWeight:
 
         result = cli_runner.invoke(
             [
-                "beta",
                 "endpoints",
                 "update",
                 "--project",
@@ -368,7 +364,7 @@ class TestUpdateTrafficWeight:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -408,7 +404,7 @@ class TestUpdateTrafficWeight:
                 },
             )
         )
-        update_route = respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
+        update_route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(
                 200,
                 json=_endpoint_body(
@@ -422,7 +418,6 @@ class TestUpdateTrafficWeight:
 
         result = cli_runner.invoke(
             [
-                "beta",
                 "endpoints",
                 "update",
                 "--project",

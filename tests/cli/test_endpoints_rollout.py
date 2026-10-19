@@ -173,10 +173,10 @@ def _rollout_args(*extra: str) -> list[str]:
 
 def _mock_active_rollout(respx_mock: MockRouter, *, rollout: dict[str, Any] | None = None) -> dict[str, Any]:
     body = rollout or _rollout_body()
-    respx_mock.get("/projects/proj/endpoints/ep_1").mock(
+    respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(
         return_value=httpx.Response(200, json=_endpoint_body(activeRolloutId=body["id"]))
     )
-    respx_mock.get(f"/projects/proj/endpoints/ep_1/rollouts/{body['id']}").mock(
+    respx_mock.get(f"/v2/projects/proj/endpoints/ep_1/rollouts/{body['id']}").mock(
         return_value=httpx.Response(200, json=body)
     )
     return body
@@ -603,16 +603,16 @@ class TestBetaEndpointsRollout:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
         )
-        start_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        start_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(200, json=_rollout_body())
         )
 
@@ -642,13 +642,13 @@ class TestBetaEndpointsRollout:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(
@@ -659,7 +659,7 @@ class TestBetaEndpointsRollout:
                 ),
             )
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(strategy="ROLLOUT_STRATEGY_TYPE_CANARY", total_steps=3),
@@ -683,13 +683,13 @@ class TestBetaEndpointsRollout:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(
@@ -700,7 +700,7 @@ class TestBetaEndpointsRollout:
                 ),
             )
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(strategy="ROLLOUT_STRATEGY_TYPE_CANARY", total_steps=3),
@@ -747,13 +747,13 @@ class TestBetaEndpointsRollout:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(
@@ -764,7 +764,7 @@ class TestBetaEndpointsRollout:
                 ),
             )
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(strategy="ROLLOUT_STRATEGY_TYPE_CANARY", total_steps=3),
@@ -806,13 +806,13 @@ class TestBetaEndpointsRollout:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(
@@ -823,7 +823,7 @@ class TestBetaEndpointsRollout:
                 ),
             )
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(strategy="ROLLOUT_STRATEGY_TYPE_CANARY", total_steps=3),
@@ -863,28 +863,28 @@ class TestBetaEndpointsRollout:
         for deployment in endpoint["deployments"]:
             if deployment["id"] == "dep_target":
                 deployment["estimatedEffectiveTrafficShare"] = 0.0
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [endpoint], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
             )
         )
-        delete_ab = respx_mock.delete("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+        delete_ab = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
             return_value=httpx.Response(200, json={"id": "abx_1"})
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(200, json=_rollout_body())
         )
 
@@ -911,28 +911,28 @@ class TestBetaEndpointsRollout:
         monkeypatch.setattr("together.lib.cli.track_cli", capture_event)
 
         endpoint = _endpoint_body()
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [endpoint], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
             )
         )
-        respx_mock.delete("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+        respx_mock.delete("/v2/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
             return_value=httpx.Response(200, json={"id": "abx_1"})
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(
                 400,
                 json={"error": {"message": "cannot start rollout", "type": "invalid_request_error"}},
@@ -961,16 +961,16 @@ class TestBetaEndpointsRollout:
         cli_runner: CliRunner,
     ) -> None:
         endpoint = _endpoint_body()
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [endpoint], "next_cursor": None},
             )
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(
                 400,
                 json={"error": {"message": "cannot start rollout", "type": "invalid_request_error"}},
@@ -1002,16 +1002,16 @@ class TestBetaEndpointsRollout:
                 _deployment_summary("dep_target", estimated_effective_traffic_share=0.0),
             ],
         )
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [endpoint], "next_cursor": None},
             )
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(200, json=_rollout_body())
         )
 
@@ -1038,16 +1038,16 @@ class TestBetaEndpointsRollout:
                 _deployment_summary("dep_target", estimated_effective_traffic_share=0.1),
             ],
         )
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [endpoint], "next_cursor": None},
             )
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(200, json=_rollout_body())
         )
 
@@ -1070,7 +1070,7 @@ class TestBetaEndpointsRollout:
             trafficSplit=[{"deploymentId": "dep_foreign", "weight": 1.0}],
             deployments=[_deployment_summary("dep_foreign", estimated_effective_traffic_share=1.0)],
         )
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body(), other], "next_cursor": None},
@@ -1089,16 +1089,16 @@ class TestBetaEndpointsRollout:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(200, json=_rollout_body())
         )
 
@@ -1116,16 +1116,16 @@ class TestBetaEndpointsRollout:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(200, json=_rollout_body())
         )
 
@@ -1154,13 +1154,13 @@ class TestBetaEndpointsRollout:
                 ),
             ]
         )
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [endpoint], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -1170,19 +1170,19 @@ class TestBetaEndpointsRollout:
                 },
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
         delete_target = respx_mock.delete(
-            "/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1"
+            "/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1"
         ).mock(return_value=httpx.Response(200, json={"id": "target_1"}))
-        delete_shadow = respx_mock.delete("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1").mock(
+        delete_shadow = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1").mock(
             return_value=httpx.Response(200, json={"id": "exp_1"})
         )
-        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
             return_value=httpx.Response(200, json=_rollout_body())
         )
 
@@ -1202,7 +1202,7 @@ class TestBetaEndpointsRollout:
         cli_runner: CliRunner,
     ) -> None:
         _mock_active_rollout(respx_mock)
-        cancel_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/cancel").mock(
+        cancel_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/cancel").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_CANCELED"))
         )
 
@@ -1223,7 +1223,7 @@ class TestBetaEndpointsRollout:
         cli_runner: CliRunner,
     ) -> None:
         _mock_active_rollout(respx_mock)
-        cancel_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/cancel").mock(
+        cancel_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/cancel").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_CANCELED"))
         )
 
@@ -1242,7 +1242,7 @@ class TestBetaEndpointsRollout:
         cli_runner: CliRunner,
     ) -> None:
         _mock_active_rollout(respx_mock)
-        cancel_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/cancel").mock(
+        cancel_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/cancel").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_CANCELED"))
         )
 
@@ -1261,7 +1261,7 @@ class TestBetaEndpointsRollout:
         cli_runner: CliRunner,
     ) -> None:
         _mock_active_rollout(respx_mock, rollout=_rollout_body(state="ROLLOUT_STATE_PAUSED"))
-        resume_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/resume").mock(
+        resume_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/resume").mock(
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_RUNNING"))
         )
 
@@ -1279,7 +1279,7 @@ class TestBetaEndpointsRollout:
         cli_runner: CliRunner,
     ) -> None:
         _mock_active_rollout(respx_mock)
-        promote_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/promote").mock(
+        promote_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/promote").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(
@@ -1306,7 +1306,7 @@ class TestBetaEndpointsRollout:
         # List/retrieve omit activeRolloutId; fallback picks newest non-terminal.
         # Newer COMPLETED must lose to older PAUSED (client-side state filter).
         # filter=ROLLOUT_FILTER_ACTIVE is omitted — that filter can drop paused.
-        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
 
         def list_rollouts(request: httpx.Request) -> httpx.Response:
             assert "filter" not in request.url.params
@@ -1330,8 +1330,8 @@ class TestBetaEndpointsRollout:
                 },
             )
 
-        list_route = respx_mock.get("/projects/proj/endpoints/ep_1/rollouts").mock(side_effect=list_rollouts)
-        pause_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_paused/pause").mock(
+        list_route = respx_mock.get("/v2/projects/proj/endpoints/ep_1/rollouts").mock(side_effect=list_rollouts)
+        pause_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_paused/pause").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(rollout_id="rol_paused", state="ROLLOUT_STATE_PAUSED"),
@@ -1350,7 +1350,7 @@ class TestBetaEndpointsRollout:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
 
         def list_rollouts(request: httpx.Request) -> httpx.Response:
             # Server ACTIVE filter would omit paused — CLI must not send it.
@@ -1375,8 +1375,8 @@ class TestBetaEndpointsRollout:
                 },
             )
 
-        respx_mock.get("/projects/proj/endpoints/ep_1/rollouts").mock(side_effect=list_rollouts)
-        resume_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_paused/resume").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/rollouts").mock(side_effect=list_rollouts)
+        resume_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_paused/resume").mock(
             return_value=httpx.Response(
                 200,
                 json=_rollout_body(rollout_id="rol_paused", state="ROLLOUT_STATE_RUNNING"),

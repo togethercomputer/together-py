@@ -36,7 +36,7 @@ async def login(
     """Log in with a browser using the OIDC device authorization grant.
 
     The issuer is the API base URL (`--base-url` / `TOGETHER_BASE_URL`, default
-    https://api.together.ai/v1) without its `/v1`.
+    https://api.together.ai). A legacy trailing `/v1` is stripped if present.
     """
 
     def prompt(code: DeviceCode) -> None:

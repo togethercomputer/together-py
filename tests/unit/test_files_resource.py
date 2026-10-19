@@ -58,7 +58,7 @@ def _mock_upload_responses(mocker: MockerFixture, *, content_str: str, filename:
             "FileType": "jsonl",
             "purpose": "fine-tune",
             "object": "file",
-            "Processed": True,
+            "processing_status": "COMPLETED",
         },
         request=mock_request,
     )
@@ -98,7 +98,7 @@ def test_file_upload(mocker: MockerFixture, tmp_path: Path):
     assert response.created_at == 1234567890
     assert response.file_type == "jsonl"
     assert response.object == "file"
-    assert response.processed == True
+    assert response.processing_status == "COMPLETED"
     assert response.purpose == "fine-tune"
 
 
@@ -312,7 +312,7 @@ def _finalize_json(content_str: str, filename: str = "valid.jsonl") -> dict[str,
         "FileType": "jsonl",
         "purpose": "fine-tune",
         "object": "file",
-        "Processed": True,
+        "processing_status": "COMPLETED",
     }
 
 

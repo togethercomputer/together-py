@@ -103,7 +103,7 @@ class TestFilesCheck:
 class TestFilesDelete:
     @pytest.mark.respx(base_url=base_url)
     def test_delete(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.delete("/files/file-to-delete").mock(
+        respx_mock.delete("/v1/files/file-to-delete").mock(
             return_value=httpx.Response(200, json={"id": "file-to-delete", "deleted": True})
         )
         result = cli_runner.invoke(["files", "delete", "file-to-delete"])
@@ -114,7 +114,9 @@ class TestFilesDelete:
 class TestFilesList:
     @pytest.mark.respx(base_url=base_url)
     def test_list(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/files").mock(return_value=httpx.Response(200, json={"data": [FILE_ROW_OLDER, FILE_ROW_NEWER]}))
+        respx_mock.get("/v1/files").mock(
+            return_value=httpx.Response(200, json={"data": [FILE_ROW_OLDER, FILE_ROW_NEWER]})
+        )
         result = cli_runner.invoke(["files", "list"])
         assert result.exit_code == 0
         assert "file-newer" in result.output
@@ -125,7 +127,9 @@ class TestFilesList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/files").mock(return_value=httpx.Response(200, json={"data": [FILE_ROW_OLDER, FILE_ROW_NEWER]}))
+        respx_mock.get("/v1/files").mock(
+            return_value=httpx.Response(200, json={"data": [FILE_ROW_OLDER, FILE_ROW_NEWER]})
+        )
         result = cli_runner.invoke(["files", "list", "--json"])
         assert result.exit_code == 0
         parsed = json.loads(result.output)
@@ -135,7 +139,7 @@ class TestFilesList:
 class TestFilesRetrieve:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/files/file-meta").mock(return_value=httpx.Response(200, json=FILE_ROW_NEWER))
+        respx_mock.get("/v1/files/file-meta").mock(return_value=httpx.Response(200, json=FILE_ROW_NEWER))
         result = cli_runner.invoke(["files", "retrieve", "file-meta"])
         assert result.exit_code == 0
         assert "newer.jsonl" in result.output
@@ -143,7 +147,7 @@ class TestFilesRetrieve:
 
     @pytest.mark.respx(base_url=base_url)
     def test_get_alias(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/files/file-meta").mock(return_value=httpx.Response(200, json=FILE_ROW_NEWER))
+        respx_mock.get("/v1/files/file-meta").mock(return_value=httpx.Response(200, json=FILE_ROW_NEWER))
         result = cli_runner.invoke(["files", "get", "file-meta"])
         assert result.exit_code == 0
         assert "newer.jsonl" in result.output
@@ -157,7 +161,7 @@ class TestFilesRetrieveContent:
 
     @pytest.mark.respx(base_url=base_url)
     def test_specifying_output(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
-        respx_mock.get("/files/file-1/content").mock(return_value=httpx.Response(200, content=b"line1\nline2\n"))
+        respx_mock.get("/v1/files/file-1/content").mock(return_value=httpx.Response(200, content=b"line1\nline2\n"))
         out = tmp_path / "saved.jsonl"
         result = cli_runner.invoke(["files", "retrieve-content", "file-1", "--output", str(out)])
         assert result.exit_code == 0
@@ -177,10 +181,10 @@ class TestFilesRetrieveContent:
         tmp_path: Path,
         cli_runner: CliRunner,
     ) -> None:
-        content_route = respx_mock.get("/files/file-1/content").mock(
+        content_route = respx_mock.get("/v1/files/file-1/content").mock(
             return_value=httpx.Response(200, content=b"line1\nline2\n")
         )
-        respx_mock.get("/files/file-1").mock(return_value=httpx.Response(200, json=FILE_ROW_NEWER))
+        respx_mock.get("/v1/files/file-1").mock(return_value=httpx.Response(200, json=FILE_ROW_NEWER))
         out = tmp_path / directory_name
         if create_directory:
             out.mkdir()
@@ -208,9 +212,9 @@ class TestFilesRetrieveContent:
         tmp_path: Path,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/files/file-1/content").mock(return_value=httpx.Response(200, content=b"safe-bytes"))
+        respx_mock.get("/v1/files/file-1/content").mock(return_value=httpx.Response(200, content=b"safe-bytes"))
         row = {**FILE_ROW_NEWER, "filename": malicious_filename}
-        respx_mock.get("/files/file-1").mock(return_value=httpx.Response(200, json=row))
+        respx_mock.get("/v1/files/file-1").mock(return_value=httpx.Response(200, json=row))
         out = tmp_path / "downloads"
         out.mkdir()
 
@@ -227,7 +231,7 @@ class TestFilesRetrieveContent:
 
     @pytest.mark.respx(base_url=base_url)
     def test_specifying_stdout(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/files/file-1/content").mock(return_value=httpx.Response(200, content=b"stdout-bytes"))
+        respx_mock.get("/v1/files/file-1/content").mock(return_value=httpx.Response(200, content=b"stdout-bytes"))
         result = cli_runner.invoke(["files", "retrieve-content", "file-1", "--stdout"])
         assert result.exit_code == 0
         # Rich loading status may leave a leading newline before body output

@@ -177,10 +177,10 @@ class TestFineTuningCreate:
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_handles_unavailable_price_estimation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes/models/limits").mock(
+        respx_mock.get("/v1/fine-tunes/models/limits").mock(
             return_value=httpx.Response(200, json={**_MODEL_LIMITS_BODY, "supports_vision": True})
         )
-        estimate = respx_mock.post("/fine-tunes/estimate-price").mock(
+        estimate = respx_mock.post("/v1/fine-tunes/estimate-price").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -213,8 +213,8 @@ class TestFineTuningCreate:
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_handles_missing_estimated_price(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
-        respx_mock.post("/fine-tunes/estimate-price").mock(
+        respx_mock.get("/v1/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.post("/v1/fine-tunes/estimate-price").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -248,8 +248,8 @@ class TestFineTuningCreate:
     def test_create_warns_when_estimated_price_exceeds_funds(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
-        respx_mock.post("/fine-tunes/estimate-price").mock(
+        respx_mock.get("/v1/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.post("/v1/fine-tunes/estimate-price").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -280,8 +280,8 @@ class TestFineTuningCreate:
 
     @pytest.mark.respx(base_url=base_url, assert_all_called=False)
     def test_create_lora_uses_default_rank(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
-        respx_mock.post("/fine-tunes/estimate-price").mock(
+        respx_mock.get("/v1/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.post("/v1/fine-tunes/estimate-price").mock(
             return_value=httpx.Response(200, json={"estimated_total_price": 1.0, "allowed_to_proceed": True})
         )
         create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
@@ -307,8 +307,8 @@ class TestFineTuningCreate:
 
     @pytest.mark.respx(base_url=base_url, assert_all_called=False)
     def test_create_early_stopping_sends_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
-        respx_mock.post("/fine-tunes/estimate-price").mock(
+        respx_mock.get("/v1/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.post("/v1/fine-tunes/estimate-price").mock(
             return_value=httpx.Response(200, json={"estimated_total_price": 1.0, "allowed_to_proceed": True})
         )
         create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
@@ -348,7 +348,7 @@ class TestFineTuningCreate:
     def test_create_early_stopping_invalid_fails_before_create(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.get("/v1/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
         create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
 
         # default patience(2) + warmup(1) + 1 = 4 > n_evals=3, so this must fail before any create call.
@@ -377,7 +377,7 @@ class TestFineTuningCreate:
 class TestFineTuningList:
     @pytest.mark.respx(base_url=base_url)
     def test_list_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes").mock(
+        respx_mock.get("/v1/fine-tunes").mock(
             return_value=httpx.Response(200, json={"data": [_FT_LIST_ITEM_OLDER, _FT_LIST_ITEM]})
         )
         result = cli_runner.invoke(["fine-tuning", "list"])
@@ -388,7 +388,7 @@ class TestFineTuningList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes").mock(
+        respx_mock.get("/v1/fine-tunes").mock(
             return_value=httpx.Response(200, json={"data": [_FT_LIST_ITEM_OLDER, _FT_LIST_ITEM]})
         )
         result = cli_runner.invoke(["fine-tuning", "list", "--json"])
@@ -398,7 +398,7 @@ class TestFineTuningList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_ft_alias_list(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes").mock(
+        respx_mock.get("/v1/fine-tunes").mock(
             return_value=httpx.Response(200, json={"data": [_FT_LIST_ITEM_OLDER, _FT_LIST_ITEM]})
         )
         result = cli_runner.invoke(["ft", "list"])
@@ -409,7 +409,7 @@ class TestFineTuningList:
 class TestFineTuningRetrieve:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY))
+        respx_mock.get("/v1/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY))
         result = cli_runner.invoke(["fine-tuning", "retrieve", "ft-1", "--json"])
         assert result.exit_code == 0
         body = json.loads(result.output)
@@ -418,7 +418,7 @@ class TestFineTuningRetrieve:
 
     @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_bare_job_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY))
+        respx_mock.get("/v1/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY))
         result = cli_runner.invoke(["ft", "ft-1", "--json"])
         assert result.exit_code == 0
         body = json.loads(result.output)
@@ -432,7 +432,7 @@ class TestFineTuningRetrieve:
             "status": "queued",
             "started_at": "0001-01-01T00:00:00Z",
         }
-        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
+        respx_mock.get("/v1/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
         previous_tz = os.environ.get("TZ")
         os.environ["TZ"] = "America/Los_Angeles"
         time.tzset()
@@ -455,7 +455,7 @@ class TestFineTuningCancel:
     @pytest.mark.respx(base_url=base_url)
     def test_cancel_not_cancellable(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         body = {**_FT_RETRIEVE_BODY, "status": "completed"}
-        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
+        respx_mock.get("/v1/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
         result = cli_runner.invoke(["fine-tuning", "cancel", "ft-1", "--quiet"])
         assert result.exit_code == 1
         assert "not currently cancellable" in result.output
@@ -464,8 +464,8 @@ class TestFineTuningCancel:
     @pytest.mark.respx(base_url=base_url)
     def test_cancel_quiet_calls_api(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         running = {**_FT_RETRIEVE_BODY, "status": "running"}
-        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=running))
-        respx_mock.post("/fine-tunes/ft-1/cancel").mock(
+        respx_mock.get("/v1/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=running))
+        respx_mock.post("/v1/fine-tunes/ft-1/cancel").mock(
             return_value=httpx.Response(200, json={**running, "status": "cancel_requested"})
         )
         result = cli_runner.invoke(["fine-tuning", "cancel", "ft-1", "--quiet", "--non-interactive"])
@@ -475,7 +475,7 @@ class TestFineTuningCancel:
     @pytest.mark.respx(base_url=base_url)
     def test_cancel_not_cancellable_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         body = {**_FT_RETRIEVE_BODY, "status": "completed"}
-        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
+        respx_mock.get("/v1/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
         result = cli_runner.invoke(["fine-tuning", "cancel", "ft-1", "--quiet", "--json"])
         assert result.exit_code == 1
         assert "Training is not currently cancellable" in result.output
@@ -484,14 +484,14 @@ class TestFineTuningCancel:
 class TestFineTuningDelete:
     @pytest.mark.respx(base_url=base_url)
     def test_delete_json_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.delete("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json={"message": "deleted"}))
+        respx_mock.delete("/v1/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json={"message": "deleted"}))
         result = cli_runner.invoke(["fine-tuning", "delete", "ft-1", "--json"])
         assert result.exit_code == 0
         assert json.loads(result.output) == {"message": "deleted"}
 
     @pytest.mark.respx(base_url=base_url)
     def test_delete_force(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.delete("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json={"message": "deleted"}))
+        respx_mock.delete("/v1/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json={"message": "deleted"}))
         result = cli_runner.invoke(["fine-tuning", "delete", "ft-1", "--force"])
         assert result.exit_code == 0
         assert "Deleted" in result.output
@@ -500,7 +500,7 @@ class TestFineTuningDelete:
 class TestFineTuningEventsAndCheckpoints:
     @pytest.mark.respx(base_url=base_url)
     def test_list_events_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes/ft-1/events").mock(return_value=httpx.Response(200, json={"data": [_FT_EVENT]}))
+        respx_mock.get("/v1/fine-tunes/ft-1/events").mock(return_value=httpx.Response(200, json={"data": [_FT_EVENT]}))
         result = cli_runner.invoke(["fine-tuning", "list-events", "ft-1", "--json"])
         assert result.exit_code == 0
         assert json.loads(result.output)[0]["message"] == "training started"
@@ -515,7 +515,7 @@ class TestFineTuningEventsAndCheckpoints:
             }
             for index in range(21)
         ]
-        respx_mock.get("/fine-tunes/ft-1/events").mock(return_value=httpx.Response(200, json={"data": events}))
+        respx_mock.get("/v1/fine-tunes/ft-1/events").mock(return_value=httpx.Response(200, json={"data": events}))
 
         result = cli_runner.invoke(["fine-tuning", "list-events", "ft-1", "--json"])
 
@@ -524,7 +524,7 @@ class TestFineTuningEventsAndCheckpoints:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes/ft-1/checkpoints").mock(
+        respx_mock.get("/v1/fine-tunes/ft-1/checkpoints").mock(
             return_value=httpx.Response(200, json={"data": [_FT_CHECKPOINT]})
         )
         result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
@@ -541,7 +541,7 @@ class TestFineTuningEventsAndCheckpoints:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         checkpoint = {**_FT_CHECKPOINT, "object_name": None}
-        respx_mock.get("/fine-tunes/ft-1/checkpoints").mock(
+        respx_mock.get("/v1/fine-tunes/ft-1/checkpoints").mock(
             return_value=httpx.Response(200, json={"data": [checkpoint]})
         )
         result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
@@ -551,7 +551,7 @@ class TestFineTuningEventsAndCheckpoints:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_empty_message(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes/ft-1/checkpoints").mock(return_value=httpx.Response(200, json={"data": []}))
+        respx_mock.get("/v1/fine-tunes/ft-1/checkpoints").mock(return_value=httpx.Response(200, json={"data": []}))
         result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
         assert result.exit_code == 0
         assert "No checkpoints found" in result.output
@@ -560,7 +560,9 @@ class TestFineTuningEventsAndCheckpoints:
 class TestFineTuningListMetrics:
     @pytest.mark.respx(base_url=base_url)
     def test_list_metrics_json_includes_zero_step_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/fine-tunes/ft-1/metrics").mock(return_value=httpx.Response(200, json=_FT_METRICS_BODY))
+        route = respx_mock.get("/v1/fine-tunes/ft-1/metrics").mock(
+            return_value=httpx.Response(200, json=_FT_METRICS_BODY)
+        )
 
         result = cli_runner.invoke(
             [
@@ -607,7 +609,7 @@ class TestFineTuningPreview:
         train_on_inputs_flag: str,
         expected_train_on_inputs: bool,
     ) -> None:
-        route = respx_mock.post("/fine-tunes/preview").mock(return_value=httpx.Response(200, json=_FT_PREVIEW_BODY))
+        route = respx_mock.post("/v1/fine-tunes/preview").mock(return_value=httpx.Response(200, json=_FT_PREVIEW_BODY))
 
         result = cli_runner.invoke(
             [
@@ -639,7 +641,7 @@ class TestFineTuningPreview:
 
     @pytest.mark.respx(base_url=base_url)
     def test_preview_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.post("/fine-tunes/preview").mock(return_value=httpx.Response(200, json=_FT_PREVIEW_BODY))
+        respx_mock.post("/v1/fine-tunes/preview").mock(return_value=httpx.Response(200, json=_FT_PREVIEW_BODY))
 
         result = cli_runner.invoke(
             [
@@ -662,7 +664,7 @@ class TestFineTuningPreview:
 class TestFineTuningModelLimits:
     @pytest.mark.respx(base_url=base_url)
     def test_model_limits_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/fine-tunes/models/limits").mock(
+        route = respx_mock.get("/v1/fine-tunes/models/limits").mock(
             return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY)
         )
 
@@ -678,7 +680,7 @@ class TestFineTuningModelLimits:
 
     @pytest.mark.respx(base_url=base_url)
     def test_model_limits_ft_alias_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.get("/v1/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
 
         result = cli_runner.invoke(["ft", "model-limits", "meta-llama/Llama-3-8b"])
 
@@ -692,7 +694,7 @@ class TestFineTuningDownload:
     def test_download_invokes_download_manager(
         self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/fine-tunes/ft-abcd-12").mock(return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY))
+        respx_mock.get("/v1/fine-tunes/ft-abcd-12").mock(return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY))
         out_file = tmp_path / "weights.tar"
         out_file.write_bytes(b"x")
 
@@ -728,7 +730,7 @@ class TestFineTuningDownload:
     def test_download_defaults_to_merged_checkpoint_for_lora_job(
         self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/fine-tunes/ft-abcd-12").mock(
+        respx_mock.get("/v1/fine-tunes/ft-abcd-12").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -772,7 +774,7 @@ class TestFineTuningDownloadTokenizedDataset:
     def test_download_tokenized_dataset_writes_file_json(
         self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
     ) -> None:
-        metadata = respx_mock.get("/fine-tunes/ft-abcd-12/download-tokenized-dataset").mock(
+        metadata = respx_mock.get("/v1/fine-tunes/ft-abcd-12/download-tokenized-dataset").mock(
             return_value=httpx.Response(200, json=_FT_TOKENIZED_DATASET_BODY)
         )
         download = respx_mock.get(_FT_TOKENIZED_DATASET_URL).mock(
@@ -809,7 +811,7 @@ class TestFineTuningDownloadTokenizedDataset:
         self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
     ) -> None:
         body = {**_FT_TOKENIZED_DATASET_BODY, "filename": "../../outside.tar.gz"}
-        respx_mock.get("/fine-tunes/ft-abcd-12/download-tokenized-dataset").mock(
+        respx_mock.get("/v1/fine-tunes/ft-abcd-12/download-tokenized-dataset").mock(
             return_value=httpx.Response(200, json=body)
         )
         respx_mock.get(_FT_TOKENIZED_DATASET_URL).mock(return_value=httpx.Response(200, content=b"tokenized-bytes"))

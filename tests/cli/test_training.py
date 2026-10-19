@@ -85,9 +85,9 @@ def _not_found() -> httpx.Response:
 
 def _mock_get_misses(respx_mock: MockRouter, object_id: str, *, hit: str) -> None:
     routes = {
-        "resource": f"/rl/model-resources/{object_id}",
-        "session": f"/rl/training-sessions/{object_id}",
-        "checkpoint": f"/rl/checkpoints/{object_id}",
+        "resource": f"/v1/rl/model-resources/{object_id}",
+        "session": f"/v1/rl/training-sessions/{object_id}",
+        "checkpoint": f"/v1/rl/checkpoints/{object_id}",
     }
     for kind, path in routes.items():
         if kind == hit:
@@ -119,7 +119,7 @@ class TestTrainingHelp:
 class TestTrainingResources:
     @pytest.mark.respx(base_url=base_url)
     def test_ls_resources_json_and_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/rl/model-resources").mock(
+        route = respx_mock.get("/v1/rl/model-resources").mock(
             return_value=httpx.Response(
                 200,
                 json={"data": [_resource_body()], "meta": _meta()},
@@ -156,7 +156,7 @@ class TestTrainingResources:
 
     @pytest.mark.respx(base_url=base_url)
     def test_ls_resources_table_and_next_page(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/rl/model-resources").mock(
+        respx_mock.get("/v1/rl/model-resources").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -176,7 +176,9 @@ class TestTrainingResources:
 
     @pytest.mark.respx(base_url=base_url)
     def test_ls_resources_empty(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/rl/model-resources").mock(return_value=httpx.Response(200, json={"data": [], "meta": _meta()}))
+        respx_mock.get("/v1/rl/model-resources").mock(
+            return_value=httpx.Response(200, json={"data": [], "meta": _meta()})
+        )
 
         result = cli_runner.invoke(["training", "ls-resources"])
 
@@ -193,7 +195,7 @@ class TestTrainingResources:
 class TestTrainingSessions:
     @pytest.mark.respx(base_url=base_url)
     def test_ls_sessions_filters_and_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/rl/training-sessions").mock(
+        route = respx_mock.get("/v1/rl/training-sessions").mock(
             return_value=httpx.Response(
                 200,
                 json={"data": [_session_body()], "meta": _meta()},
@@ -225,7 +227,7 @@ class TestTrainingSessions:
 
     @pytest.mark.respx(base_url=base_url)
     def test_ls_sessions_table_and_next_page(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/rl/training-sessions").mock(
+        respx_mock.get("/v1/rl/training-sessions").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -247,7 +249,7 @@ class TestTrainingSessions:
 class TestTrainingCheckpoints:
     @pytest.mark.respx(base_url=base_url)
     def test_ls_checkpoints_filters_by_type(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/rl/checkpoints").mock(
+        route = respx_mock.get("/v1/rl/checkpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -274,7 +276,7 @@ class TestTrainingCheckpoints:
 
     @pytest.mark.respx(base_url=base_url)
     def test_ls_checkpoints_training_type(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/rl/checkpoints").mock(
+        route = respx_mock.get("/v1/rl/checkpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -294,7 +296,7 @@ class TestTrainingCheckpoints:
 
     @pytest.mark.respx(base_url=base_url)
     def test_ls_checkpoints_omitted_type_returns_both(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/rl/checkpoints").mock(
+        route = respx_mock.get("/v1/rl/checkpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -319,7 +321,7 @@ class TestTrainingCheckpoints:
 
     @pytest.mark.respx(base_url=base_url)
     def test_ls_checkpoints_session_limit_and_cursor(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/rl/checkpoints").mock(
+        route = respx_mock.get("/v1/rl/checkpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -366,7 +368,7 @@ class TestTrainingCheckpoints:
 class TestTrainingGet:
     @pytest.mark.respx(base_url=base_url)
     def test_get_model_resource(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/rl/model-resources/res-1").mock(
+        respx_mock.get("/v1/rl/model-resources/res-1").mock(
             return_value=httpx.Response(200, json=_resource_body(base_weights_ref="ml_weights"))
         )
         _mock_get_misses(respx_mock, "res-1", hit="resource")
@@ -381,7 +383,7 @@ class TestTrainingGet:
 
     @pytest.mark.respx(base_url=base_url)
     def test_get_training_session(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/rl/training-sessions/sess-1").mock(return_value=httpx.Response(200, json=_session_body()))
+        respx_mock.get("/v1/rl/training-sessions/sess-1").mock(return_value=httpx.Response(200, json=_session_body()))
         _mock_get_misses(respx_mock, "sess-1", hit="session")
 
         result = cli_runner.invoke(["training", "get", "sess-1"])
@@ -393,7 +395,7 @@ class TestTrainingGet:
 
     @pytest.mark.respx(base_url=base_url)
     def test_get_inference_checkpoint(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/rl/checkpoints/ckpt-inf-1").mock(return_value=httpx.Response(200, json=_checkpoint_body()))
+        respx_mock.get("/v1/rl/checkpoints/ckpt-inf-1").mock(return_value=httpx.Response(200, json=_checkpoint_body()))
         _mock_get_misses(respx_mock, "ckpt-inf-1", hit="checkpoint")
 
         result = cli_runner.invoke(["training", "get", "ckpt-inf-1", "--json"])
@@ -407,7 +409,7 @@ class TestTrainingGet:
 
     @pytest.mark.respx(base_url=base_url)
     def test_get_training_checkpoint(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/rl/checkpoints/ckpt-train-1").mock(
+        respx_mock.get("/v1/rl/checkpoints/ckpt-train-1").mock(
             return_value=httpx.Response(
                 200,
                 json=_checkpoint_body("ckpt-train-1", checkpoint_type="CHECKPOINT_TYPE_TRAINING"),
@@ -425,14 +427,14 @@ class TestTrainingGet:
     def test_get_prefers_a_hit_over_an_error_from_another_type(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/rl/model-resources/sess-1").mock(
+        respx_mock.get("/v1/rl/model-resources/sess-1").mock(
             return_value=httpx.Response(
                 500,
                 json={"error": {"message": "model resources unavailable", "type": "server_error"}},
             )
         )
-        respx_mock.get("/rl/training-sessions/sess-1").mock(return_value=httpx.Response(200, json=_session_body()))
-        respx_mock.get("/rl/checkpoints/sess-1").mock(return_value=_not_found())
+        respx_mock.get("/v1/rl/training-sessions/sess-1").mock(return_value=httpx.Response(200, json=_session_body()))
+        respx_mock.get("/v1/rl/checkpoints/sess-1").mock(return_value=_not_found())
 
         result = cli_runner.invoke(["training", "get", "sess-1", "--json"])
 
@@ -451,14 +453,14 @@ class TestTrainingGet:
 
     @pytest.mark.respx(base_url=base_url)
     def test_get_surfaces_non_404_when_nothing_matches(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/rl/model-resources/missing").mock(
+        respx_mock.get("/v1/rl/model-resources/missing").mock(
             return_value=httpx.Response(
                 500,
                 json={"error": {"message": "model resources unavailable", "type": "server_error"}},
             )
         )
-        respx_mock.get("/rl/training-sessions/missing").mock(return_value=_not_found())
-        respx_mock.get("/rl/checkpoints/missing").mock(return_value=_not_found())
+        respx_mock.get("/v1/rl/training-sessions/missing").mock(return_value=_not_found())
+        respx_mock.get("/v1/rl/checkpoints/missing").mock(return_value=_not_found())
 
         result = cli_runner.invoke(["training", "get", "missing"])
 

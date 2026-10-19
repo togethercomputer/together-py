@@ -30,12 +30,12 @@ def _login(cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 
 
 class TestProjectScope:
-    @pytest.mark.respx(base_url=f"{base_url}/v1")
+    @pytest.mark.respx(base_url=base_url)
     def test_unscoped_login_tells_you_to_switch(
         self, respx_mock: MockRouter, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _login(cli_runner, tmp_path, monkeypatch, project_id=None)
-        respx_mock.get("/projects/proj/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
+        respx_mock.get("/v2/projects/proj/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
 
         result = cli_runner.invoke(["models", "list"])
 
@@ -43,12 +43,12 @@ class TestProjectScope:
         assert "tg switch proj" in _flat(result.output)
         assert "permission denied" not in result.output
 
-    @pytest.mark.respx(base_url=f"{base_url}/v1")
+    @pytest.mark.respx(base_url=base_url)
     def test_unscoped_login_401_prompts_for_a_project(
         self, respx_mock: MockRouter, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _login(cli_runner, tmp_path, monkeypatch, project_id=None)
-        respx_mock.get("/projects/proj/models").mock(
+        respx_mock.get("/v2/projects/proj/models").mock(
             return_value=httpx.Response(
                 401, json={"error": {"message": "unauthorized", "type": "authentication_error"}}
             )
@@ -61,7 +61,7 @@ class TestProjectScope:
         assert "tg login" not in result.output
         assert "unauthorized" not in result.output
 
-    @pytest.mark.respx(base_url=f"{base_url}/v1")
+    @pytest.mark.respx(base_url=base_url)
     def test_unscoped_login_401_after_rejected_refresh_says_login(
         self, respx_mock: MockRouter, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -85,7 +85,7 @@ class TestProjectScope:
         respx_mock.post(f"{base_url}/oauth/token").mock(
             return_value=httpx.Response(401, json={"error": "invalid_grant"})
         )
-        respx_mock.get("/projects/proj/models").mock(
+        respx_mock.get("/v2/projects/proj/models").mock(
             return_value=httpx.Response(
                 401, json={"error": {"message": "unauthorized", "type": "authentication_error"}}
             )
@@ -98,7 +98,7 @@ class TestProjectScope:
         assert "select a project scope" not in result.output.lower()
         assert "tg switch" not in result.output
 
-    @pytest.mark.respx(base_url=f"{base_url}/v1")
+    @pytest.mark.respx(base_url=base_url)
     def test_project_token_401_is_not_a_scope_prompt(
         self, respx_mock: MockRouter, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -116,7 +116,7 @@ class TestProjectScope:
         respx_mock.post(f"{base_url}/oauth/token").mock(
             return_value=httpx.Response(401, json={"error": "invalid_grant"})
         )
-        respx_mock.get("/projects/proj/models").mock(
+        respx_mock.get("/v2/projects/proj/models").mock(
             return_value=httpx.Response(
                 401, json={"error": {"message": "unauthorized", "type": "authentication_error"}}
             )
@@ -129,12 +129,12 @@ class TestProjectScope:
         assert "select a project scope" not in result.output.lower()
         assert "tg login" not in result.output
 
-    @pytest.mark.respx(base_url=f"{base_url}/v1")
+    @pytest.mark.respx(base_url=base_url)
     def test_unscoped_login_400_stays_an_api_error(
         self, respx_mock: MockRouter, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _login(cli_runner, tmp_path, monkeypatch, project_id=None)
-        respx_mock.get("/projects/proj/models").mock(
+        respx_mock.get("/v2/projects/proj/models").mock(
             return_value=httpx.Response(400, json={"error": {"message": "bad model", "type": "invalid_request_error"}})
         )
 
@@ -144,12 +144,12 @@ class TestProjectScope:
         assert "bad model" in result.output
         assert "tg switch" not in result.output
 
-    @pytest.mark.respx(base_url=f"{base_url}/v1")
+    @pytest.mark.respx(base_url=base_url)
     def test_unscoped_login_json(
         self, respx_mock: MockRouter, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _login(cli_runner, tmp_path, monkeypatch, project_id=None)
-        respx_mock.get("/projects/proj/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
+        respx_mock.get("/v2/projects/proj/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
 
         result = cli_runner.invoke(["models", "list", "--json"])
 
@@ -169,12 +169,12 @@ class TestProjectScope:
         assert "tg projects list" in text
         assert "tg switch <project-id>" in text
 
-    @pytest.mark.respx(base_url=f"{base_url}/v1")
+    @pytest.mark.respx(base_url=base_url)
     def test_other_project_tells_you_to_switch_to_it(
         self, respx_mock: MockRouter, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _login(cli_runner, tmp_path, monkeypatch, project_id="proj_a")
-        respx_mock.get("/projects/proj_b/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
+        respx_mock.get("/v2/projects/proj_b/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
 
         result = cli_runner.invoke(["--project", "proj_b", "models", "list"])
 
@@ -183,12 +183,12 @@ class TestProjectScope:
         assert "scoped to project proj_a, not proj_b" in text
         assert "tg switch proj_b" in text
 
-    @pytest.mark.respx(base_url=f"{base_url}/v1")
+    @pytest.mark.respx(base_url=base_url)
     def test_matching_scope_keeps_the_api_error(
         self, respx_mock: MockRouter, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _login(cli_runner, tmp_path, monkeypatch, project_id="proj")
-        respx_mock.get("/projects/proj/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
+        respx_mock.get("/v2/projects/proj/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
 
         result = cli_runner.invoke(["models", "list"])
 
@@ -209,7 +209,7 @@ class TestProjectScope:
         assert "Missing project_id" in result.output
         assert "tg switch" not in result.output
 
-    @pytest.mark.respx(base_url=f"{base_url}/v1")
+    @pytest.mark.respx(base_url=base_url)
     def test_whoami_forbidden_is_not_a_switch_hint(
         self, respx_mock: MockRouter, cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -221,7 +221,7 @@ class TestProjectScope:
         assert result.exit_code == 1, result.output
         assert "tg switch" not in result.output
 
-    @pytest.mark.respx(base_url=f"{base_url}/v1")
+    @pytest.mark.respx(base_url=base_url)
     def test_interactive_rejection_reruns_after_switch(
         self,
         respx_mock: MockRouter,
@@ -240,8 +240,8 @@ class TestProjectScope:
                 return httpx.Response(403, json=_FORBIDDEN)
             return httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
 
-        respx_mock.get("/projects/proj/models").mock(side_effect=models)
-        respx_mock.get("/projects").mock(
+        respx_mock.get("/v2/projects/proj/models").mock(side_effect=models)
+        respx_mock.get("/v1/projects").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -421,6 +421,6 @@ async def test_prompt_lists_projects_to_switch_to(monkeypatch: pytest.MonkeyPatc
 def PermissionDenied() -> Exception:
     from together import PermissionDeniedError
 
-    request = httpx.Request("GET", "https://api.together.ai/v1/projects/proj_b/models")
+    request = httpx.Request("GET", "https://api.together.ai/v2/projects/proj_b/models")
     response = httpx.Response(403, json=_FORBIDDEN, request=request)
     return PermissionDeniedError("permission denied", response=response, body=_FORBIDDEN)

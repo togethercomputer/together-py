@@ -90,7 +90,7 @@ class FakeClient:
     def __init__(self) -> None:
         self.post_training = FakeRL()
         self.closed = False
-        self.base_url = httpx.URL("https://api.together.ai/v1/")
+        self.base_url = httpx.URL("https://api.together.ai/")
         self.api_key = "test-api-key"
         self.captured_put_body: bytes | None = None
 

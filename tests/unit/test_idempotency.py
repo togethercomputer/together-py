@@ -16,7 +16,7 @@ from together.post_training import SessionClient
 BASE_URL = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 IDEMPOTENCY_HEADER = "Idempotency-Key"
 OPERATION_ID = "550e8400-e29b-41d4-a716-446655440000"
-OPERATION_PATH = "/rl/training-sessions/session-id/operations/training-checkpoint"
+OPERATION_PATH = "/v1/rl/training-sessions/session-id/operations/training-checkpoint"
 
 
 def _no_retry_delay(*_args: object, **_kwargs: object) -> float:
@@ -161,7 +161,7 @@ async def test_rl_wrappers_generate_retry_keys(
     endpoint: str,
     output: dict[str, Any],
 ) -> None:
-    path = f"/rl/training-sessions/session-id/operations/{endpoint}"
+    path = f"/v1/rl/training-sessions/session-id/operations/{endpoint}"
     post_route = respx_mock.post(path).mock(
         side_effect=[
             httpx.Response(500),
@@ -202,8 +202,8 @@ async def test_rl_wrappers_generate_retry_keys(
     "path",
     [
         "/chat/completions",
-        "/rl/training-sessions/session-id/stop",
-        "/rl/training-sessions/session-id/payloads/upload-url",
+        "/v1/rl/training-sessions/session-id/stop",
+        "/v1/rl/training-sessions/session-id/payloads/upload-url",
     ],
 )
 async def test_other_posts_do_not_generate_keys(

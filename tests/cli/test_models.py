@@ -127,7 +127,7 @@ def _supported_model_body(**overrides: Any) -> dict[str, Any]:
 class TestBetaModelsCreate:
     @pytest.mark.respx(base_url=base_url)
     def test_create_posts_name_base_model_and_type(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.post("/projects/proj/models").mock(return_value=httpx.Response(200, json=_model_body()))
+        route = respx_mock.post("/v2/projects/proj/models").mock(return_value=httpx.Response(200, json=_model_body()))
 
         result = cli_runner.invoke(
             [
@@ -152,19 +152,19 @@ class TestBetaModelsCreate:
         }
         assert json.loads(result.output)["id"] == "ml_1"
         # Model ids are passed through — no supported-models lookup.
-        assert not any(call.request.url.path == "/supported-models" for call in cast(list[Call], respx_mock.calls))
+        assert not any(call.request.url.path == "/v2/supported-models" for call in cast(list[Call], respx_mock.calls))
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_resolves_base_model_name_via_supported_models(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        supported_route = respx_mock.get("/supported-models").mock(
+        supported_route = respx_mock.get("/v2/supported-models").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
             )
         )
-        create_route = respx_mock.post("/projects/proj/models").mock(
+        create_route = respx_mock.post("/v2/projects/proj/models").mock(
             return_value=httpx.Response(200, json=_model_body())
         )
 
@@ -193,7 +193,7 @@ class TestBetaModelsCreate:
     def test_create_rejects_unmatched_base_model_name_with_candidates(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/supported-models").mock(
+        respx_mock.get("/v2/supported-models").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -269,7 +269,7 @@ class TestBetaModelsCreate:
 class TestBetaModelsUpdate:
     @pytest.mark.respx(base_url=base_url)
     def test_update_sends_mask_and_payload(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.patch("/projects/proj/models/ml_1").mock(
+        route = respx_mock.patch("/v2/projects/proj/models/ml_1").mock(
             return_value=httpx.Response(200, json=_model_body(name="my-project/renamed"))
         )
 
@@ -302,7 +302,7 @@ class TestBetaModelsUpdate:
 class TestBetaModelsList:
     @pytest.mark.respx(base_url=base_url)
     def test_list_sends_cursor_pagination(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/projects/proj/models").mock(
+        route = respx_mock.get("/v2/projects/proj/models").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_model_body()], "next_cursor": "next"},
@@ -321,7 +321,7 @@ class TestBetaModelsList:
 class TestBetaModelsPublic:
     @pytest.mark.respx(base_url=base_url)
     def test_public_maps_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/supported-models").mock(
+        route = respx_mock.get("/v2/supported-models").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_supported_model_body()], "next_cursor": "c1"},
@@ -359,7 +359,7 @@ class TestBetaModelsPublic:
 
     @pytest.mark.respx(base_url=base_url)
     def test_public_table_shows_profile_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/supported-models").mock(
+        respx_mock.get("/v2/supported-models").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
@@ -379,7 +379,7 @@ class TestBetaModelsOrg:
     @pytest.mark.respx(base_url=base_url)
     def test_org_lists_org_scoped_models(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
-        route = respx_mock.get("/organizations/org-1/models").mock(
+        route = respx_mock.get("/v2/organizations/org-1/models").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_model_body()], "next_cursor": None},
@@ -398,8 +398,8 @@ class TestBetaModelsOrg:
 class TestBetaModelsRetrieve:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_includes_files(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
-        respx_mock.get("/projects/proj/models/ml_1/files").mock(return_value=httpx.Response(200, json=_files_body()))
+        respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
+        respx_mock.get("/v2/projects/proj/models/ml_1/files").mock(return_value=httpx.Response(200, json=_files_body()))
 
         result = cli_runner.invoke(["models", "get", "ml_1", "--project", "proj", "--json"])
 
@@ -415,14 +415,14 @@ class TestBetaModelsRetrieve:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/models/ml_1").mock(
+        respx_mock.get("/v2/projects/proj/models/ml_1").mock(
             return_value=httpx.Response(
                 200,
                 json=_model_body(baseModel="projects/proj_public/models/ml_base"),
             )
         )
-        respx_mock.get("/projects/proj/models/ml_1/files").mock(return_value=httpx.Response(200, json=_files_body()))
-        respx_mock.get("/projects/proj_public/models/ml_base").mock(
+        respx_mock.get("/v2/projects/proj/models/ml_1/files").mock(return_value=httpx.Response(200, json=_files_body()))
+        respx_mock.get("/v2/projects/proj_public/models/ml_base").mock(
             return_value=httpx.Response(
                 200,
                 json=_model_body(
@@ -442,7 +442,7 @@ class TestBetaModelsRetrieve:
 class TestBetaModelsRm:
     @pytest.mark.respx(base_url=base_url)
     def test_rm_deletes_model(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.delete("/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json={}))
+        route = respx_mock.delete("/v2/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json={}))
 
         result = cli_runner.invoke(["models", "rm", "ml_1", "--project", "proj", "--json"])
 
@@ -454,7 +454,7 @@ class TestBetaModelsRm:
 class TestBetaModelsListFiles:
     @pytest.mark.respx(base_url=base_url)
     def test_ls_files_passes_revision(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/projects/proj/models/ml_1/files").mock(
+        route = respx_mock.get("/v2/projects/proj/models/ml_1/files").mock(
             return_value=httpx.Response(200, json=_files_body())
         )
 
@@ -469,7 +469,7 @@ class TestBetaModelsListRevisions:
     @pytest.mark.parametrize("command", ["ls-revisions", "list-revisions"])
     @pytest.mark.respx(base_url=base_url)
     def test_list_revisions_aliases(self, command: str, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/projects/proj/models/ml_1/revisions").mock(
+        respx_mock.get("/v2/projects/proj/models/ml_1/revisions").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -495,7 +495,7 @@ class TestBetaModelsListRevisions:
 
     @pytest.mark.respx(base_url=base_url)
     def test_ls_revisions_table_shows_validation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/projects/proj/models/ml_1/revisions").mock(
+        respx_mock.get("/v2/projects/proj/models/ml_1/revisions").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -523,7 +523,7 @@ class TestBetaModelsListRevisions:
     def test_ls_revisions_table_renders_legacy_numeric_fields(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/projects/proj/models/19/revisions").mock(
+        respx_mock.get("/v2/projects/proj/models/19/revisions").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -555,7 +555,7 @@ class TestBetaModelsListRevisions:
 class TestBetaModelsConfigs:
     @pytest.mark.respx(base_url=base_url)
     def test_configs_filters_by_model(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/projects/proj/configs").mock(
+        route = respx_mock.get("/v2/projects/proj/configs").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_config_body()], "next_cursor": "next"},
@@ -586,7 +586,7 @@ class TestBetaModelsConfigs:
 
     @pytest.mark.respx(base_url=base_url)
     def test_configs_accepts_model_resource_path(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/projects/proj/configs").mock(
+        route = respx_mock.get("/v2/projects/proj/configs").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
         )
 
@@ -611,7 +611,7 @@ class TestBetaModelsConfigs:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
-        respx_mock.get("/projects/proj/models").mock(
+        respx_mock.get("/v2/projects/proj/models").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -621,7 +621,7 @@ class TestBetaModelsConfigs:
                 },
             )
         )
-        route = respx_mock.get("/projects/proj/configs").mock(
+        route = respx_mock.get("/v2/projects/proj/configs").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
         )
 
@@ -635,13 +635,13 @@ class TestBetaModelsConfigs:
     @pytest.mark.respx(base_url=base_url)
     def test_configs_resolves_public_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
-        respx_mock.get("/supported-models").mock(
+        respx_mock.get("/v2/supported-models").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
             )
         )
-        route = respx_mock.get("/projects/proj/configs").mock(
+        route = respx_mock.get("/v2/projects/proj/configs").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
         )
 
@@ -668,8 +668,7 @@ class TestBetaModelsUpload:
         (model_dir / ".hidden").write_bytes(b"ignored")
         (model_dir / "empty.bin").write_bytes(b"")
 
-        # upload forces the client onto the v2 production host
-        create_route = respx_mock.post("https://api.together.ai/v2/projects/proj/models/upload/create").mock(
+        create_route = respx_mock.post("/v2/projects/proj/models/upload/create").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -692,7 +691,7 @@ class TestBetaModelsUpload:
         put_route = respx_mock.put("https://storage.example/upload-1/part-1").mock(
             return_value=httpx.Response(200, headers={"ETag": '"etag-1"'})
         )
-        complete_route = respx_mock.post("https://api.together.ai/v2/projects/proj/models/upload/complete").mock(
+        complete_route = respx_mock.post("/v2/projects/proj/models/upload/complete").mock(
             return_value=httpx.Response(200, json={"revisionId": "rev-1"})
         )
 
@@ -747,13 +746,13 @@ class TestBetaModelsUpload:
     ) -> None:
         weights = tmp_path / "weights.bin"
         weights.write_bytes(b"cached")
-        create_route = respx_mock.post("https://api.together.ai/v2/projects/proj/models/upload/create").mock(
+        create_route = respx_mock.post("/v2/projects/proj/models/upload/create").mock(
             return_value=httpx.Response(
                 200,
                 json={"files": [{"path": "weights.bin", "skipUpload": True}]},
             )
         )
-        complete_route = respx_mock.post("https://api.together.ai/v2/projects/proj/models/upload/complete").mock(
+        complete_route = respx_mock.post("/v2/projects/proj/models/upload/complete").mock(
             return_value=httpx.Response(200, json={"revisionId": "rev-2"})
         )
 
@@ -813,8 +812,7 @@ class TestBetaModelsDownload:
         dest.mkdir()
         content = b"hello world"
 
-        # download forces the client onto the v2 production host
-        respx_mock.post("https://api.together.ai/v2/projects/proj/models/download").mock(
+        respx_mock.post("/v2/projects/proj/models/download").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -882,7 +880,7 @@ class TestBetaModelsDownload:
 class TestBetaModelsRemoteUploads:
     @pytest.mark.respx(base_url=base_url)
     def test_create_remote_upload(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.post("/projects/proj/models/uploads").mock(
+        route = respx_mock.post("/v2/projects/proj/models/uploads").mock(
             return_value=httpx.Response(200, json=_remote_upload_body())
         )
 
@@ -912,7 +910,7 @@ class TestBetaModelsRemoteUploads:
 
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_remote_upload(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/projects/proj/models/uploads/ru_1").mock(
+        respx_mock.get("/v2/projects/proj/models/uploads/ru_1").mock(
             return_value=httpx.Response(200, json=_remote_upload_body())
         )
 
@@ -923,7 +921,7 @@ class TestBetaModelsRemoteUploads:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_remote_uploads(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/projects/proj/models/uploads").mock(
+        route = respx_mock.get("/v2/projects/proj/models/uploads").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_remote_upload_body()], "next_cursor": "next"},

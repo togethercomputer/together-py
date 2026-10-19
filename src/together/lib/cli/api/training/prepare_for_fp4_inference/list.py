@@ -12,12 +12,8 @@ from together.lib.cli.api.training.prepare_for_fp4_inference._utils import forma
 
 
 def _input_model_name(configuration: ParamsConfiguration) -> str:
-    """Qualified name of the model being prepared.
-
-    ``model_name`` replaced ``adapter_model_name``. Jobs created before that rename
-    only have the former field.
-    """
-    return configuration.api_model_name or configuration.adapter_model_name or ""
+    """Qualified name of the model being prepared."""
+    return configuration.api_model_name or ""
 
 
 async def list(

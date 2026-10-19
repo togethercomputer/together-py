@@ -1,11 +1,11 @@
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.lib.cli.utils._whoami import project_of, fetch_whoami, organization_of
+from together.lib.cli.utils._whoami import project_of, organization_of
 from together.lib.cli.utils._console import console
 
 
 async def whoami(*, config: CLIConfigParameter) -> None:
-    me = await fetch_whoami(config.client)
+    me = await config.client.whoami()
 
     if config.json:
         console.print_json(openapi_dumps(me).decode("utf-8"))

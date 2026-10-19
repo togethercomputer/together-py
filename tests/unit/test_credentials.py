@@ -86,7 +86,7 @@ def test_sdk_client_does_not_read_the_credential_store(monkeypatch: pytest.Monke
     save_stored_credentials(StoredCredentials(access_token="stored-jwt", issuer="https://api.qa.together.ai"))
     with pytest.raises(TogetherError, match="api_key"):
         Together()
-    assert str(Together(api_key="explicit-key").base_url) == "https://api.together.ai/v1/"
+    assert str(Together(api_key="explicit-key").base_url) == "https://api.together.ai"
 
 
 def test_file_is_kubeconfig_shaped(creds_file: Path) -> None:
@@ -233,8 +233,8 @@ def test_legacy_merged_list_entries_are_split(creds_file: Path) -> None:
 @pytest.mark.parametrize(
     ("issuer", "base_url"),
     [
-        ("https://api.qa.together.ai/", "https://api.qa.together.ai/v1"),
-        # Production maps to None so the SDK default (and its v2 routing) applies.
+        ("https://api.qa.together.ai/", "https://api.qa.together.ai"),
+        # Production maps to None so the SDK default applies.
         ("https://api.together.ai", None),
         (None, None),
     ],

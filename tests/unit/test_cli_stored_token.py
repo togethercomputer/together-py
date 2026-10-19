@@ -92,7 +92,7 @@ def test_logged_in_ignores_together_base_url(tmp_path: Path, monkeypatch: pytest
     monkeypatch.setattr(cli, "_create_client", spy_create)
     _spy_resolve(monkeypatch)
     _run(["telemetry", "status"])
-    assert seen == [("https://api.qa.together.ai/v1/", True)]
+    assert seen == [("https://api.qa.together.ai", True)]
     assert os.environ["TOGETHER_BASE_URL"] == "http://127.0.0.1:9"
 
 
@@ -116,7 +116,7 @@ def test_logged_in_production_keeps_default_routing(tmp_path: Path, monkeypatch:
     monkeypatch.setattr(cli, "_create_client", spy_create)
     _spy_resolve(monkeypatch)
     _run(["telemetry", "status"])
-    assert seen == [("https://api.together.ai/v1/", False)]
+    assert seen == [("https://api.together.ai", False)]
 
 
 def test_stored_project_id_is_applied_to_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

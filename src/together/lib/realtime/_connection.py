@@ -73,7 +73,12 @@ def build_realtime_url(
     `extra_query["language"]` takes precedence.
     """
     scheme = {"https": "wss", "http": "ws"}.get(base_url.scheme, base_url.scheme)
-    path = base_url.path.rstrip("/") + "/realtime"
+    # Client base URL is the API root (no trailing `/v1`); realtime lives at `/v1/realtime`.
+    # Strip a legacy `/v1` suffix so this stays correct before and after that client change.
+    path = base_url.path.rstrip("/")
+    if path.endswith("/v1"):
+        path = path[: -len("/v1")]
+    path = f"{path}/v1/realtime"
     params: Dict[str, Any] = {"model": model, "input_audio_format": input_audio_format}
     if turn_detection:
         detection = dict(turn_detection)
