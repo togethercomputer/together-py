@@ -16,7 +16,6 @@ from ..._compat import cached_property
 from ..._resource import SyncAPIResource, AsyncAPIResource
 
 if TYPE_CHECKING:
-    from ..clusters import ClustersResource, AsyncClustersResource
     from ..realtime import RealtimeResource, AsyncRealtimeResource
 
 __all__ = ["BetaResource", "AsyncBetaResource"]
@@ -26,14 +25,6 @@ class BetaResource(SyncAPIResource):
     @cached_property
     def jig(self) -> JigResource:
         return JigResource(self._client)
-
-    # Handwritten (not generated): shim for dropping beta.clusters in a minor
-    # Delete this on next major version bump.
-    @cached_property
-    def clusters(self) -> ClustersResource:
-        from ..clusters import ClustersResource
-
-        return ClustersResource(self._client)
 
     # Handwritten (not generated): realtime transcription over WebSocket.
     # Guarded by tests/unit/test_realtime_wiring.py against regen drops.
@@ -67,14 +58,6 @@ class AsyncBetaResource(AsyncAPIResource):
     @cached_property
     def jig(self) -> AsyncJigResource:
         return AsyncJigResource(self._client)
-
-    # Handwritten (not generated): shim for dropping beta.clusters in a minor
-    # Delete this on next major version bump.
-    @cached_property
-    def clusters(self) -> AsyncClustersResource:
-        from ..clusters import AsyncClustersResource
-
-        return AsyncClustersResource(self._client)
 
     # Handwritten (not generated): realtime transcription over WebSocket.
     # Guarded by tests/unit/test_realtime_wiring.py against regen drops.

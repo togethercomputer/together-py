@@ -791,33 +791,22 @@ class TestClustersList:
         assert json.loads(result.output) == payload
         assert result.exit_code == 0
 
-    @pytest.mark.respx(base_url=base_url)
-    def test_beta_alias_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        payload = {"clusters": [_cluster_body()]}
-        respx_mock.get("/compute/clusters").mock(return_value=httpx.Response(200, json=payload))
-        result = cli_runner.invoke(["beta", "clusters", "list", "--json"])
-        assert json.loads(result.output) == payload
-        assert result.exit_code == 0
-
-
 class TestClustersHelp:
-    def test_clusters_is_top_level_and_beta_alias_is_hidden(self, cli_runner: CliRunner) -> None:
+    def test_clusters_is_top_level_not_under_beta(self, cli_runner: CliRunner) -> None:
         root = cli_runner.invoke(["--help"])
         assert root.exit_code == 0
         assert "clusters" in root.output
-        assert "beta clusters" not in root.output
 
         beta = cli_runner.invoke(["beta", "--help"])
         assert beta.exit_code == 0
         assert "clusters" not in beta.output
         assert "endpoints" in beta.output
 
-        # The alias still has the full command tree.
-        alias_help = cli_runner.invoke(["beta", "clusters", "--help"])
-        assert alias_help.exit_code == 0
-        assert "list" in alias_help.output
-        assert "storage" in alias_help.output
-        assert "remediations" in alias_help.output
+        clusters_help = cli_runner.invoke(["clusters", "--help"])
+        assert clusters_help.exit_code == 0
+        assert "list" in clusters_help.output
+        assert "storage" in clusters_help.output
+        assert "remediations" in clusters_help.output
 
 
 class TestClustersListRegions:

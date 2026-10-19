@@ -323,8 +323,8 @@ def test_parse_command_and_flags_strips_beta_prefix() -> None:
     assert flags == []
     assert is_beta is False
 
-    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "clusters", "list"])
-    assert cmd == "clusters list"
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "endpoints", "list"])
+    assert cmd == "endpoints list"
     assert flags == []
     assert is_beta is True
 
@@ -338,11 +338,6 @@ def test_parse_clusters_uuid_inserts_retrieve() -> None:
     assert cmd == "clusters retrieve"
     assert is_beta is False
     assert argv[:2] == ["clusters", "retrieve"]
-
-    cmd, _, is_beta, argv = preparse_tokens(app, ["beta", "clusters", cluster_id])
-    assert cmd == "clusters retrieve"
-    assert is_beta is True
-    assert argv[:3] == ["beta", "clusters", "retrieve"]
 
 
 def test_parse_command_and_flags_normalizes_ft_to_fine_tuning() -> None:

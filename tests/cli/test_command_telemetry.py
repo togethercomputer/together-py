@@ -331,7 +331,7 @@ def test_unknown_option_error_telemetry_is_option_and_command(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     cli_runner: CliRunner,
 ) -> None:
-    r = cli_runner.invoke(["beta", "clusters", "create", "--not-a-real-option"])
+    r = cli_runner.invoke(["clusters", "create", "--not-a-real-option"])
     assert r.exit_code == 1
     assert _event_kinds(track_cli_capture) == [
         CliTrackingEvents.CommandStarted.value,
@@ -339,7 +339,7 @@ def test_unknown_option_error_telemetry_is_option_and_command(
     ]
     failed = track_cli_capture[1][1]
     assert failed["command"] == "clusters create"
-    assert failed["is_beta_command"] is True
+    assert failed["is_beta_command"] is False
     assert failed["error"] == 'Unknown option: "--not-a-real-option" for command "clusters create"'
     assert "Function defined in file" not in failed["error"]
     assert ".py" not in failed["error"]
@@ -350,7 +350,7 @@ def test_unknown_option_equals_value_telemetry_strips_value(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     cli_runner: CliRunner,
 ) -> None:
-    r = cli_runner.invoke(["beta", "clusters", "create", "--auth-token=hunter2secret"])
+    r = cli_runner.invoke(["clusters", "create", "--auth-token=hunter2secret"])
     assert r.exit_code == 1
     failed = track_cli_capture[1][1]
     assert failed["command"] == "clusters create"

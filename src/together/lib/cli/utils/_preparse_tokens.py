@@ -20,10 +20,6 @@ _COMMAND_ID_IDENTIFIERS = {
     "clusters": _UUID_RE,
     "clusters storage": _UUID_RE,
     "clusters remediations": _UUID_RE,
-    # Hidden alias. preparse keeps the beta prefix here (it is stripped later).
-    "beta clusters": _UUID_RE,
-    "beta clusters storage": _UUID_RE,
-    "beta clusters remediations": _UUID_RE,
     "beta jig volumes": _UUID_RE,
 }
 

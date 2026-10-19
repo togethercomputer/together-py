@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import inspect
-from typing import Any, Optional, Annotated, get_args, get_origin
+from typing import Optional, Annotated, get_args, get_origin
 
 import httpx
 from cyclopts import App, Group, Parameter, CycloptsError, MissingArgumentError
@@ -130,8 +130,7 @@ _GLOBAL_PARAM_HELP = {
 # Commands that authenticate out-of-band (OIDC / step-ca) and make no Together
 # API calls, so the launcher must not require an API key or run the up-front
 # whoami() for them. Values match preparse_tokens() command paths with the beta
-# prefix stripped, so this covers both `tg clusters ssh` and the hidden
-# `tg beta clusters ssh` alias.
+# prefix stripped.
 _NO_AUTH_COMMANDS = frozenset({"clusters ssh"})
 # Top-level commands that perform their own auth (or clear it) and must not
 # require an existing API key or the project-resolution whoami().
@@ -390,11 +389,11 @@ async def _run_launcher(
 
     # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
     # and never call the Together API. They must not be gated on an API key or the
-    # up-front whoami() used for project resolution. `tg clusters ssh` is one
-    # (the hidden `tg beta clusters ssh` alias is the same command): its auth is
-    # entirely the cluster's Dex OIDC flow (see together.lib.cli.api.clusters.ssh).
-    # Before the whoami() was added for project resolution these commands worked
-    # with no key; skip client setup so they stay keyless.
+    # up-front whoami() used for project resolution. `tg clusters ssh` is one:
+    # its auth is entirely the cluster's Dex OIDC flow
+    # (see together.lib.cli.api.clusters.ssh). Before the whoami() was added for
+    # project resolution these commands worked with no key; skip client setup so
+    # they stay keyless.
     # `tg login` / `logout` / `switch` do their own auth against the stored issuer.
     no_auth_command = parsed_command in _NO_AUTH_COMMANDS or parsed_command in _NO_AUTH_ROOT_COMMANDS
 
@@ -1003,46 +1002,33 @@ beta_app = app.command(beta_root_app)
 clusters_app = app.command(
     App(name="clusters", help="Create and manage GPU clusters", help_epilogue=CLUSTERS_HELP_EXAMPLES)
 )
-# Hidden alias so `tg beta clusters` keeps working without showing up in help.
-# Cyclopts stores `show` on the App, so this is a separate App that shares subcommands.
-_beta_clusters_alias = beta_app.command(
-    App(name="clusters", show=False, help="Create and manage GPU clusters", help_epilogue=CLUSTERS_HELP_EXAMPLES)
-)
-
-
-def _clusters_command(obj: Any, /, *args: Any, **kwargs: Any) -> Any:
-    clusters_app.command(obj, *args, **kwargs)
-    _beta_clusters_alias.command(obj, *args, **kwargs)
-    return obj
-
-
-_clusters_command((f"{_CLI}.clusters.list:list"), alias="ls", help="List your clusters")
-_clusters_command(
+clusters_app.command((f"{_CLI}.clusters.list:list"), alias="ls", help="List your clusters")
+clusters_app.command(
     (f"{_CLI}.clusters.create:create"),
     alias="-c",
     help="Create a new cluster",
     help_epilogue=CLUSTERS_CREATE_HELP_EXAMPLES,
 )
-_clusters_command((f"{_CLI}.clusters.retrieve:retrieve"), alias="get", help="Get cluster details")
-_clusters_command(
+clusters_app.command((f"{_CLI}.clusters.retrieve:retrieve"), alias="get", help="Get cluster details")
+clusters_app.command(
     (f"{_CLI}.clusters.update:update"),
     help="Update a cluster",
     help_epilogue=CLUSTERS_UPDATE_HELP_EXAMPLES,
 )
-_clusters_command((f"{_CLI}.clusters.delete:delete"), alias="-d", help="Delete a cluster")
-_clusters_command((f"{_CLI}.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
-_clusters_command(
+clusters_app.command((f"{_CLI}.clusters.delete:delete"), alias="-d", help="Delete a cluster")
+clusters_app.command((f"{_CLI}.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
+clusters_app.command(
     (f"{_CLI}.clusters.get_credentials:get_credentials"),
     help="Get credentials for a cluster",
     help_epilogue=CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
 )
-_clusters_command(
+clusters_app.command(
     (f"{_CLI}.clusters.ssh:ssh"),
     help="SSH into a cluster via an OIDC-signed certificate",
 )
 
 ### Clusters > Storage API commands
-storage_app = _clusters_command(
+storage_app = clusters_app.command(
     App(
         name="storage",
         help="Manage cluster storage volumes",
@@ -1070,7 +1056,7 @@ storage_app.command(
 storage_app.command((f"{_CLI}.clusters.storage.delete:delete"), help="Delete a storage volume", alias="-d")
 
 ### Clusters > Remediations API commands
-remediations_app = _clusters_command(
+remediations_app = clusters_app.command(
     App(
         name="remediations",
         help="Manage node remediations",
