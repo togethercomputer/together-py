@@ -37,7 +37,7 @@ class TestProjectScope:
         _login(cli_runner, tmp_path, monkeypatch, project_id=None)
         respx_mock.get("/projects/proj/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
 
-        result = cli_runner.invoke(["beta", "models", "list"])
+        result = cli_runner.invoke(["models", "list"])
 
         assert result.exit_code == 1, result.output
         assert "tg switch proj" in _flat(result.output)
@@ -54,7 +54,7 @@ class TestProjectScope:
             )
         )
 
-        result = cli_runner.invoke(["beta", "models", "list"])
+        result = cli_runner.invoke(["models", "list"])
 
         assert result.exit_code == 1, result.output
         assert "tg switch proj" in _flat(result.output)
@@ -91,7 +91,7 @@ class TestProjectScope:
             )
         )
 
-        result = cli_runner.invoke(["beta", "models", "list"])
+        result = cli_runner.invoke(["models", "list"])
 
         assert result.exit_code == 1, result.output
         assert "tg login" in result.output
@@ -122,7 +122,7 @@ class TestProjectScope:
             )
         )
 
-        result = cli_runner.invoke(["beta", "models", "list"])
+        result = cli_runner.invoke(["models", "list"])
 
         assert result.exit_code == 1, result.output
         assert "unauthorized" in result.output
@@ -138,7 +138,7 @@ class TestProjectScope:
             return_value=httpx.Response(400, json={"error": {"message": "bad model", "type": "invalid_request_error"}})
         )
 
-        result = cli_runner.invoke(["beta", "models", "list"])
+        result = cli_runner.invoke(["models", "list"])
 
         assert result.exit_code == 1, result.output
         assert "bad model" in result.output
@@ -151,7 +151,7 @@ class TestProjectScope:
         _login(cli_runner, tmp_path, monkeypatch, project_id=None)
         respx_mock.get("/projects/proj/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
 
-        result = cli_runner.invoke(["beta", "models", "list", "--json"])
+        result = cli_runner.invoke(["models", "list", "--json"])
 
         assert result.exit_code == 1, result.output
         assert "tg switch proj" in json.loads(result.output)["error"]
@@ -162,7 +162,7 @@ class TestProjectScope:
         _login(cli_runner, tmp_path, monkeypatch, project_id=None)
         del cli_runner.env["TOGETHER_PROJECT_ID"]
 
-        result = cli_runner.invoke(["beta", "models", "list"])
+        result = cli_runner.invoke(["models", "list"])
 
         assert result.exit_code == 1, result.output
         text = _flat(result.output)
@@ -176,7 +176,7 @@ class TestProjectScope:
         _login(cli_runner, tmp_path, monkeypatch, project_id="proj_a")
         respx_mock.get("/projects/proj_b/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
 
-        result = cli_runner.invoke(["--project", "proj_b", "beta", "models", "list"])
+        result = cli_runner.invoke(["--project", "proj_b", "models", "list"])
 
         assert result.exit_code == 1, result.output
         text = _flat(result.output)
@@ -190,7 +190,7 @@ class TestProjectScope:
         _login(cli_runner, tmp_path, monkeypatch, project_id="proj")
         respx_mock.get("/projects/proj/models").mock(return_value=httpx.Response(403, json=_FORBIDDEN))
 
-        result = cli_runner.invoke(["beta", "models", "list"])
+        result = cli_runner.invoke(["models", "list"])
 
         assert result.exit_code == 1, result.output
         assert "permission denied" in result.output
@@ -203,7 +203,7 @@ class TestProjectScope:
         )
         del cli_runner.env["TOGETHER_PROJECT_ID"]
 
-        result = cli_runner.invoke(["beta", "models", "list"])
+        result = cli_runner.invoke(["models", "list"])
 
         assert result.exit_code == 1, result.output
         assert "Missing project_id" in result.output
@@ -264,7 +264,7 @@ class TestProjectScope:
         monkeypatch.setattr("together.lib.cli.utils._project_scope.select_project", select)
         monkeypatch.setattr(TogetherAuth, "switch", switch)
 
-        result = cli_runner.invoke(["beta", "models", "list"])
+        result = cli_runner.invoke(["models", "list"])
 
         assert result.exit_code == 0, result.output
         assert "You must select a project scope to work in." in result.output

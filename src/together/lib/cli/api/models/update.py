@@ -9,8 +9,8 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._json_mode import exit_with_message
+from together.lib.cli.api.models._utils import print_model_detail
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.models._utils import print_model_detail
 
 
 async def update(
@@ -20,7 +20,7 @@ async def update(
     *,
     config: CLIConfigParameter,
 ) -> None:
-    """Update a beta model."""
+    """Update a model."""
 
     update_mask: List[str] = []
     body: dict[str, Any] = {}
@@ -35,12 +35,12 @@ async def update(
     if not update_mask:
         exit_with_message(
             "Error: At least one update option must be specified.",
-            diagnostic="At least one beta model update option must be specified",
+            diagnostic="At least one model update option must be specified",
         )
 
     response = await show_loading_status(
-        "Updating beta model...",
-        config.client.beta.models.update(
+        "Updating model...",
+        config.client.models.update(
             id,
             **body,
             update_mask=",".join(update_mask),

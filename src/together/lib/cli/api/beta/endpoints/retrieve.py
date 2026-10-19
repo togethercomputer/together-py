@@ -16,8 +16,8 @@ from together.pagination import AsyncCursorPagination
 from together.types.beta import Endpoint, EndpointDeployment
 from together._exceptions import APIError
 from together._utils._json import openapi_dumps
+from together.types.models import Config
 from together.lib.utils.tools import format_datetime
-from together.types.beta.models import Config
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.types.beta.endpoints import Rollout, AbExperiment, ShadowExperiment
 from together.lib.cli.utils._console import console
@@ -103,7 +103,7 @@ async def _load_deployment_config(config: CLIConfigParameter, deployment: Endpoi
     if not config_id:
         return None
     try:
-        return await config.client.beta.models.configs.retrieve(
+        return await config.client.models.configs.retrieve(
             id=config_id,
             project_id=match.group(1) if match is not None else None,
         )

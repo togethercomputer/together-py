@@ -50,7 +50,7 @@ async def resolve_base_model_id(config: CLIConfig, base_model: str) -> str:
 
     supported = await show_loading_status(
         "Resolving base model...",
-        config.client.beta.models.list_supported(search=base_model),
+        config.client.models.list_supported(search=base_model),
     )
 
     candidates: list[tuple[str, str, str]] = []
@@ -77,7 +77,7 @@ async def resolve_base_model_id(config: CLIConfig, base_model: str) -> str:
             "Use a model id instead:\n"
             f"{_format_candidate_lines(ambiguous)}\n\n"
             "Re-run with a model id, for example:\n"
-            f"  tg beta models create <name> --base-model {next(iter(exact_ids))}"
+            f"  tg models create <name> --base-model {next(iter(exact_ids))}"
         )
 
     if candidates:
@@ -88,11 +88,9 @@ async def resolve_base_model_id(config: CLIConfig, base_model: str) -> str:
             "Possible matches:\n"
             f"{_format_candidate_lines(candidates)}\n\n"
             "Re-run with an exact model name or model id, for example:\n"
-            f"  tg beta models create <name> --base-model {example_id}"
+            f"  tg models create <name> --base-model {example_id}"
         )
 
     raise ValueError(
-        f'Base model "{base_model}" not found.\n'
-        "Search supported models with:\n"
-        f"  tg beta models public --search {base_model}"
+        f'Base model "{base_model}" not found.\nSearch supported models with:\n  tg models public --search {base_model}'
     )

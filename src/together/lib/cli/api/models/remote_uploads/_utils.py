@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 from together.lib.cli.utils._console import console
 
 if TYPE_CHECKING:
-    from together.types.beta.models.remote_upload_create_response import RemoteUploadCreateResponse
-    from together.types.beta.models.remote_upload_retrieve_response import RemoteUploadRetrieveResponse
+    from together.types.models.remote_upload_create_response import RemoteUploadCreateResponse
+    from together.types.models.remote_upload_retrieve_response import RemoteUploadRetrieveResponse
 
 
 def format_status(status: str | None) -> str:

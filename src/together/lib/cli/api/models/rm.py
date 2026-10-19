@@ -15,14 +15,14 @@ async def rm(
     *,
     config: CLIConfigParameter,
 ) -> None:
-    """Delete a beta model."""
+    """Delete a model."""
     await show_loading_status(
-        "Deleting beta model...",
-        config.client.beta.models.delete(id),
+        "Deleting model...",
+        config.client.models.delete(id),
     )
 
     if config.json:
-        console.print_json(openapi_dumps({"message": "Successfully deleted beta model"}).decode("utf-8"))
+        console.print_json(openapi_dumps({"message": "Successfully deleted model"}).decode("utf-8"))
         return
 
     console.print("[green]√[/green] Beta model deleted.")

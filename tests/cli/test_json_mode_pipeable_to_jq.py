@@ -13,7 +13,6 @@ from respx import MockRouter
 
 from tests.cli.utils import CliRunner
 from tests.cli.test_files import FILE_ROW_NEWER, _file_response
-from tests.cli.test_models import _UPLOAD_BODY, list_data
 from tests.cli.test_batches import _BATCH_JOB, _BATCH_CREATE
 from tests.cli.test_clusters import _VOLUME_BODY, _REGIONS_BODY, _cluster_body
 from tests.cli.test_endpoints import DEDICATED_EP, ENDPOINT_LIST_ITEM, model_data
@@ -69,9 +68,6 @@ def _mock_json_mode_http(respx_mock: MockRouter) -> None:
     respx_mock.get("/fine-tunes/ft-123/events").mock(return_value=_ok({"data": [_FT_EVENT]}))
     respx_mock.get("/fine-tunes/ft-123/checkpoints").mock(return_value=_ok({"data": [_FT_CHECKPOINT]}))
     respx_mock.post("/fine-tunes/preview").mock(return_value=_ok(_FT_PREVIEW_BODY))
-
-    respx_mock.get("/models").mock(return_value=_ok(list_data))
-    respx_mock.post("/models").mock(return_value=_ok(_UPLOAD_BODY))
 
     cluster = _cluster_body("cluster-123", "together-py-testing-suite")
     respx_mock.post("/compute/clusters").mock(return_value=_ok(cluster))
@@ -191,12 +187,6 @@ class TestJSONMode:
         fine_tuning.run_and_assert("list-checkpoints ft-123")
         fine_tuning.run_and_assert("preview --training-file file-123 --model deepseek-ai/DeepSeek-R1")
         fine_tuning.skip.run_and_assert("retrieve-checkpoint ft-123/checkpoint-123")
-
-    def test_models_json_mode(self, cli_runner: CliRunner) -> None:
-        models = JSONValidator("models", cli_runner)
-        models.run_and_assert("list")
-        models.run_and_assert("list --type dedicated")
-        models.run_and_assert("upload --model-name model-123/version-123 --model-source s3://model-123/version-123")
 
     def test_clusters_json_mode(self, cli_runner: CliRunner) -> None:
         clusters = JSONValidator(("clusters",), cli_runner)

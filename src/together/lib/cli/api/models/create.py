@@ -9,10 +9,10 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.api.models._utils import print_model_detail
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.models._utils import print_model_detail
+from together.lib.cli.api.models._resolve_base_model import resolve_base_model_id
 from together.lib.cli.utils._assert_explicit_project_id import assert_explicit_project_id
-from together.lib.cli.api.beta.models._resolve_base_model import resolve_base_model_id
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
 
 
@@ -24,7 +24,7 @@ class PromptBaseModel(PromptParameter):
     async def preprompt(self, config: CLIConfig) -> None:
         self.choices = []
 
-        async for model in config.client.beta.models.list_supported():
+        async for model in config.client.models.list_supported():
             for profile in model.deployment_profiles:
                 match = MODEL_PATH_RE.match(profile.model)
                 if match:
@@ -42,7 +42,7 @@ async def create(
     *,
     base_model: Annotated[
         str,
-        Parameter(help="Supported base model ID (ml_...) or deploy model name; run `tg beta models public` to find it"),
+        Parameter(help="Supported base model ID (ml_...) or deploy model name; run `tg models public` to find it"),
         PromptBaseModel(),
     ],
     type: Annotated[
@@ -58,8 +58,8 @@ async def create(
     base_model_id = await resolve_base_model_id(config, base_model)
 
     response = await show_loading_status(
-        "Creating beta model...",
-        config.client.beta.models.create(name=name, base_model_id=base_model_id, type=type),
+        "Creating model...",
+        config.client.models.create(name=name, base_model_id=base_model_id, type=type),
     )
 
     if config.json:

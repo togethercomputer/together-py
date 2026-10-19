@@ -59,7 +59,6 @@ from together.lib.cli.utils._help_examples import (
     TOP_LEVEL_HELP_EXAMPLES,
     JIG_DEPLOY_HELP_EXAMPLES,
     JIG_SUBMIT_HELP_EXAMPLES,
-    BETA_MODELS_HELP_EXAMPLES,
     FINE_TUNING_HELP_EXAMPLES,
     JIG_DESTROY_HELP_EXAMPLES,
     JIG_SECRETS_HELP_EXAMPLES,
@@ -67,13 +66,18 @@ from together.lib.cli.utils._help_examples import (
     EVALS_CREATE_HELP_EXAMPLES,
     FILES_UPLOAD_HELP_EXAMPLES,
     TRAINING_FP4_HELP_EXAMPLES,
+    MODELS_CREATE_HELP_EXAMPLES,
+    MODELS_PUBLIC_HELP_EXAMPLES,
+    MODELS_UPDATE_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
     BATCHES_SUBMIT_HELP_EXAMPLES,
     BETA_ENDPOINTS_HELP_EXAMPLES,
     JIG_JOB_STATUS_HELP_EXAMPLES,
+    MODELS_CONFIGS_HELP_EXAMPLES,
     CLUSTERS_CREATE_HELP_EXAMPLES,
     CLUSTERS_UPDATE_HELP_EXAMPLES,
     JIG_SECRETS_SET_HELP_EXAMPLES,
+    MODELS_DOWNLOAD_HELP_EXAMPLES,
     BATCHES_DOWNLOAD_HELP_EXAMPLES,
     CLUSTERS_STORAGE_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
@@ -83,24 +87,19 @@ from together.lib.cli.utils._help_examples import (
     BETA_ENDPOINTS_RM_HELP_EXAMPLES,
     JIG_SECRETS_UNSET_HELP_EXAMPLES,
     BETA_ENDPOINTS_GET_HELP_EXAMPLES,
-    BETA_MODELS_CREATE_HELP_EXAMPLES,
-    BETA_MODELS_PUBLIC_HELP_EXAMPLES,
-    BETA_MODELS_UPDATE_HELP_EXAMPLES,
-    BETA_MODELS_UPLOAD_HELP_EXAMPLES,
     ENDPOINTS_HARDWARE_HELP_EXAMPLES,
     FINE_TUNING_CREATE_HELP_EXAMPLES,
     JIG_SECRETS_DELETE_HELP_EXAMPLES,
     JIG_VOLUMES_CREATE_HELP_EXAMPLES,
     JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
-    BETA_MODELS_CONFIGS_HELP_EXAMPLES,
     FINE_TUNING_PREVIEW_HELP_EXAMPLES,
     TRAINING_FP4_CREATE_HELP_EXAMPLES,
-    BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
     BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
     BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
     BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
     CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
+    MODELS_REMOTE_UPLOADS_HELP_EXAMPLES,
     BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
     CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
@@ -108,9 +107,8 @@ from together.lib.cli.utils._help_examples import (
     CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
     FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
     FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
-    BETA_MODELS_REMOTE_UPLOADS_HELP_EXAMPLES,
     CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
-    BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
+    MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._project_scope import ProjectScopeSwitched, explain_project_scope
@@ -791,9 +789,98 @@ training_fp4_app.command(f"{_FP4}.list_events:list_events", help="List events fo
 training_fp4_app.command(f"{_FP4}.cancel:cancel", help="Cancel an FP4 preparation job")
 
 ## Models API commands
-models_app = app.command(App(name="models", help="List and upload models", help_epilogue=MODELS_HELP_EXAMPLES))
-models_app.command((f"{_CLI}.models.list:list"), alias="ls", help="List available models")
-models_app.command((f"{_CLI}.models.upload:upload"), help="Upload a model", help_epilogue=MODELS_UPLOAD_HELP_EXAMPLES)
+models_app = app.command(
+    App(
+        name="models",
+        help="Register and manage models for dedicated inference",
+        help_epilogue=MODELS_HELP_EXAMPLES,
+    )
+)
+# `tg models deploy` is the same command as `tg beta endpoints deploy`.
+models_app.command(
+    (f"{_CLI}.beta.endpoints.deploy:deploy"),
+    help="Create a deployment on a new or existing endpoint",
+    help_epilogue=BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES.replace(
+        "tg beta endpoints deploy",
+        "tg models deploy",
+    ),
+)
+models_app.command((f"{_CLI}.models.list:list"), alias="ls", help="List models in the caller's project")
+models_app.command(
+    (f"{_CLI}.models.public:public"),
+    help="List publicly-visible models across all projects",
+    help_epilogue=MODELS_PUBLIC_HELP_EXAMPLES,
+)
+models_app.command((f"{_CLI}.models.org:org"), help="List internal-visibility models in the caller's organization")
+models_app.command(
+    (f"{_CLI}.models.create:create"),
+    alias="-c",
+    help="Register a model (does not upload files)",
+    help_epilogue=MODELS_CREATE_HELP_EXAMPLES,
+)
+models_app.command((f"{_CLI}.models.list_files:list_files"), name="ls-files", help="List files in a model or adapter")
+models_app.command(
+    (f"{_CLI}.models.list_revisions:list_revisions"),
+    name="ls-revisions",
+    alias="list-revisions",
+    help="List revisions for a model",
+)
+models_app.command((f"{_CLI}.models.retrieve:retrieve"), alias="get", help="Get a model by ID")
+models_app.command(
+    (f"{_CLI}.models.update:update"),
+    help="Update a model (provided fields only)",
+    help_epilogue=MODELS_UPDATE_HELP_EXAMPLES,
+)
+models_app.command(
+    (f"{_CLI}.models.rm:rm"),
+    name="rm",
+    alias="-d",
+    help="Delete a model (metadata; does not delete files)",
+)
+models_app.command(
+    (f"{_CLI}.models.upload:upload"),
+    help="Upload files to a model or adapter",
+    help_epilogue=MODELS_UPLOAD_HELP_EXAMPLES,
+)
+models_app.command(
+    (f"{_CLI}.models.download:download"),
+    help="Download files from a model or adapter",
+    help_epilogue=MODELS_DOWNLOAD_HELP_EXAMPLES,
+)
+
+### Models > Remote Uploads API commands
+models_remote_uploads_app = models_app.command(
+    App(
+        name="remote-uploads",
+        help="Import model weights from Hugging Face or presigned URLs",
+        group="Subcommands",
+        help_epilogue=MODELS_REMOTE_UPLOADS_HELP_EXAMPLES,
+    )
+)
+models_remote_uploads_app.command(
+    (f"{_CLI}.models.remote_uploads.create:create"),
+    alias="-c",
+    help="Start a remote upload job",
+    help_epilogue=MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
+)
+models_remote_uploads_app.command(
+    (f"{_CLI}.models.remote_uploads.retrieve:retrieve"),
+    alias="get",
+    help="Get a remote upload job by ID",
+)
+models_remote_uploads_app.command(
+    (f"{_CLI}.models.remote_uploads.list:list"),
+    alias="ls",
+    help="List remote upload jobs",
+)
+
+### Models > Configs API commands
+models_app.command(
+    (f"{_CLI}.models.configs.list:list"),
+    name="configs",
+    help="List deployable configs for a model",
+    help_epilogue=MODELS_CONFIGS_HELP_EXAMPLES,
+)
 
 ## Endpoints API commands
 endpoints_app = app.command(App(name="endpoints", help="Deploy and manage dedicated endpoints"))
@@ -1063,104 +1150,6 @@ beta_endpoints_app.command(
     sort_key=9999,
 )
 
-### Beta Models API commands
-beta_models_app = beta_app.command(
-    App(
-        name="models",
-        help="Register and manage models for dedicated inference",
-        help_epilogue=BETA_MODELS_HELP_EXAMPLES,
-    )
-)
-# `tg beta models deploy` is the same command as `tg beta endpoints deploy`.
-beta_models_app.command(
-    (f"{_CLI}.beta.endpoints.deploy:deploy"),
-    help="Create a deployment on a new or existing endpoint",
-    help_epilogue=BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES.replace(
-        "tg beta endpoints deploy",
-        "tg beta models deploy",
-    ),
-)
-beta_models_app.command((f"{_CLI}.beta.models.list:list"), alias="ls", help="List models in the caller's project")
-beta_models_app.command(
-    (f"{_CLI}.beta.models.public:public"),
-    help="List publicly-visible models across all projects",
-    help_epilogue=BETA_MODELS_PUBLIC_HELP_EXAMPLES,
-)
-beta_models_app.command(
-    (f"{_CLI}.beta.models.org:org"), help="List internal-visibility models in the caller's organization"
-)
-beta_models_app.command(
-    (f"{_CLI}.beta.models.create:create"),
-    alias="-c",
-    help="Register a model (does not upload files)",
-    help_epilogue=BETA_MODELS_CREATE_HELP_EXAMPLES,
-)
-beta_models_app.command(
-    (f"{_CLI}.beta.models.list_files:list_files"), name="ls-files", help="List files in a model or adapter"
-)
-beta_models_app.command(
-    (f"{_CLI}.beta.models.list_revisions:list_revisions"),
-    name="ls-revisions",
-    alias="list-revisions",
-    help="List revisions for a model",
-)
-beta_models_app.command((f"{_CLI}.beta.models.retrieve:retrieve"), alias="get", help="Get a model by ID")
-beta_models_app.command(
-    (f"{_CLI}.beta.models.update:update"),
-    help="Update a model (provided fields only)",
-    help_epilogue=BETA_MODELS_UPDATE_HELP_EXAMPLES,
-)
-beta_models_app.command(
-    (f"{_CLI}.beta.models.rm:rm"),
-    name="rm",
-    alias="-d",
-    help="Delete a model (metadata; does not delete files)",
-)
-beta_models_app.command(
-    (f"{_CLI}.beta.models.upload:upload"),
-    help="Upload files to a model or adapter",
-    help_epilogue=BETA_MODELS_UPLOAD_HELP_EXAMPLES,
-)
-beta_models_app.command(
-    (f"{_CLI}.beta.models.download:download"),
-    help="Download files from a model or adapter",
-    help_epilogue=BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
-)
-
-### Beta Models > Remote Uploads API commands
-beta_models_remote_uploads_app = beta_models_app.command(
-    App(
-        name="remote-uploads",
-        help="Import model weights from Hugging Face or presigned URLs",
-        group="Subcommands",
-        help_epilogue=BETA_MODELS_REMOTE_UPLOADS_HELP_EXAMPLES,
-    )
-)
-beta_models_remote_uploads_app.command(
-    (f"{_CLI}.beta.models.remote_uploads.create:create"),
-    alias="-c",
-    help="Start a remote upload job",
-    help_epilogue=BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
-)
-beta_models_remote_uploads_app.command(
-    (f"{_CLI}.beta.models.remote_uploads.retrieve:retrieve"),
-    alias="get",
-    help="Get a remote upload job by ID",
-)
-beta_models_remote_uploads_app.command(
-    (f"{_CLI}.beta.models.remote_uploads.list:list"),
-    alias="ls",
-    help="List remote upload jobs",
-)
-
-### Beta Models > Configs API commands
-beta_models_app.command(
-    (f"{_CLI}.beta.models.configs.list:list"),
-    name="configs",
-    help="List deployable configs for a model",
-    help_epilogue=BETA_MODELS_CONFIGS_HELP_EXAMPLES,
-)
-
 ### Jig commands
 jig_app = beta_app.command(
     App(name="jig", help="Build, deploy, and manage custom containers", help_epilogue=JIG_HELP_EXAMPLES)
@@ -1325,9 +1314,6 @@ def main() -> None:
     BETA_GROUP_TITLE = "Beta Commands"
     app.command(
         App(name="beta endpoints", help="Deploy and manage dedicated inference endpoints", group=BETA_GROUP_TITLE)
-    )
-    app.command(
-        App(name="beta models", help="Register and manage models for dedicated inference", group=BETA_GROUP_TITLE)
     )
     app.command(App(name="beta jig", help="Container deployment", group=BETA_GROUP_TITLE))
     beta_root_app.show = False

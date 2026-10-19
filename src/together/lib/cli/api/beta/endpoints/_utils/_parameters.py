@@ -79,9 +79,9 @@ class ModelPromptParameter(PromptParameter):
     async def preprompt(self, config: CLIConfig) -> None:
         self.choices = []
 
-        list_supported_request = config.client.beta.models.list_supported()
+        list_supported_request = config.client.models.list_supported()
 
-        async for project_model in config.client.beta.models.list():
+        async for project_model in config.client.models.list():
             self.choices.append(("/".join(project_model.name.split("/")[1:]), project_model.id))
 
         async for supported_model in list_supported_request:

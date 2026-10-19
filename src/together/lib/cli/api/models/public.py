@@ -33,10 +33,10 @@ async def public(
     *,
     config: CLIConfigParameter,
 ) -> None:
-    """List platform-supported base models usable when creating a beta model."""
+    """List platform-supported base models usable when creating a model."""
     response = await show_loading_status(
         "Loading supported models...",
-        config.client.beta.models.list_supported(
+        config.client.models.list_supported(
             limit=limit if limit is not None else omit,
             after=after or omit,
             search=search or omit,
@@ -78,7 +78,7 @@ async def public(
 
     if response.next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
-        console.print(f"  [dim]-[/dim] [white]tg beta models public --after {response.next_cursor}[/white]")
+        console.print(f"  [dim]-[/dim] [white]tg models public --after {response.next_cursor}[/white]")
 
 
 def _profile_cli_model(profile: object, fallback: str | None = None) -> str:

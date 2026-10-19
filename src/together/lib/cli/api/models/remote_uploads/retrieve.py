@@ -8,7 +8,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.models.remote_uploads._utils import print_remote_upload_detail
+from together.lib.cli.api.models.remote_uploads._utils import print_remote_upload_detail
 
 
 async def retrieve(
@@ -19,7 +19,7 @@ async def retrieve(
     """Retrieve a remote upload job."""
 
     response = await show_loading_status(
-        "Loading remote upload job...", config.client.beta.models.remote_uploads.retrieve(id)
+        "Loading remote upload job...", config.client.models.remote_uploads.retrieve(id)
     )
 
     if config.json:

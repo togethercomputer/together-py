@@ -195,22 +195,22 @@ class TestBetaEndpointsDeploy:
     @pytest.mark.usefixtures("plain_cli_help")
     def test_models_deploy_help_matches_endpoints_deploy(self, cli_runner: CliRunner) -> None:
         endpoints = cli_runner.invoke(["beta", "endpoints", "deploy", "--help"])
-        models = cli_runner.invoke(["beta", "models", "deploy", "--help"])
+        models = cli_runner.invoke(["models", "deploy", "--help"])
 
         assert endpoints.exit_code == 0, endpoints.output
         assert models.exit_code == 0, models.output
-        assert models.output == endpoints.output.replace("tg beta endpoints deploy", "tg beta models deploy").replace(
-            "beta endpoints deploy", "beta models deploy"
+        assert models.output == endpoints.output.replace("tg beta endpoints deploy", "tg models deploy").replace(
+            "beta endpoints deploy", "models deploy"
         )
 
     @pytest.mark.usefixtures("plain_cli_help")
     def test_models_help_lists_deploy_alias(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["beta", "models", "--help"])
+        result = cli_runner.invoke(["models", "--help"])
 
         output = " ".join(result.output.split())
         assert result.exit_code == 0, result.output
         assert "Create a deployment on a new or existing endpoint" in output
-        assert "tg beta models deploy" in output
+        assert "tg models deploy" in output
 
     def test_deploy_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["beta", "endpoints", "deploy", "--scale-to-zero-window"])

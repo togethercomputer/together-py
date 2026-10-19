@@ -9,8 +9,8 @@ from cyclopts import Parameter
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.api.models._utils import print_model_detail
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.models._utils import print_model_detail
 
 
 async def retrieve(
@@ -18,12 +18,12 @@ async def retrieve(
     *,
     config: CLIConfigParameter,
 ) -> None:
-    """Retrieve a beta model."""
+    """Retrieve a model."""
     model, files = await show_loading_status(
-        "Loading beta model...",
+        "Loading model...",
         asyncio.gather(
-            config.client.beta.models.retrieve(id),
-            safe_fetch(config.client.beta.models.list_files(id=id)),
+            config.client.models.retrieve(id),
+            safe_fetch(config.client.models.list_files(id=id)),
         ),
     )
 

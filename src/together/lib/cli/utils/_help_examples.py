@@ -11,11 +11,11 @@ TOP_LEVEL_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Upload an external model to Together:
   [dim]First create a model record and reference compatible base model.
-  You can find model IDs of the supported base models with `tg beta models public`.[/dim]
-  [primary]$ tg beta models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
+  You can find model IDs of the supported base models with `tg models public`.[/dim]
+  [primary]$ tg models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
 
   [dim]Upload from a local file/directory to the model record created above.[/dim]
-  [primary]$ tg beta models upload ml_yyyyyyyyyyy ./path/to/my-model[/primary]
+  [primary]$ tg models upload ml_yyyyyyyyyyy ./path/to/my-model[/primary]
 """
 
 ## Files API commands
@@ -51,28 +51,6 @@ FILES_RETRIEVE_CONTENT_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Print file contents to stdout:
   [primary]tg files download <file-id> --stdout[/primary]
-"""
-
-## Models API commands
-MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] List all models:
-  [primary]tg models list[/primary]
-
-[dim]-[/dim] Upload a model:
-  [primary]tg models upload --model-name my-model --model-source s3-or-hugging-face[/primary]
-"""
-
-MODELS_UPLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Upload a model from S3:
-  [primary]tg models upload \\
-    --model-name my-model \\
-    --model-source $(aws s3 presign s3://my-bucket/my-model)[/primary]
-
-[dim]-[/dim] Upload private model from Hugging Face:
-  [primary]tg models upload \\
-    --model-name my-model \\
-    --model-source my-org/model-name \\
-    --hf-token $HUGGING_FACE_TOKEN[/primary]
 """
 
 ## Projects
@@ -520,106 +498,106 @@ BETA_ENDPOINTS_GET_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta endpoints my-endpoint --json[/primary]
 """
 
-## Beta models API commands
+## Models API commands
 
-BETA_MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Deploy a model to a dedicated endpoint:
-  [primary]tg beta models deploy Qwen/Qwen2.5-7B --endpoint my-endpoint[/primary]
+  [primary]tg models deploy Qwen/Qwen2.5-7B --endpoint my-endpoint[/primary]
 
 [dim]-[/dim] Find a supported base model, then register your own:
-  [primary]tg beta models public --search Qwen[/primary]
-  [primary]tg beta models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
+  [primary]tg models public --search Qwen[/primary]
+  [primary]tg models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Upload weights from disk (or import remotely):
-  [primary]tg beta models upload ml_yyyyyyyyyyyy ./path/to/my-model[/primary]
-  [primary]tg beta models remote-uploads create ml_yyyyyyyyyyyy --from https://huggingface.co/org/model[/primary]
+  [primary]tg models upload ml_yyyyyyyyyyyy ./path/to/my-model[/primary]
+  [primary]tg models remote-uploads create ml_yyyyyyyyyyyy --from https://huggingface.co/org/model[/primary]
 
 [dim]-[/dim] List project models and inspect one:
-  [primary]tg beta models ls[/primary]
-  [primary]tg beta models ml_yyyyyyyyyyyy[/primary]
+  [primary]tg models ls[/primary]
+  [primary]tg models ml_yyyyyyyyyyyy[/primary]
 
-[dim]-[/dim] List configs for a model to be used with [primary]tg beta models deploy --config[/primary]:
-  [primary]tg beta models configs ml_yyyyyyyyyyyy[/primary]
+[dim]-[/dim] List configs for a model to be used with [primary]tg models deploy --config[/primary]:
+  [primary]tg models configs ml_yyyyyyyyyyyy[/primary]
 
 [dim]-[/dim] Download a revision locally:
-  [primary]tg beta models download ml_yyyyyyyyyyyy ./out --format hf[/primary]
+  [primary]tg models download ml_yyyyyyyyyyyy ./out --format hf[/primary]
 """
 
-BETA_MODELS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Register a full model (find names/IDs with [primary]tg beta models public[/primary]):
-  [primary]tg beta models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
+MODELS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Register a full model (find names/IDs with [primary]tg models public[/primary]):
+  [primary]tg models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Or pass a deploy model name instead of an id:
-  [primary]tg beta models create --name my-model --base-model Qwen/Qwen3.5-9B-FP8[/primary]
+  [primary]tg models create --name my-model --base-model Qwen/Qwen3.5-9B-FP8[/primary]
 
 [dim]-[/dim] Register a LoRA adapter record:
-  [primary]tg beta models create --name my-adapter --base-model ml_xxxxxxxxxxxx --type adapter[/primary]
+  [primary]tg models create --name my-adapter --base-model ml_xxxxxxxxxxxx --type adapter[/primary]
 """
 
-BETA_MODELS_UPLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
+MODELS_UPLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Upload a local directory into an existing model record:
-  [primary]tg beta models upload ml_xxxxxxxxxxxx ./path/to/my-model[/primary]
+  [primary]tg models upload ml_xxxxxxxxxxxx ./path/to/my-model[/primary]
 
 [dim]-[/dim] Upload a single file:
-  [primary]tg beta models upload ml_xxxxxxxxxxxx ./model.safetensors[/primary]
+  [primary]tg models upload ml_xxxxxxxxxxxx ./model.safetensors[/primary]
 """
 
-BETA_MODELS_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
+MODELS_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Download the latest revision:
-  [primary]tg beta models download ml_xxxxxxxxxxxx ./out[/primary]
+  [primary]tg models download ml_xxxxxxxxxxxx ./out[/primary]
 
 [dim]-[/dim] Download a specific revision as a Hugging Face snapshot:
-  [primary]tg beta models download ml_xxxxxxxxxxxx ./out --revision <revision-id> --format hf[/primary]
+  [primary]tg models download ml_xxxxxxxxxxxx ./out --revision <revision-id> --format hf[/primary]
 
 [dim]-[/dim] Download only selected paths:
-  [primary]tg beta models download ml_xxxxxxxxxxxx ./out --files config.json --files tokenizer.json[/primary]
+  [primary]tg models download ml_xxxxxxxxxxxx ./out --files config.json --files tokenizer.json[/primary]
 """
 
-BETA_MODELS_PUBLIC_HELP_EXAMPLES = """[dim]Examples:[/dim]
+MODELS_PUBLIC_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Search supported base models:
-  [primary]tg beta models public --search Qwen[/primary]
+  [primary]tg models public --search Qwen[/primary]
 
 [dim]-[/dim] Filter by modality / product:
-  [primary]tg beta models public --modality text --product dedicated[/primary]
+  [primary]tg models public --modality text --product dedicated[/primary]
 
 [dim]-[/dim] Paginate:
-  [primary]tg beta models public --after <cursor>[/primary]
+  [primary]tg models public --after <cursor>[/primary]
 """
 
-BETA_MODELS_CONFIGS_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] List configs you can pass to [primary]tg beta models deploy --config[/primary]:
-  [primary]tg beta models configs ml_xxxxxxxxxxxx[/primary]
+MODELS_CONFIGS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] List configs you can pass to [primary]tg models deploy --config[/primary]:
+  [primary]tg models configs ml_xxxxxxxxxxxx[/primary]
 """
 
-BETA_MODELS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+MODELS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Rename a model:
-  [primary]tg beta models update ml_xxxxxxxxxxxx --name my-model-v2[/primary]
+  [primary]tg models update ml_xxxxxxxxxxxx --name my-model-v2[/primary]
 
 [dim]-[/dim] Update description:
-  [primary]tg beta models update ml_xxxxxxxxxxxx --description "Production weights"[/primary]
+  [primary]tg models update ml_xxxxxxxxxxxx --description "Production weights"[/primary]
 """
 
-BETA_MODELS_REMOTE_UPLOADS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+MODELS_REMOTE_UPLOADS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Import from Hugging Face into an existing model record:
-  [primary]tg beta models remote-uploads create ml_xxxxxxxxxxxx \\
+  [primary]tg models remote-uploads create ml_xxxxxxxxxxxx \\
     --from https://huggingface.co/org/model[/primary]
 
 [dim]-[/dim] List and inspect jobs:
-  [primary]tg beta models remote-uploads ls[/primary]
-  [primary]tg beta models remote-uploads get <job-id>[/primary]
+  [primary]tg models remote-uploads ls[/primary]
+  [primary]tg models remote-uploads get <job-id>[/primary]
 """
 
-BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Import a public Hugging Face repo:
-  [primary]tg beta models remote-uploads create ml_xxxxxxxxxxxx \\
+  [primary]tg models remote-uploads create ml_xxxxxxxxxxxx \\
     --from https://huggingface.co/org/model[/primary]
 
 [dim]-[/dim] Import a gated/private HF repo:
-  [primary]tg beta models remote-uploads create ml_xxxxxxxxxxxx \\
+  [primary]tg models remote-uploads create ml_xxxxxxxxxxxx \\
     --from https://huggingface.co/org/private-model --token "$HF_TOKEN"[/primary]
 
 [dim]-[/dim] Import from a presigned archive URL:
-  [primary]tg beta models remote-uploads create ml_xxxxxxxxxxxx \\
+  [primary]tg models remote-uploads create ml_xxxxxxxxxxxx \\
     --from "https://bucket.s3.amazonaws.com/model.tar.gz?X-Amz-Signature=..."[/primary]
 """
 

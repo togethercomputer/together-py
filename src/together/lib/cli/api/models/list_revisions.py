@@ -30,7 +30,7 @@ async def list_revisions(
     *,
     config: CLIConfigParameter,
 ) -> None:
-    response = await show_loading_status("Loading model revisions...", config.client.beta.models.list_revisions(id))
+    response = await show_loading_status("Loading model revisions...", config.client.models.list_revisions(id))
 
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))

@@ -10,8 +10,8 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.api.models.remote_uploads._utils import print_remote_upload_detail
 from together.lib.cli.utils._assert_explicit_project_id import assert_explicit_project_id
-from together.lib.cli.api.beta.models.remote_uploads._utils import print_remote_upload_detail
 
 
 async def create(
@@ -32,7 +32,7 @@ async def create(
 
     response = await show_loading_status(
         "Starting remote upload...",
-        config.client.beta.models.remote_uploads.create(
+        config.client.models.remote_uploads.create(
             model_id=model_id,
             remote_url=remote_url,
             token=token or omit,

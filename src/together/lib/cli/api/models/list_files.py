@@ -21,7 +21,7 @@ async def list_files(
     config: CLIConfigParameter,
 ) -> None:
     response = await show_loading_status(
-        "Loading model files...", config.client.beta.models.list_files(id, revision_id=revision or omit)
+        "Loading model files...", config.client.models.list_files(id, revision_id=revision or omit)
     )
 
     if config.json:
@@ -47,7 +47,7 @@ async def list_files(
     if response.next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
         console.print(
-            f"  [dim]-[/dim] [white]tg beta models ls-files {id} f{f'--revision {revision}' if revision else ''} --after {response.next_cursor}[/white]"
+            f"  [dim]-[/dim] [white]tg models ls-files {id} f{f'--revision {revision}' if revision else ''} --after {response.next_cursor}[/white]"
         )
 
 

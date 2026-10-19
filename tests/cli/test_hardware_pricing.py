@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from together.types.models.config import Config
 from together.lib.cli.utils.config import CLIConfig
-from together.types.beta.models.config import Config
 from together.types.beta.endpoints.inference_instance_type import InferenceInstanceType
 from together.lib.cli.api.beta.endpoints._utils._hardware_pricing import (
     format_gpu_label,
@@ -97,7 +97,7 @@ async def test_resolve_hardware_pricing_happy_path() -> None:
 @pytest.mark.asyncio
 async def test_resolve_hardware_pricing_fetches_config_when_selectors_missing() -> None:
     client = MagicMock()
-    client.beta.models.configs.retrieve = AsyncMock(return_value=_config())
+    client.models.configs.retrieve = AsyncMock(return_value=_config())
     client.beta.endpoints.hardware.list = AsyncMock(
         return_value=MagicMock(data=[_instance()]),
     )
@@ -108,13 +108,13 @@ async def test_resolve_hardware_pricing_fetches_config_when_selectors_missing() 
 
     assert pricing is not None
     assert pricing.estimated_price_label == "$24.00/hr"
-    client.beta.models.configs.retrieve.assert_awaited_once_with("cr_1", project_id="proj")
+    client.models.configs.retrieve.assert_awaited_once_with("cr_1", project_id="proj")
 
 
 @pytest.mark.asyncio
 async def test_resolve_hardware_pricing_returns_none_without_hardware_selectors() -> None:
     client = MagicMock()
-    client.beta.models.configs.retrieve = AsyncMock(
+    client.models.configs.retrieve = AsyncMock(
         return_value=_config(selectors=[{"key": "optimization", "value": "balanced"}]),
     )
     cli = CLIConfig(client=client, non_interactive=True, json=False, project_id="proj")

@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import re
 
+from together.types.models.config import Config
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.types.beta.models.config import Config
-from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
+from together.types.supported_model_deployment_profile import SupportedModelDeploymentProfile
 
 _CONFIG_PATH_RE = re.compile(r"^projects/([^/]+)/configs/([^/]+)$")
 
 
 async def resolve_configs(config: CLIConfigParameter, model_id: str) -> list[Config]:
-    configs = await config.client.beta.models.configs.list(reference_model_id=model_id)
+    configs = await config.client.models.configs.list(reference_model_id=model_id)
     return list(configs.data or [])
 
 
@@ -24,7 +24,7 @@ def find_config(configs: list[Config], config_id: str) -> Config | None:
 
 MULTIPLE_CONFIGS_MESSAGE = (
     "Multiple configs found for model. Please specify a config id using the --config flag. "
-    "You can use `tg beta models configs <model-id>` to list configs that can be used."
+    "You can use `tg models configs <model-id>` to list configs that can be used."
 )
 
 
@@ -32,7 +32,7 @@ def resolve_config(configs: list[Config], config_id: str | None, *, model: str) 
     """Pick a config from the model's config list, validating an explicit --config when given."""
     if config_id is None:
         if len(configs) > 1:
-            from together.lib.cli.api.beta.models._utils import print_configs_table
+            from together.lib.cli.api.models._utils import print_configs_table
 
             print_configs_table(configs, empty_message="")
             raise ValueError(MULTIPLE_CONFIGS_MESSAGE)
@@ -44,7 +44,7 @@ def resolve_config(configs: list[Config], config_id: str | None, *, model: str) 
     if selected is not None:
         return selected
     raise ValueError(
-        f"Config {config_id} is not valid for model {model}. Use `tg beta models configs <model-id>` to list configs."
+        f"Config {config_id} is not valid for model {model}. Use `tg models configs <model-id>` to list configs."
     )
 
 
@@ -64,7 +64,7 @@ async def choose_config(
 async def prompt_for_config(configs: list[Config], *, model: str) -> Config:
     """Ask which config to deploy. A cancelled or unavailable prompt fails like ``--non-interactive``."""
     from together.lib.cli.utils._prompt import PromptParameter
-    from together.lib.cli.api.beta.models._utils import print_configs_table
+    from together.lib.cli.api.models._utils import print_configs_table
 
     print_configs_table(configs, empty_message="")
     choices: list[str | tuple[str, str]] = []

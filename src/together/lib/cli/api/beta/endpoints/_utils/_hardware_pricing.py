@@ -4,8 +4,8 @@ import re
 from typing import Optional
 from dataclasses import dataclass
 
+from together.types.models.config import Config
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.types.beta.models.config import Config
 from together.types.beta.endpoints.inference_instance_type import InferenceInstanceType
 
 
@@ -107,7 +107,7 @@ async def ensure_config_with_selectors(config: CLIConfigParameter, model_config:
     if not model_config.id or not model_config.project_id:
         return model_config
     try:
-        return await config.client.beta.models.configs.retrieve(
+        return await config.client.models.configs.retrieve(
             model_config.id,
             project_id=model_config.project_id,
         )

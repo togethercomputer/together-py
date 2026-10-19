@@ -17,7 +17,7 @@ from together._utils import path_template
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._json_mode import exit_with_message
-from together.lib.cli.api.beta.models.upload import (
+from together.lib.cli.api.models.upload import (
     PART_SIZE_BYTES,
     FILE_CONCURRENCY,
     PART_CONCURRENCY,
@@ -276,7 +276,7 @@ async def _download_model_files(
 ) -> dict[str, Any]:
     rev = revision_id
     if not rev:
-        list_response = await config.client.beta.models.list_files(object_id, revision_id=omit)
+        list_response = await config.client.models.list_files(object_id, revision_id=omit)
         rev = list_response.revision_id
         if not rev:
             raise ValueError("could not resolve latest revision")
@@ -347,7 +347,7 @@ async def download(
     ] = None,
     config: CLIConfigParameter,
 ) -> None:
-    """Download files from a beta model or adapter."""
+    """Download files from a model or adapter."""
 
     try:
         object_id, resolved_revision = _parse_object_and_revision(model_id, revision)

@@ -12,7 +12,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter
-from together.lib.cli.api.beta.models.remote_uploads._utils import format_status
+from together.lib.cli.api.models.remote_uploads._utils import format_status
 
 
 async def list(
@@ -25,7 +25,7 @@ async def list(
 
     response = await show_loading_status(
         "Loading remote upload jobs...",
-        config.client.beta.models.remote_uploads.list(
+        config.client.models.remote_uploads.list(
             limit=limit if limit is not None else omit,
             after=after or omit,
         ),
@@ -39,7 +39,7 @@ async def list(
         "Remote Uploads",
         empty_message=(
             "No remote upload jobs found. To start one run:\n"
-            "  [dim]-[/dim] [primary]tg beta models remote-uploads create <model-id> --from <url>[/primary]"
+            "  [dim]-[/dim] [primary]tg models remote-uploads create <model-id> --from <url>[/primary]"
         ),
     )
     table.add_primary_column("Job ID")
@@ -55,4 +55,4 @@ async def list(
 
     if response.next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
-        console.print(f"  [dim]-[/dim] [white]tg beta models remote-uploads ls --after {response.next_cursor}[/white]")
+        console.print(f"  [dim]-[/dim] [white]tg models remote-uploads ls --after {response.next_cursor}[/white]")

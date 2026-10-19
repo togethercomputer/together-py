@@ -12,7 +12,7 @@ from cyclopts.validators import Number
 from together import ConflictError, omit
 from together.types.beta import Model, Endpoint, DeploymentAutoscalingParam
 from together._utils._json import openapi_dumps
-from together.types.beta.models import Config
+from together.types.models import Config
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console

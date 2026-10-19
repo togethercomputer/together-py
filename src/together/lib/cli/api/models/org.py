@@ -7,8 +7,8 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._whoami import fetch_whoami, organization_of
 from together.lib.cli.utils._console import console
+from together.lib.cli.api.models._utils import print_models_table
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.models._utils import print_models_table
 from together.lib.cli.utils._mock_pagination import AfterParameter
 
 
@@ -24,7 +24,7 @@ async def org(
 
     response = await show_loading_status(
         "Loading org-scoped models...",
-        config.client.beta.models.list_org_scoped(
+        config.client.models.list_org_scoped(
             organization.id,
             limit=limit if limit is not None else omit,
             after=after or omit,
