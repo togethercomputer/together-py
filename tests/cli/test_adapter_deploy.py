@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from together import NotFoundError
-from together.types.beta import Model, EndpointDeployment
+from together.types import Model, EndpointDeployment
+from together.types.models.config import Config
 from together.lib.cli.utils.config import CLIConfig
-from together.types.beta.models.config import Config
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import load_model
 from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
     is_adapter_model,
@@ -165,28 +165,28 @@ def _cli(client: Any, *, project_id: str | None) -> CLIConfig:
 async def test_bare_id_without_project_skips_default_project_retrieve() -> None:
     client = MagicMock()
     client.project_id = "proj_default"
-    client.beta.models.retrieve = AsyncMock()
+    client.models.retrieve = AsyncMock()
 
     assert await load_model(_cli(client, project_id=None), "ml_public") is None
-    client.beta.models.retrieve.assert_not_awaited()
+    client.models.retrieve.assert_not_awaited()
 
 
 async def test_bare_id_not_in_project_is_not_an_adapter() -> None:
     client = MagicMock()
     client.project_id = "proj"
-    client.beta.models.retrieve = AsyncMock(
+    client.models.retrieve = AsyncMock(
         side_effect=NotFoundError(message="Model not found", response=MagicMock(), body=None),
     )
 
     assert await load_model(_cli(client, project_id="proj"), "ml_public") is None
-    client.beta.models.retrieve.assert_awaited_once_with(id="ml_public", project_id="proj")
+    client.models.retrieve.assert_awaited_once_with(id="ml_public", project_id="proj")
 
 
 async def test_adapter_rollback_text_is_omitted_in_json_mode(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    from together.types.beta import Endpoint
+    from together.types import Endpoint
     from together.lib.cli.api.beta.endpoints import deploy as deploy_mod
 
     base = _model()
@@ -221,9 +221,9 @@ async def test_adapter_rollback_text_is_omitted_in_json_mode(
     monkeypatch.setattr(deploy_mod, "show_loading_status", _passthrough)
 
     client = MagicMock()
-    client.beta.endpoints.delete = AsyncMock()
-    client.beta.endpoints.deployments.delete = AsyncMock()
-    client.beta.endpoints.deployments.create = AsyncMock(side_effect=RuntimeError("create failed"))
+    client.endpoints.delete = AsyncMock()
+    client.endpoints.deployments.delete = AsyncMock()
+    client.endpoints.deployments.create = AsyncMock(side_effect=RuntimeError("create failed"))
     cli = _cli(client, project_id="proj")
     cli.json = True
 
@@ -251,8 +251,8 @@ async def test_adapter_rollback_text_is_omitted_in_json_mode(
 
     assert "Rolling back" not in capsys.readouterr().out
 
-    client.beta.endpoints.deployments.create = AsyncMock(return_value=deployment)
-    client.beta.endpoints.adapters.create = AsyncMock(side_effect=RuntimeError("attach failed"))
+    client.endpoints.deployments.create = AsyncMock(return_value=deployment)
+    client.endpoints.adapters.create = AsyncMock(side_effect=RuntimeError("attach failed"))
 
     with pytest.raises(RuntimeError, match="attach failed"):
         await deploy_mod._deploy_adapter(
@@ -283,32 +283,32 @@ async def test_bare_id_in_project_still_loads_an_adapter() -> None:
     adapter = _model(id="ml_lora", weights={"type": "WEIGHTS_TYPE_ADAPTER"})
     client = MagicMock()
     client.project_id = "proj"
-    client.beta.models.retrieve = AsyncMock(return_value=adapter)
+    client.models.retrieve = AsyncMock(return_value=adapter)
 
     loaded = await load_model(_cli(client, project_id="proj"), "ml_lora")
 
     assert loaded is not None
     assert loaded is adapter
     assert is_adapter_model(loaded)
-    client.beta.models.retrieve.assert_awaited_once_with(id="ml_lora", project_id="proj")
+    client.models.retrieve.assert_awaited_once_with(id="ml_lora", project_id="proj")
 
 
 async def test_default_project_non_adapter_is_ignored() -> None:
     client = MagicMock()
     client.project_id = "proj_default"
-    client.beta.models.retrieve = AsyncMock(return_value=_model(id="ml_public"))
+    client.models.retrieve = AsyncMock(return_value=_model(id="ml_public"))
 
     assert await load_client_project_adapter(_cli(client, project_id=None), "ml_public") is None
-    client.beta.models.retrieve.assert_awaited_once_with(id="ml_public", project_id="proj_default")
+    client.models.retrieve.assert_awaited_once_with(id="ml_public", project_id="proj_default")
 
 
 async def test_default_project_adapter_is_returned_for_deploy() -> None:
     adapter = _model(id="ml_lora", projectId="proj_default", weights={"type": "WEIGHTS_TYPE_ADAPTER"})
     client = MagicMock()
     client.project_id = "proj_default"
-    client.beta.models.retrieve = AsyncMock(return_value=adapter)
+    client.models.retrieve = AsyncMock(return_value=adapter)
 
     loaded = await load_client_project_adapter(_cli(client, project_id=None), "ml_lora")
 
     assert loaded is adapter
-    client.beta.models.retrieve.assert_awaited_once_with(id="ml_lora", project_id="proj_default")
+    client.models.retrieve.assert_awaited_once_with(id="ml_lora", project_id="proj_default")

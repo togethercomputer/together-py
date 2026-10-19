@@ -14,8 +14,10 @@ _COMMAND_ID_IDENTIFIERS = {
     "evals": re.compile(r"^eval-"),
     "batches": re.compile(r"^batch"),
     "endpoints": re.compile(r"^endpoint-"),
+    "models configs": re.compile(r"^ep_"),
     "beta models configs": re.compile(r"^ep_"),
-    # `beta endpoints` uses App.default(retrieve) instead of token rewriting.
+    # `endpoints` / `beta endpoints` use App.default(retrieve) instead of token rewriting.
+    "models": re.compile(r"^ml_"),
     "beta models": re.compile(r"^ml_"),
     "beta endpoints deployments": re.compile(r"^dep_"),
     "clusters": _UUID_RE,
@@ -91,6 +93,46 @@ def _telemetry_command_for_default(
     if not parsed_command:
         return str(default_name)
     return f"{parsed_command} {default_name}"
+
+
+# Flags owned by the root meta launcher. parse_known_args does not see them, and a
+# later positional (for example `endpoints rm --force`) treats `--json` as an unknown option.
+_META_BOOL_FLAGS = {
+    "--json": "json",
+    "--no-json": "json",
+    "--debug": "debug",
+    "--non-interactive": "non-interactive",
+}
+_META_VALUE_FLAGS = {
+    "--project": "project",
+    "--api-key": "api-key",
+    "--base-url": "base-url",
+    "--timeout": "timeout",
+    "--max-retries": "max-retries",
+}
+
+
+def _without_meta_flags(tokens: list[str]) -> tuple[list[str], list[str]]:
+    """Drop launcher-level flags so command parameters still bind for telemetry."""
+    kept: list[str] = []
+    names: list[str] = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        bare, separator, _value = token.partition("=")
+        if bare in _META_BOOL_FLAGS:
+            names.append(_META_BOOL_FLAGS[bare])
+            index += 1
+            continue
+        if bare in _META_VALUE_FLAGS:
+            names.append(_META_VALUE_FLAGS[bare])
+            index += 1
+            if not separator and index < len(tokens) and not tokens[index].startswith("-"):
+                index += 1
+            continue
+        kept.append(token)
+        index += 1
+    return kept, names
 
 
 def _long_option_names_in_tokens(tokens: list[str]) -> list[str]:
@@ -170,9 +212,13 @@ def preparse_tokens(app: App, tokens: list[str]) -> tuple[str, list[str], bool, 
     parsed_command = _telemetry_command_for_default(parsed_command, apps, rest_after_chain)
 
     explicit_args: list[str] = []
+    parse_argv, meta_flags = _without_meta_flags(argv)
     try:
-        _, bound, _unused, _ignored = app.parse_known_args(argv)
+        _, bound, _unused, _ignored = app.parse_known_args(parse_argv)
         explicit_args.extend(bound.arguments.keys())
+        for name in meta_flags:
+            if name not in explicit_args:
+                explicit_args.append(name)
     except CycloptsError:
         explicit_args.extend(_long_option_names_in_tokens(rest_after_chain))
 

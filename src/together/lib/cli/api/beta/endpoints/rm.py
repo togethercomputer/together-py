@@ -9,16 +9,16 @@ from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
 from together import APIError, AsyncClient, omit
+from together.types import Endpoint, DeploymentAutoscalingParam
 from together.pagination import AsyncCursorPagination
-from together.types.beta import Endpoint, DeploymentAutoscalingParam
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.endpoints.ab_experiment import AbExperiment
-from together.types.beta.endpoints.shadow_experiment import ShadowExperiment
-from together.types.beta.endpoints.adapter_list_response import AdapterListResponse
+from together.types.endpoints.ab_experiment import AbExperiment
+from together.types.endpoints.shadow_experiment import ShadowExperiment
+from together.types.endpoints.adapter_list_response import AdapterListResponse
 from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
 from together.lib.cli.api.beta.endpoints._utils._detach_from_experiments import (
     detach_deployment_from_experiments,
@@ -73,26 +73,26 @@ async def _delete_endpoint(endpoint_id: str, *, force: bool, config: CLIConfigPa
     try:
         await show_loading_status(
             "Deleting endpoint...",
-            config.client.beta.endpoints.delete(endpoint_id),
+            config.client.endpoints.delete(endpoint_id),
         )
     except APIError as e:
         if force:
-            endpoint = await config.client.beta.endpoints.retrieve(endpoint_id)
-            await config.client.beta.endpoints.update(endpoint_id, traffic_split=[], update_mask="trafficSplit")
+            endpoint = await config.client.endpoints.retrieve(endpoint_id)
+            await config.client.endpoints.update(endpoint_id, traffic_split=[], update_mask="trafficSplit")
 
             for deployment in endpoint.deployments or []:
                 assert deployment.id is not None
-                await config.client.beta.endpoints.deployments.update(
+                await config.client.endpoints.deployments.update(
                     deployment.id,
                     endpoint_id=endpoint_id,
                     autoscaling=DeploymentAutoscalingParam(min_replicas=0, max_replicas=0),
                     update_mask="autoscaling",
                 )
-                await config.client.beta.endpoints.deployments.delete(deployment.id, endpoint_id=endpoint_id)
+                await config.client.endpoints.deployments.delete(deployment.id, endpoint_id=endpoint_id)
 
             await show_loading_status(
                 "Deleting endpoint...",
-                config.client.beta.endpoints.delete(endpoint_id),
+                config.client.endpoints.delete(endpoint_id),
             )
         else:
             await _print_endpoint_delete_blocked(endpoint_id, error=e, config=config)
@@ -107,7 +107,7 @@ async def _print_endpoint_delete_blocked(
     error: APIError,
     config: CLIConfigParameter,
 ) -> None:
-    endpoint = await config.client.beta.endpoints.retrieve(endpoint_id)
+    endpoint = await config.client.endpoints.retrieve(endpoint_id)
     deployments = [d for d in (endpoint.deployments or []) if d.id]
 
     if config.json:
@@ -152,7 +152,7 @@ async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) 
     try:
         await show_loading_status(
             "Deleting deployment...",
-            config.client.beta.endpoints.deployments.delete(
+            config.client.endpoints.deployments.delete(
                 id=deployment_id,
                 endpoint_id=endpoint.id,
             ),
@@ -176,7 +176,7 @@ async def _scale_down_and_ask_retry(
 ) -> None:
     await show_loading_status(
         "Scaling deployment to zero...",
-        config.client.beta.endpoints.deployments.update(
+        config.client.endpoints.deployments.update(
             deployment_id,
             endpoint_id=endpoint_id,
             autoscaling=DeploymentAutoscalingParam(min_replicas=0, max_replicas=0),
@@ -215,7 +215,7 @@ async def _delete_adapter(adapter_id: str, *, config: CLIConfigParameter) -> dic
     endpoint_id, deployment_id, adapter = await _find_adapter(config.client, adapter_id)
     await show_loading_status(
         "Removing adapter...",
-        config.client.beta.endpoints.adapters.delete(
+        config.client.endpoints.adapters.delete(
             id=adapter.id,
             endpoint_id=endpoint_id,
             deployment_id=deployment_id,
@@ -227,7 +227,7 @@ async def _delete_adapter(adapter_id: str, *, config: CLIConfigParameter) -> dic
 
 async def _list_endpoint_page(client: AsyncClient, after: str | None) -> AsyncCursorPagination[Endpoint]:
     # `list` returns an awaitable paginator, not a coroutine, so it cannot be passed to create_task directly.
-    return await client.beta.endpoints.list(after=after or omit)
+    return await client.endpoints.list(after=after or omit)
 
 
 async def _find_adapter(
@@ -273,7 +273,7 @@ async def _find_adapter_on_page(
         async with semaphore:
             try:
                 # Deployments that cannot host adapters reject the list call; keep scanning.
-                async for adapter in client.beta.endpoints.adapters.list(endpoint_id, deployment_id):
+                async for adapter in client.endpoints.adapters.list(endpoint_id, deployment_id):
                     if adapter.id == adapter_id:
                         return endpoint_id, deployment_id, adapter
             except APIError:
@@ -306,7 +306,7 @@ async def _delete_ab_experiment(experiment_id: str, *, config: CLIConfigParamete
     endpoint_id, experiment = await _find_ab_experiment(config.client, experiment_id, config.project_id)
     await show_loading_status(
         "Deleting A/B experiment...",
-        config.client.beta.endpoints.ab_experiments.delete(
+        config.client.endpoints.ab_experiments.delete(
             id=experiment.id,
             endpoint_id=endpoint_id,
             etag=experiment.etag or omit,
@@ -319,7 +319,7 @@ async def _delete_shadow_experiment(experiment_id: str, *, config: CLIConfigPara
     endpoint_id, experiment = await _find_shadow_experiment(config.client, experiment_id)
     await show_loading_status(
         "Deleting shadow experiment...",
-        config.client.beta.endpoints.shadow_experiments.delete(
+        config.client.endpoints.shadow_experiments.delete(
             id=experiment.id,
             endpoint_id=endpoint_id,
             etag=experiment.etag or omit,
@@ -336,7 +336,7 @@ async def _delete_rollout(rollout_id: str, *, config: CLIConfigParameter) -> dic
     rollout = await resolve_rollout_by_id(config.client, rollout_id)
     await show_loading_status(
         "Deleting rollout...",
-        config.client.beta.endpoints.rollouts.delete(
+        config.client.endpoints.rollouts.delete(
             id=rollout.id,
             endpoint_id=rollout.endpoint_id,
             etag=rollout.etag or omit,
@@ -352,11 +352,11 @@ async def _find_ab_experiment(
 ) -> tuple[str, AbExperiment]:
     cursor: str | None = None
     while True:
-        endpoints = await client.beta.endpoints.list(after=cursor or omit)
+        endpoints = await client.endpoints.list(after=cursor or omit)
         for endpoint in endpoints.data:
             page_cursor: str | None = None
             while True:
-                page = await client.beta.endpoints.ab_experiments.list(
+                page = await client.endpoints.ab_experiments.list(
                     endpoint_id=endpoint.id,
                     project_id=project_id,
                     after=page_cursor or omit,
@@ -379,9 +379,9 @@ async def _find_shadow_experiment(
 ) -> tuple[str, ShadowExperiment]:
     cursor: str | None = None
     while True:
-        endpoints = await client.beta.endpoints.list(after=cursor or omit)
+        endpoints = await client.endpoints.list(after=cursor or omit)
         for endpoint in endpoints.data:
-            page = await client.beta.endpoints.shadow_experiments.list(
+            page = await client.endpoints.shadow_experiments.list(
                 endpoint_id=endpoint.id,
                 include_targets=True,
             )

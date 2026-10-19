@@ -29,7 +29,7 @@ async def list(
     reference = await resolve_model_reference(config, model)
     response = await show_loading_status(
         "Loading model configs...",
-        config.client.beta.models.configs.list(
+        config.client.models.configs.list(
             reference_model=reference.reference_model or omit,
             reference_model_id=reference.reference_model_id or omit,
             limit=limit if limit is not None else omit,

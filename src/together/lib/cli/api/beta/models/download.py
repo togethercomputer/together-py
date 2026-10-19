@@ -276,7 +276,7 @@ async def _download_model_files(
 ) -> dict[str, Any]:
     rev = revision_id
     if not rev:
-        list_response = await config.client.beta.models.list_files(object_id, revision_id=omit)
+        list_response = await config.client.models.list_files(object_id, revision_id=omit)
         rev = list_response.revision_id
         if not rev:
             raise ValueError("could not resolve latest revision")
@@ -290,7 +290,7 @@ async def _download_model_files(
         dict[str, Any],
         await config.client.post(
             path_template(
-                "/projects/{project_id}/models/download",
+                "/v2/projects/{project_id}/models/download",
                 project_id=config.project_id,
             ),
             cast_to=object,
@@ -357,9 +357,6 @@ async def download(
             error=str(exc),
             diagnostic="Invalid model download request",
         )
-
-    # Ensure we use the v2 apis for this
-    config.client.base_url = "https://api.together.ai/v2"
 
     if config.json:
         try:

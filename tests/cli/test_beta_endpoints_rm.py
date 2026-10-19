@@ -11,8 +11,8 @@ from respx import MockRouter
 from respx.models import Call
 
 from together import AsyncClient
+from together.types import AbMember
 from tests.cli.utils import CliRunner
-from together.types.beta import AbMember
 from together.lib.cli._track_cli import CliTrackingEvents
 from together.lib.cli.api.beta.endpoints.rm import _find_adapter
 from together.lib.cli.api.beta.endpoints._utils._ab_experiments import members_without_deployment
@@ -231,13 +231,9 @@ def _adapter_client(
                     return page
             return _EndpointPage(endpoints, next_cursor)
 
-    class _Beta:
-        def __init__(self) -> None:
-            self.endpoints = _Endpoints()
-
     class _Client:
         def __init__(self) -> None:
-            self.beta = _Beta()
+            self.endpoints = _Endpoints()
 
     return cast(AsyncClient, _Client())
 
@@ -321,7 +317,7 @@ class TestMembersWithoutDeployment:
 class TestBetaEndpointsRm:
     @pytest.mark.respx(base_url=base_url)
     def test_rm_endpoint(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1").mock(
+        delete_route = respx_mock.delete("/v2/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(200, json={"id": "ep_1"})
         )
 
@@ -341,13 +337,13 @@ class TestBetaEndpointsRm:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         events = _capture_cli_events(monkeypatch)
-        respx_mock.delete("/projects/proj/endpoints/ep_1").mock(
+        respx_mock.delete("/v2/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(
                 400,
                 json={"error": {"message": "endpoint has running deployments", "type": "invalid_request_error"}},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
 
         result = cli_runner.invoke(["beta", "endpoints", "rm", "--project", "proj", "ep_1"])
 
@@ -365,13 +361,13 @@ class TestBetaEndpointsRm:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.delete("/projects/proj/endpoints/ep_1").mock(
+        respx_mock.delete("/v2/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(
                 400,
                 json={"error": {"message": "endpoint has running deployments", "type": "invalid_request_error"}},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
 
         result = cli_runner.invoke(_rm_args("ep_1"))
 
@@ -383,19 +379,19 @@ class TestBetaEndpointsRm:
 
     @pytest.mark.respx(base_url=base_url)
     def test_rm_ab_experiment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
             )
         )
-        delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+        delete_route = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
             return_value=httpx.Response(200, json={"id": "abx_1"})
         )
 
@@ -408,19 +404,19 @@ class TestBetaEndpointsRm:
 
     @pytest.mark.respx(base_url=base_url)
     def test_rm_shadow_experiment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_shadow_experiment_body()], "next_cursor": None},
             )
         )
-        delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1").mock(
+        delete_route = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1").mock(
             return_value=httpx.Response(200, json={"id": "exp_1"})
         )
 
@@ -437,28 +433,28 @@ class TestBetaEndpointsRm:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_shadow_experiment_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
         delete_target = respx_mock.delete(
-            "/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1"
+            "/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1"
         ).mock(return_value=httpx.Response(200, json={"id": "target_1"}))
-        delete_shadow = respx_mock.delete("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1").mock(
+        delete_shadow = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1").mock(
             return_value=httpx.Response(200, json={"id": "exp_1"})
         )
-        delete_deployment = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_shadow").mock(
+        delete_deployment = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/deployments/dep_shadow").mock(
             return_value=httpx.Response(200, json={"id": "dep_shadow"})
         )
 
@@ -489,7 +485,7 @@ class TestBetaEndpointsRm:
         for deployment in endpoint["deployments"]:
             if deployment["id"] == "dep_variant":
                 deployment["estimatedEffectiveTrafficShare"] = 0.0
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -499,10 +495,10 @@ class TestBetaEndpointsRm:
                 },
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -532,7 +528,7 @@ class TestBetaEndpointsRm:
                 },
             )
         )
-        update_ab = respx_mock.patch("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+        update_ab = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
             return_value=httpx.Response(
                 200,
                 json=_ab_experiment_body(
@@ -551,7 +547,7 @@ class TestBetaEndpointsRm:
                 ),
             )
         )
-        delete_deployment = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
+        delete_deployment = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
             return_value=httpx.Response(200, json={"id": "dep_variant"})
         )
 
@@ -574,25 +570,25 @@ class TestBetaEndpointsRm:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
             )
         )
-        delete_ab = respx_mock.delete("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+        delete_ab = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
             return_value=httpx.Response(200, json={"id": "abx_1"})
         )
-        delete_deployment = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
+        delete_deployment = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
             return_value=httpx.Response(200, json={"id": "dep_variant"})
         )
 
@@ -610,19 +606,19 @@ class TestBetaEndpointsRm:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        delete_deployment = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+        delete_deployment = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
             return_value=httpx.Response(200, json={"id": "dep_control"})
         )
 
@@ -642,19 +638,19 @@ class TestBetaEndpointsRm:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         events = _capture_cli_events(monkeypatch)
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+        respx_mock.delete("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
             return_value=httpx.Response(
                 400,
                 json={
@@ -665,7 +661,7 @@ class TestBetaEndpointsRm:
                 },
             )
         )
-        update_route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+        update_route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -715,7 +711,7 @@ class TestBetaEndpointsRm:
             "etag": "etag-rol",
             "status": {"totalSteps": 1, "steps": []},
         }
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -725,10 +721,10 @@ class TestBetaEndpointsRm:
                 },
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/rollouts/rol_1").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1").mock(
             return_value=httpx.Response(200, json=rollout)
         )
-        delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1/rollouts/rol_1").mock(
+        delete_route = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1").mock(
             return_value=httpx.Response(200, json={"id": "rol_1"})
         )
 
@@ -759,19 +755,19 @@ class TestBetaEndpointsRm:
             "etag": "etag-rol",
             "status": {"totalSteps": 1, "steps": []},
         }
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/rollouts").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [rollout], "next_cursor": None},
             )
         )
-        delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1/rollouts/rol_stale").mock(
+        delete_route = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/rollouts/rol_stale").mock(
             return_value=httpx.Response(200, json={"id": "rol_stale"})
         )
 
@@ -784,25 +780,25 @@ class TestBetaEndpointsRm:
 
     @pytest.mark.respx(base_url=base_url)
     def test_rm_adapter(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_adapter_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_shadow/adapters").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_shadow/adapters").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters/dad_1").mock(
+        delete_route = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters/dad_1").mock(
             return_value=httpx.Response(200, json={})
         )
 
@@ -822,29 +818,29 @@ class TestBetaEndpointsRm:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(
             return_value=httpx.Response(
                 400,
                 json={"error": {"message": "deployment does not serve adapters", "type": "invalid_request_error"}},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_adapter_body("dad_later")], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_shadow/adapters").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_shadow/adapters").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
         delete_route = respx_mock.delete(
-            "/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters/dad_later"
+            "/v2/projects/proj/endpoints/ep_1/deployments/dep_variant/adapters/dad_later"
         ).mock(return_value=httpx.Response(200, json={}))
 
         result = cli_runner.invoke(_rm_args("dad_later"))
@@ -856,14 +852,14 @@ class TestBetaEndpointsRm:
 
     @pytest.mark.respx(base_url=base_url)
     def test_rm_adapter_not_found(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/projects/proj/endpoints").mock(
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
         for deployment_id in ("dep_control", "dep_variant", "dep_shadow"):
-            respx_mock.get(f"/projects/proj/endpoints/ep_1/deployments/{deployment_id}/adapters").mock(
+            respx_mock.get(f"/v2/projects/proj/endpoints/ep_1/deployments/{deployment_id}/adapters").mock(
                 return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
             )
 
@@ -899,14 +895,14 @@ class TestBetaEndpointsRm:
                 json={"object": "list", "data": [_adapter_body("dad_other")], "next_cursor": "adapters-2"},
             )
 
-        respx_mock.get("/projects/proj/endpoints").mock(side_effect=endpoints)
-        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(side_effect=adapters)
+        respx_mock.get("/v2/projects/proj/endpoints").mock(side_effect=endpoints)
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(side_effect=adapters)
         for deployment_id in ("dep_variant", "dep_shadow"):
-            respx_mock.get(f"/projects/proj/endpoints/ep_1/deployments/{deployment_id}/adapters").mock(
+            respx_mock.get(f"/v2/projects/proj/endpoints/ep_1/deployments/{deployment_id}/adapters").mock(
                 return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
             )
         delete_route = respx_mock.delete(
-            "/projects/proj/endpoints/ep_1/deployments/dep_control/adapters/dad_page2"
+            "/v2/projects/proj/endpoints/ep_1/deployments/dep_control/adapters/dad_page2"
         ).mock(return_value=httpx.Response(200, json={}))
 
         result = cli_runner.invoke(_rm_args("dad_page2"))

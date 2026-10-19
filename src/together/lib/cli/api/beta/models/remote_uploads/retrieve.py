@@ -19,7 +19,7 @@ async def retrieve(
     """Retrieve a remote upload job."""
 
     response = await show_loading_status(
-        "Loading remote upload job...", config.client.beta.models.remote_uploads.retrieve(id)
+        "Loading remote upload job...", config.client.models.remote_uploads.retrieve(id)
     )
 
     if config.json:

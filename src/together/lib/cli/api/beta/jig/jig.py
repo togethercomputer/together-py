@@ -657,7 +657,7 @@ class Jig:
     def registry(self) -> str:
         """Get registry and namespace for current user"""
         if not self.state.registry_base_path:
-            res = self.together.get("/image-repositories/base-path", cast_to=httpx.Response)
+            res = self.together.get("/v1/image-repositories/base-path", cast_to=httpx.Response)
             response = res.json()
             # strip protocol for docker image format
             self.state.registry_base_path = response["base-path"].split("://", 1)[-1]
@@ -804,7 +804,7 @@ class Jig:
         if images:
             body["images"] = images
         try:
-            self.together._client.post("/deployments/prewarm", json=body, headers=self.together.auth_headers)
+            self.together._client.post("/v1/deployments/prewarm", json=body, headers=self.together.auth_headers)
         except Exception as e:
             if DEBUG:
                 console.print(f"Prewarm request failed: {e}")

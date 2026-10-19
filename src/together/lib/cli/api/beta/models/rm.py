@@ -18,7 +18,7 @@ async def rm(
     """Delete a beta model."""
     await show_loading_status(
         "Deleting beta model...",
-        config.client.beta.models.delete(id),
+        config.client.models.delete(id),
     )
 
     if config.json:

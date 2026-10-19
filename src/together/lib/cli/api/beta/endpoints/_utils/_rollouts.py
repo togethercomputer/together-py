@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from together import AsyncClient, omit
-from together.types.beta.endpoints.rollout import Rollout
+from together.types.endpoints.rollout import Rollout
 
 
 async def resolve_rollout_by_id(
@@ -14,11 +14,11 @@ async def resolve_rollout_by_id(
     endpoint_ids: list[str] = []
 
     while True:
-        page = await client.beta.endpoints.list(after=cursor or omit)
+        page = await client.endpoints.list(after=cursor or omit)
         for endpoint in page.data:
             endpoint_ids.append(endpoint.id)
             if endpoint.active_rollout_id == rollout_id:
-                rollout = await client.beta.endpoints.rollouts.retrieve(
+                rollout = await client.endpoints.rollouts.retrieve(
                     rollout_id,
                     endpoint_id=endpoint.id,
                 )
@@ -41,7 +41,7 @@ async def _lazy_scan_for_rollout(
     This is a fallback for when the rollout ID is not the active rollout ID.
     """
     for endpoint_id in endpoint_ids:
-        async for rollout in client.beta.endpoints.rollouts.list(
+        async for rollout in client.endpoints.rollouts.list(
             endpoint_id=endpoint_id,
             limit=50,
         ):

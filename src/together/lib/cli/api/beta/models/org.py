@@ -24,7 +24,7 @@ async def org(
 
     response = await show_loading_status(
         "Loading org-scoped models...",
-        config.client.beta.models.list_org_scoped(
+        config.client.models.list_org_scoped(
             organization.id,
             limit=limit if limit is not None else omit,
             after=after or omit,

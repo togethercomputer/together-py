@@ -9,7 +9,7 @@ from cyclopts.validators import Number
 
 from together import omit
 from together._utils._json import openapi_dumps
-from together.types.beta.endpoint import Endpoint
+from together.types.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
@@ -65,7 +65,7 @@ async def ab(
 
     control_deployment = await show_loading_status(
         "Loading control deployment...",
-        config.client.beta.endpoints.deployments.retrieve(
+        config.client.endpoints.deployments.retrieve(
             id=control,
             endpoint_id=endpoint.id,
         ),
@@ -97,7 +97,7 @@ async def ab(
 
     deployment = await show_loading_status(
         "Creating variant deployment...",
-        config.client.beta.endpoints.deployments.create(
+        config.client.endpoints.deployments.create(
             endpoint_id=endpoint.id,
             name=name,
             model=construct_model_path(resolved_model, resolved.revision_id),
@@ -117,7 +117,7 @@ async def ab(
     if existing_experiment is None:
         experiment = await show_loading_status(
             "Creating A/B experiment...",
-            config.client.beta.endpoints.ab_experiments.create(
+            config.client.endpoints.ab_experiments.create(
                 endpoint_id=endpoint.id,
                 name=experiment_name,
                 members=members,
@@ -127,7 +127,7 @@ async def ab(
         assert existing_experiment.id is not None
         experiment = await show_loading_status(
             "Updating A/B experiment...",
-            config.client.beta.endpoints.ab_experiments.update(
+            config.client.endpoints.ab_experiments.update(
                 id=existing_experiment.id,
                 endpoint_id=endpoint.id,
                 update_mask="members",

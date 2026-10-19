@@ -172,7 +172,7 @@ class FilesResource(SyncAPIResource):
 
         try:
             upload_manager = UploadManager(self._client)
-            result = upload_manager.upload("/files", file, purpose, progress_callback=progress_callback)
+            result = upload_manager.upload("/v1/files", file, purpose, progress_callback=progress_callback)
 
             return FileResponse(
                 id=result.id,
@@ -359,7 +359,7 @@ class AsyncFilesResource(AsyncAPIResource):
 
         try:
             upload_manager = AsyncUploadManager(self._client)
-            result = await upload_manager.upload("/files", file, purpose, progress_callback=progress_callback)
+            result = await upload_manager.upload("/v1/files", file, purpose, progress_callback=progress_callback)
 
             return FileResponse(
                 id=result.id,

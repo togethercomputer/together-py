@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Literal
 
-from together.types.beta.endpoints.metric_rule_param import MetricRuleParam
-from together.types.beta.endpoints.threshold_check_param import ThresholdCheckParam
-from together.types.beta.endpoints.regression_check_param import RegressionCheckParam
+from together.types.endpoints.metric_rule_param import MetricRuleParam
+from together.types.endpoints.threshold_check_param import ThresholdCheckParam
+from together.types.endpoints.regression_check_param import RegressionCheckParam
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import normalize_duration
 
 # Matches Metric.name; serving_latency is retired.

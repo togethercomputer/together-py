@@ -7,15 +7,15 @@ TOP_LEVEL_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Deploy a model to a dedicated endpoint:
   [dim]Create an endpoint and deploy the model to it.
   After the endpoint is created, you can run inference against it with the fully qualified endpoint name.[/dim]
-  [primary]tg beta endpoints deploy Qwen/Qwen2.5-7B --endpoint my-custom-endpoint-name[/primary]
+  [primary]tg endpoints deploy Qwen/Qwen2.5-7B --endpoint my-custom-endpoint-name[/primary]
 
 [dim]-[/dim] Upload an external model to Together:
   [dim]First create a model record and reference compatible base model.
-  You can find model IDs of the supported base models with `tg beta models public`.[/dim]
-  [primary]$ tg beta models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
+  You can find model IDs of the supported base models with `tg models public`.[/dim]
+  [primary]$ tg models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
 
   [dim]Upload from a local file/directory to the model record created above.[/dim]
-  [primary]$ tg beta models upload ml_yyyyyyyyyyy ./path/to/my-model[/primary]
+  [primary]$ tg models upload ml_yyyyyyyyyyy ./path/to/my-model[/primary]
 """
 
 ## Files API commands

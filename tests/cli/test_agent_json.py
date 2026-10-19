@@ -59,7 +59,7 @@ class TestAgentJsonDefault:
 
         assert result.exit_code == 1
         payload = json.loads(result.out_out)
-        assert payload["error"] == "At least one update option must be specified"
+        assert payload["error"] == "Error: At least one update option must be specified."
 
     def test_agent_usage_error_is_json(self, capsys: pytest.CaptureFixture[str]) -> None:
         result = CliRunner(capsys, agent=True).invoke(["not-a-command"])

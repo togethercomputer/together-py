@@ -12,23 +12,23 @@ from rich.markup import escape as escape_rich_markup
 from rich.columns import Columns
 from rich.padding import Padding
 
+from together.types import Endpoint, EndpointDeployment
 from together.pagination import AsyncCursorPagination
-from together.types.beta import Endpoint, EndpointDeployment
 from together._exceptions import APIError
 from together._utils._json import openapi_dumps
+from together.types.models import Config
 from together.lib.utils.tools import format_datetime
-from together.types.beta.models import Config
+from together.types.endpoints import Rollout, AbExperiment, ShadowExperiment
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.types.beta.endpoints import Rollout, AbExperiment, ShadowExperiment
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.endpoints.metric_result import (
+from together.types.endpoints.metric_result import (
     MetricResult as StatusConditionMetric,
     MetricResult as StatusStepMetric,
 )
-from together.types.beta.endpoints.rollout_condition import RolloutCondition as StatusCondition
-from together.types.beta.endpoints.rollout_step_status import RolloutStepStatus as StatusStep
+from together.types.endpoints.rollout_condition import RolloutCondition as StatusCondition
+from together.types.endpoints.rollout_step_status import RolloutStepStatus as StatusStep
 from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     resolve_endpoint,
@@ -82,7 +82,7 @@ async def _retrieve_deployment(deployment_id_or_name: str, *, config: CLIConfigP
     )
     deployment = await show_loading_status(
         "Loading deployment...",
-        config.client.beta.endpoints.deployments.retrieve(
+        config.client.endpoints.deployments.retrieve(
             deployment_id,
             endpoint_id=endpoint.id,
         ),
@@ -103,7 +103,7 @@ async def _load_deployment_config(config: CLIConfigParameter, deployment: Endpoi
     if not config_id:
         return None
     try:
-        return await config.client.beta.models.configs.retrieve(
+        return await config.client.models.configs.retrieve(
             id=config_id,
             project_id=match.group(1) if match is not None else None,
         )
@@ -169,16 +169,16 @@ async def _load_endpoint_resources(
     rollouts, which should still show in the retrieve printout.
     """
     endpoint, ab_experiments, shadows = await asyncio.gather(
-        config.client.beta.endpoints.retrieve(id),
-        config.client.beta.endpoints.ab_experiments.list(id),
-        config.client.beta.endpoints.shadow_experiments.list(id, include_targets=True),
+        config.client.endpoints.retrieve(id),
+        config.client.endpoints.ab_experiments.list(id),
+        config.client.endpoints.shadow_experiments.list(id, include_targets=True),
     )
 
     rollout: Rollout | None = None
     if endpoint.active_rollout_id:
         # active_rollout_id can be stale; don't fail the whole retrieve on a 404.
         try:
-            rollout = await config.client.beta.endpoints.rollouts.retrieve(
+            rollout = await config.client.endpoints.rollouts.retrieve(
                 endpoint.active_rollout_id,
                 endpoint_id=endpoint.id,
             )
@@ -251,7 +251,7 @@ async def render_deployments(endpoint: Endpoint, *, config: CLIConfigParameter) 
 async def _load_adapter_names(config: CLIConfigParameter, endpoint_id: str, deployment_id: str) -> list[str]:
     """Display names of adapters attached to a deployment; empty when they cannot be listed."""
     try:
-        adapters = [adapter async for adapter in config.client.beta.endpoints.adapters.list(endpoint_id, deployment_id)]
+        adapters = [adapter async for adapter in config.client.endpoints.adapters.list(endpoint_id, deployment_id)]
     except APIError:
         return []
     return list(

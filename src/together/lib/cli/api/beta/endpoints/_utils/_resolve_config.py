@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import re
 
+from together.types.models.config import Config
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.types.beta.models.config import Config
-from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
+from together.types.supported_model_deployment_profile import SupportedModelDeploymentProfile
 
 _CONFIG_PATH_RE = re.compile(r"^projects/([^/]+)/configs/([^/]+)$")
 
 
 async def resolve_configs(config: CLIConfigParameter, model_id: str) -> list[Config]:
-    configs = await config.client.beta.models.configs.list(reference_model_id=model_id)
+    configs = await config.client.models.configs.list(reference_model_id=model_id)
     return list(configs.data or [])
 
 

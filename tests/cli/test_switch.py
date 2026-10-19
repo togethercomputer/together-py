@@ -232,13 +232,13 @@ def _logged_in(creds_file: Path, cli_runner: CliRunner) -> None:
     cli_runner.env.pop("TOGETHER_API_KEY", None)
 
 
-@pytest.mark.respx(base_url=f"{os.environ.get('TEST_API_BASE_URL', 'http://127.0.0.1:4010')}/v1")
+@pytest.mark.respx(base_url=os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010"))
 def test_switch_without_project_prompts(
     respx_mock: MockRouter, creds_file: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _logged_in(creds_file, cli_runner)
     switched: list[str] = []
-    respx_mock.get("/projects").mock(return_value=httpx.Response(200, json=_project_page("proj_a", "proj_b")))
+    respx_mock.get("/v1/projects").mock(return_value=httpx.Response(200, json=_project_page("proj_a", "proj_b")))
 
     async def fake_select(projects: Sequence[Project], *, preferred: str | None, message: str = "") -> str | None:
         del preferred
@@ -264,11 +264,11 @@ def test_switch_without_project_prompts(
     assert "proj_b" in result.output
 
 
-@pytest.mark.respx(base_url=f"{os.environ.get('TEST_API_BASE_URL', 'http://127.0.0.1:4010')}/v1")
+@pytest.mark.respx(base_url=os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010"))
 def test_switch_without_project_prints_choices(respx_mock: MockRouter, creds_file: Path, cli_runner: CliRunner) -> None:
     _logged_in(creds_file, cli_runner)
     cli_runner.env.pop("TOGETHER_PROJECT_ID", None)
-    respx_mock.get("/projects").mock(return_value=httpx.Response(200, json=_project_page("proj_a", "proj_b")))
+    respx_mock.get("/v1/projects").mock(return_value=httpx.Response(200, json=_project_page("proj_a", "proj_b")))
 
     result = cli_runner.invoke(["switch"])
 
@@ -281,12 +281,12 @@ def test_switch_without_project_prints_choices(respx_mock: MockRouter, creds_fil
     assert stored_access_token() == "cli-jwt"
 
 
-@pytest.mark.respx(base_url=f"{os.environ.get('TEST_API_BASE_URL', 'http://127.0.0.1:4010')}/v1")
+@pytest.mark.respx(base_url=os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010"))
 def test_switch_without_project_json_lists_choices(
     respx_mock: MockRouter, creds_file: Path, cli_runner: CliRunner
 ) -> None:
     _logged_in(creds_file, cli_runner)
-    respx_mock.get("/projects").mock(return_value=httpx.Response(200, json=_project_page("proj_a", "proj_b")))
+    respx_mock.get("/v1/projects").mock(return_value=httpx.Response(200, json=_project_page("proj_a", "proj_b")))
 
     result = cli_runner.invoke(["switch", "--json"])
 
@@ -298,7 +298,7 @@ def test_switch_without_project_json_lists_choices(
     assert stored_access_token() == "cli-jwt"
 
 
-@pytest.mark.respx(base_url=f"{os.environ.get('TEST_API_BASE_URL', 'http://127.0.0.1:4010')}/v1")
+@pytest.mark.respx(base_url=os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010"))
 def test_switch_lists_with_the_login_token_across_pages(
     respx_mock: MockRouter, creds_file: Path, cli_runner: CliRunner
 ) -> None:
@@ -318,7 +318,7 @@ def test_switch_lists_with_the_login_token_across_pages(
         assert request.headers["authorization"] == "Bearer login-jwt"
         return httpx.Response(200, json=pages.pop(0))
 
-    route = respx_mock.get("/projects").mock(side_effect=respond)
+    route = respx_mock.get("/v1/projects").mock(side_effect=respond)
 
     result = cli_runner.invoke(["switch"])
 

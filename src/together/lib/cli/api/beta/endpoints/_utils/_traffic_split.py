@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from together.types.beta import EndpointTrafficSplitEntry, EndpointTrafficSplitEntryParam
+from together.types import EndpointTrafficSplitEntry, EndpointTrafficSplitEntryParam
 
 
 def upsert_traffic_weight(

@@ -25,7 +25,7 @@ async def list(
 
     response = await show_loading_status(
         "Loading remote upload jobs...",
-        config.client.beta.models.remote_uploads.list(
+        config.client.models.remote_uploads.list(
             limit=limit if limit is not None else omit,
             after=after or omit,
         ),

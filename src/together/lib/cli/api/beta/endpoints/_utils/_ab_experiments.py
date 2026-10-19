@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from together import AsyncClient
-from together.types.beta import AbMember, AbMemberParam
+from together.types import AbMember, AbMemberParam
 from together.lib.utils.tools import format_datetime
 from together.lib.cli.utils._console import console
-from together.types.beta.endpoints.ab_experiment import AbExperiment
+from together.types.endpoints.ab_experiment import AbExperiment
 
 
 async def find_ab_for_deployment(
@@ -12,7 +12,7 @@ async def find_ab_for_deployment(
     endpoint_id: str,
     deployment_id: str,
 ) -> AbExperiment | None:
-    async for experiment in client.beta.endpoints.ab_experiments.list(endpoint_id=endpoint_id):
+    async for experiment in client.endpoints.ab_experiments.list(endpoint_id=endpoint_id):
         if any(m.deployment_id == deployment_id for m in experiment.members):
             return experiment
     return None
@@ -24,7 +24,7 @@ async def find_ab_experiment_by_name(
     endpoint_id: str,
     name: str,
 ) -> AbExperiment | None:
-    async for experiment in client.beta.endpoints.ab_experiments.list(endpoint_id=endpoint_id):
+    async for experiment in client.endpoints.ab_experiments.list(endpoint_id=endpoint_id):
         if experiment.name == name:
             return experiment
     return None

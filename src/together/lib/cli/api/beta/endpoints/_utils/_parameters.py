@@ -10,8 +10,8 @@ if TYPE_CHECKING:
 
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
-from together.types.beta.deployment_placement_config_param import DeploymentPlacementConfigParam
-from together.types.beta.endpoints.deployment_create_params import (
+from together.types.deployment_placement_config_param import DeploymentPlacementConfigParam
+from together.types.endpoints.deployment_create_params import (
     Placement,
     PlacementInline,
 )
@@ -79,9 +79,9 @@ class ModelPromptParameter(PromptParameter):
     async def preprompt(self, config: CLIConfig) -> None:
         self.choices = []
 
-        list_supported_request = config.client.beta.models.list_supported()
+        list_supported_request = config.client.models.list_supported()
 
-        async for project_model in config.client.beta.models.list():
+        async for project_model in config.client.models.list():
             self.choices.append(("/".join(project_model.name.split("/")[1:]), project_model.id))
 
         async for supported_model in list_supported_request:
@@ -113,7 +113,7 @@ class EndpointPromptParameter(PromptParameter):
 
     @override
     async def preprompt(self, config: CLIConfig) -> None:
-        endpoints = await config.client.beta.endpoints.list()
+        endpoints = await config.client.endpoints.list()
         show_more = endpoints.next_cursor is not None
         self.choices = [("/".join(endpoint.name.split("/")[1:]), endpoint.id) for endpoint in endpoints.data]
         if show_more:

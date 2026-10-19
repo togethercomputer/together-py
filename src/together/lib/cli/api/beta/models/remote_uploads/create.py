@@ -32,7 +32,7 @@ async def create(
 
     response = await show_loading_status(
         "Starting remote upload...",
-        config.client.beta.models.remote_uploads.create(
+        config.client.models.remote_uploads.create(
             model_id=model_id,
             remote_url=remote_url,
             token=token or omit,

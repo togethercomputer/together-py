@@ -21,7 +21,7 @@ async def list_files(
     config: CLIConfigParameter,
 ) -> None:
     response = await show_loading_status(
-        "Loading model files...", config.client.beta.models.list_files(id, revision_id=revision or omit)
+        "Loading model files...", config.client.models.list_files(id, revision_id=revision or omit)
     )
 
     if config.json:

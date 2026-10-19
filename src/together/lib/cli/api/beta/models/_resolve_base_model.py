@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from together.lib.cli.utils.config import CLIConfig
+from together.types.supported_model import SupportedModel
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.supported_model import SupportedModel
-from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
+from together.types.supported_model_deployment_profile import SupportedModelDeploymentProfile
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
 
 
@@ -50,7 +50,7 @@ async def resolve_base_model_id(config: CLIConfig, base_model: str) -> str:
 
     supported = await show_loading_status(
         "Resolving base model...",
-        config.client.beta.models.list_supported(search=base_model),
+        config.client.models.list_supported(search=base_model),
     )
 
     candidates: list[tuple[str, str, str]] = []

@@ -22,7 +22,7 @@ async def list(
 ) -> None:
     response = await show_loading_status(
         "Loading beta models...",
-        config.client.beta.models.list(
+        config.client.models.list(
             limit=limit if limit is not None else omit,
             after=after or omit,
         ),

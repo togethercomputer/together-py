@@ -122,8 +122,8 @@ def _config_body(config_id: str = "cr_1", **overrides: Any) -> dict[str, Any]:
 
 
 def _mock_model_and_config(respx_mock: MockRouter, *, configs: list[dict[str, Any]] | None = None) -> None:
-    respx_mock.get("/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
-    respx_mock.get("/projects/proj/configs").mock(
+    respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
+    respx_mock.get("/v2/projects/proj/configs").mock(
         return_value=httpx.Response(
             200,
             json={"object": "list", "data": configs if configs is not None else [_config_body()], "next_cursor": None},
@@ -132,7 +132,7 @@ def _mock_model_and_config(respx_mock: MockRouter, *, configs: list[dict[str, An
 
 
 def _mock_endpoint(respx_mock: MockRouter) -> None:
-    respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+    respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
 
 
 def _shadow_cli_args(**overrides: str) -> list[str]:
@@ -234,13 +234,13 @@ class TestBetaEndpointShadow:
     ) -> None:
         _mock_endpoint(respx_mock)
         _mock_model_and_config(respx_mock)
-        create_experiment_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        create_experiment_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json=_shadow_experiment_body())
         )
-        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+        create_deployment_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(200, json=_deployment_body())
         )
-        create_target_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+        create_target_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
             return_value=httpx.Response(200, json=_shadow_target_body())
         )
 
@@ -281,13 +281,13 @@ class TestBetaEndpointShadow:
     ) -> None:
         _mock_endpoint(respx_mock)
         _mock_model_and_config(respx_mock)
-        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(
                 409,
                 json={"error": {"message": "Shadow experiment already exists", "type": "conflict"}},
             )
         )
-        list_route = respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        list_route = respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -297,10 +297,10 @@ class TestBetaEndpointShadow:
                 },
             )
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(200, json=_deployment_body(deployment_id="dep_shadow_2"))
         )
-        create_target_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+        create_target_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
             return_value=httpx.Response(
                 200,
                 json=_shadow_target_body(
@@ -329,13 +329,13 @@ class TestBetaEndpointShadow:
     ) -> None:
         _mock_endpoint(respx_mock)
         _mock_model_and_config(respx_mock)
-        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(
                 409,
                 json={"error": {"message": "Shadow experiment already exists", "type": "conflict"}},
             )
         )
-        list_route = respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        list_route = respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             side_effect=[
                 httpx.Response(
                     200,
@@ -355,10 +355,10 @@ class TestBetaEndpointShadow:
                 ),
             ]
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(200, json=_deployment_body(deployment_id="dep_shadow_2"))
         )
-        create_target_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+        create_target_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
             return_value=httpx.Response(
                 200,
                 json=_shadow_target_body(
@@ -383,13 +383,13 @@ class TestBetaEndpointShadow:
     ) -> None:
         _mock_endpoint(respx_mock)
         _mock_model_and_config(respx_mock)
-        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(
                 409,
                 json={"error": {"message": "Shadow experiment already exists", "type": "conflict"}},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
 
@@ -426,20 +426,20 @@ class TestBetaEndpointShadow:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint(respx_mock)
-        configs_route = respx_mock.get("/projects/proj/configs").mock(
+        configs_route = respx_mock.get("/v2/projects/proj/configs").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_config_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
-        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json=_shadow_experiment_body())
         )
-        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+        create_deployment_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(200, json=_deployment_body())
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
             return_value=httpx.Response(200, json=_shadow_target_body())
         )
 
@@ -478,8 +478,8 @@ class TestBetaEndpointShadow:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint(respx_mock)
-        respx_mock.get("/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
-        respx_mock.get("/projects/proj/configs").mock(
+        respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
+        respx_mock.get("/v2/projects/proj/configs").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -517,7 +517,7 @@ class TestBetaEndpointShadow:
     ) -> None:
         _mock_endpoint(respx_mock)
         _mock_model_and_config(respx_mock)
-        create_experiment_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        create_experiment_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(
                 200,
                 json=_shadow_experiment_body(
@@ -526,10 +526,10 @@ class TestBetaEndpointShadow:
                 ),
             )
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(200, json=_deployment_body())
         )
-        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
             return_value=httpx.Response(200, json=_shadow_target_body())
         )
 

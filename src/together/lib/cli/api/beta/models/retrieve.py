@@ -22,8 +22,8 @@ async def retrieve(
     model, files = await show_loading_status(
         "Loading beta model...",
         asyncio.gather(
-            config.client.beta.models.retrieve(id),
-            safe_fetch(config.client.beta.models.list_files(id=id)),
+            config.client.models.retrieve(id),
+            safe_fetch(config.client.models.list_files(id=id)),
         ),
     )
 

@@ -12,7 +12,7 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.endpoints.ab_experiment import AbExperiment
+from together.types.endpoints.ab_experiment import AbExperiment
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve as retrieve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._traffic_split import upsert_traffic_weight
 from together.lib.cli.api.beta.endpoints._utils._ab_experiments import (
@@ -185,7 +185,7 @@ async def update(
     if update_mask:
         updated = await show_loading_status(
             "Updating deployment...",
-            config.client.beta.endpoints.deployments.update(
+            config.client.endpoints.deployments.update(
                 id,
                 endpoint_id=endpoint.id,
                 update_mask=",".join(update_mask),
@@ -201,7 +201,7 @@ async def update(
         )
         endpoint = await show_loading_status(
             "Updating endpoint traffic split...",
-            config.client.beta.endpoints.update(
+            config.client.endpoints.update(
                 endpoint.id,
                 traffic_split=traffic_split,
                 update_mask="trafficSplit",
@@ -218,7 +218,7 @@ async def update(
             assert ab_members is not None
             updated_ab = await show_loading_status(
                 "Updating A/B experiment...",
-                config.client.beta.endpoints.ab_experiments.update(
+                config.client.endpoints.ab_experiments.update(
                     id=ab_experiment.id,
                     endpoint_id=endpoint.id,
                     update_mask="members",

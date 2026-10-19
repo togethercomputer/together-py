@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from together import omit
-from together.types.beta.endpoint import Endpoint
+from together.types.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.beta.endpoints._utils._ab_experiments import (
@@ -53,7 +53,7 @@ async def detach_deployment_from_experiments(
         target = next(t for t in (shadow.targets or []) if t.target_deployment_id == deployment_id)
         await show_loading_status(
             "Removing deployment from shadow experiment...",
-            config.client.beta.endpoints.shadow_experiments.targets.delete(
+            config.client.endpoints.shadow_experiments.targets.delete(
                 id=target.id,
                 endpoint_id=endpoint_id,
                 experiment_id=shadow.id,
@@ -66,7 +66,7 @@ async def detach_deployment_from_experiments(
         else:
             await show_loading_status(
                 "Deleting empty shadow experiment...",
-                config.client.beta.endpoints.shadow_experiments.delete(
+                config.client.endpoints.shadow_experiments.delete(
                     id=shadow.id,
                     endpoint_id=endpoint_id,
                     etag=shadow.etag or omit,
@@ -82,7 +82,7 @@ async def detach_deployment_from_experiments(
         if len(remaining_members) < 2 or removed.role == "AB_EXPERIMENT_MEMBER_ROLE_CONTROL":
             await show_loading_status(
                 "Deleting A/B experiment...",
-                config.client.beta.endpoints.ab_experiments.delete(
+                config.client.endpoints.ab_experiments.delete(
                     id=ab.id,
                     endpoint_id=endpoint_id,
                     etag=ab.etag or omit,
@@ -93,7 +93,7 @@ async def detach_deployment_from_experiments(
             members = members_without_deployment(ab.members, deployment_id)
             await show_loading_status(
                 "Removing deployment from A/B experiment...",
-                config.client.beta.endpoints.ab_experiments.update(
+                config.client.endpoints.ab_experiments.update(
                     id=ab.id,
                     endpoint_id=endpoint_id,
                     update_mask="members",

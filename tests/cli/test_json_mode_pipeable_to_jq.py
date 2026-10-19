@@ -13,10 +13,8 @@ from respx import MockRouter
 
 from tests.cli.utils import CliRunner
 from tests.cli.test_files import FILE_ROW_NEWER, _file_response
-from tests.cli.test_models import _UPLOAD_BODY, list_data
 from tests.cli.test_batches import _BATCH_JOB, _BATCH_CREATE
 from tests.cli.test_clusters import _VOLUME_BODY, _REGIONS_BODY, _cluster_body
-from tests.cli.test_endpoints import DEDICATED_EP, ENDPOINT_LIST_ITEM, model_data
 from tests.cli.test_fine_tuning import (
     _FT_EVENT,
     _FT_LIST_ITEM,
@@ -45,47 +43,36 @@ def _ok(body: object) -> httpx.Response:
 
 def _mock_json_mode_http(respx_mock: MockRouter) -> None:
     """Deterministic HTTP for in-process CLI JSON-mode tests (no live API key)."""
-    respx_mock.get("/clusters/availability-zones").mock(return_value=_ok({"avzones": ["us-east-1a"]}))
-    respx_mock.post("/endpoints").mock(return_value=_ok(DEDICATED_EP))
-    respx_mock.delete("/endpoints/endpoint-123").mock(return_value=_ok({"id": "endpoint-123", "deleted": True}))
-    respx_mock.get("/hardware").mock(return_value=_ok(model_data))
-    respx_mock.get("/endpoints").mock(return_value=_ok({"object": "list", "data": [ENDPOINT_LIST_ITEM]}))
-    respx_mock.get("/endpoints/endpoint-123").mock(return_value=_ok(DEDICATED_EP))
-    respx_mock.patch("/endpoints/endpoint-123").mock(return_value=_ok(DEDICATED_EP))
+    respx_mock.post("/v1/batches").mock(return_value=_ok(_BATCH_CREATE))
+    respx_mock.get("/v1/batches").mock(return_value=_ok([_BATCH_JOB]))
+    respx_mock.get("/v1/batches/batch_job_abc123def456").mock(return_value=_ok(_BATCH_JOB))
+    respx_mock.post("/v1/batches/batch_job_abc123def456/cancel").mock(return_value=_ok(_BATCH_JOB))
 
-    respx_mock.post("/batches").mock(return_value=_ok(_BATCH_CREATE))
-    respx_mock.get("/batches").mock(return_value=_ok([_BATCH_JOB]))
-    respx_mock.get("/batches/batch_job_abc123def456").mock(return_value=_ok(_BATCH_JOB))
-    respx_mock.post("/batches/batch_job_abc123def456/cancel").mock(return_value=_ok(_BATCH_JOB))
+    respx_mock.delete("/v1/files/file-123").mock(return_value=_ok({"id": "file-123", "deleted": True}))
+    respx_mock.get("/v1/files").mock(return_value=_ok({"data": [FILE_ROW_NEWER]}))
+    respx_mock.get("/v1/files/file-123").mock(return_value=_ok(FILE_ROW_NEWER))
 
-    respx_mock.delete("/files/file-123").mock(return_value=_ok({"id": "file-123", "deleted": True}))
-    respx_mock.get("/files").mock(return_value=_ok({"data": [FILE_ROW_NEWER]}))
-    respx_mock.get("/files/file-123").mock(return_value=_ok(FILE_ROW_NEWER))
-
-    respx_mock.get("/fine-tunes").mock(return_value=_ok({"data": [_FT_LIST_ITEM]}))
-    respx_mock.get("/fine-tunes/ft-123").mock(return_value=_ok(_FT_RUNNING))
-    respx_mock.post("/fine-tunes/ft-123/cancel").mock(return_value=_ok(_FT_RUNNING))
-    respx_mock.delete("/fine-tunes/ft-123").mock(return_value=_ok({"message": "deleted"}))
-    respx_mock.get("/fine-tunes/ft-123/events").mock(return_value=_ok({"data": [_FT_EVENT]}))
-    respx_mock.get("/fine-tunes/ft-123/checkpoints").mock(return_value=_ok({"data": [_FT_CHECKPOINT]}))
-    respx_mock.post("/fine-tunes/preview").mock(return_value=_ok(_FT_PREVIEW_BODY))
-
-    respx_mock.get("/models").mock(return_value=_ok(list_data))
-    respx_mock.post("/models").mock(return_value=_ok(_UPLOAD_BODY))
+    respx_mock.get("/v1/fine-tunes").mock(return_value=_ok({"data": [_FT_LIST_ITEM]}))
+    respx_mock.get("/v1/fine-tunes/ft-123").mock(return_value=_ok(_FT_RUNNING))
+    respx_mock.post("/v1/fine-tunes/ft-123/cancel").mock(return_value=_ok(_FT_RUNNING))
+    respx_mock.delete("/v1/fine-tunes/ft-123").mock(return_value=_ok({"message": "deleted"}))
+    respx_mock.get("/v1/fine-tunes/ft-123/events").mock(return_value=_ok({"data": [_FT_EVENT]}))
+    respx_mock.get("/v1/fine-tunes/ft-123/checkpoints").mock(return_value=_ok({"data": [_FT_CHECKPOINT]}))
+    respx_mock.post("/v1/fine-tunes/preview").mock(return_value=_ok(_FT_PREVIEW_BODY))
 
     cluster = _cluster_body("cluster-123", "together-py-testing-suite")
-    respx_mock.post("/compute/clusters").mock(return_value=_ok(cluster))
-    respx_mock.get("/compute/clusters").mock(return_value=_ok({"clusters": [cluster]}))
-    respx_mock.get("/compute/clusters/cluster-123").mock(return_value=_ok(cluster))
-    respx_mock.put("/compute/clusters/cluster-123").mock(return_value=_ok(cluster))
-    respx_mock.delete("/compute/clusters/cluster-123").mock(return_value=_ok({"cluster_id": "cluster-123"}))
-    respx_mock.get("/compute/regions").mock(return_value=_ok(_REGIONS_BODY))
+    respx_mock.post("/v1/compute/clusters").mock(return_value=_ok(cluster))
+    respx_mock.get("/v1/compute/clusters").mock(return_value=_ok({"clusters": [cluster]}))
+    respx_mock.get("/v1/compute/clusters/cluster-123").mock(return_value=_ok(cluster))
+    respx_mock.put("/v1/compute/clusters/cluster-123").mock(return_value=_ok(cluster))
+    respx_mock.delete("/v1/compute/clusters/cluster-123").mock(return_value=_ok({"cluster_id": "cluster-123"}))
+    respx_mock.get("/v1/compute/regions").mock(return_value=_ok(_REGIONS_BODY))
 
-    respx_mock.post("/compute/clusters/storage/volumes").mock(return_value=_ok(_VOLUME_BODY))
-    respx_mock.put("/compute/clusters/storage/volumes").mock(return_value=_ok(_VOLUME_BODY))
-    respx_mock.get("/compute/clusters/storage/volumes").mock(return_value=_ok({"volumes": [_VOLUME_BODY]}))
-    respx_mock.get("/compute/clusters/storage/volumes/storage-123").mock(return_value=_ok(_VOLUME_BODY))
-    respx_mock.delete("/compute/clusters/storage/volumes/storage-123").mock(return_value=_ok({"success": True}))
+    respx_mock.post("/v1/compute/clusters/storage/volumes").mock(return_value=_ok(_VOLUME_BODY))
+    respx_mock.put("/v1/compute/clusters/storage/volumes").mock(return_value=_ok(_VOLUME_BODY))
+    respx_mock.get("/v1/compute/clusters/storage/volumes").mock(return_value=_ok({"volumes": [_VOLUME_BODY]}))
+    respx_mock.get("/v1/compute/clusters/storage/volumes/storage-123").mock(return_value=_ok(_VOLUME_BODY))
+    respx_mock.delete("/v1/compute/clusters/storage/volumes/storage-123").mock(return_value=_ok({"success": True}))
 
 
 class JSONValidator:
@@ -119,23 +106,6 @@ class TestJSONMode:
     @pytest.fixture(autouse=True)
     def _http(self, respx_mock: MockRouter) -> None:
         _mock_json_mode_http(respx_mock)
-
-    def test_endpoints_json_mode(self, cli_runner: CliRunner) -> None:
-        endpoints = JSONValidator("endpoints", cli_runner)
-        endpoints.run_and_assert("availability-zones")
-        endpoints.run_and_assert("create --model deepseek-ai/DeepSeek-R1 --hardware 1x_nvidia_a100_80gb_sxm")
-        endpoints.run_and_assert("delete endpoint-123")
-        endpoints.run_and_assert("hardware")
-        endpoints.run_and_assert("hardware --model deepseek-ai/DeepSeek-R1")
-        endpoints.run_and_assert("list")
-        endpoints.run_and_assert("list --type dedicated")
-        endpoints.run_and_assert("list --usage-type on-demand")
-        endpoints.run_and_assert("list --usage-type reserved")
-        endpoints.run_and_assert("list --mine")
-        endpoints.run_and_assert("retrieve endpoint-123")
-        endpoints.run_and_assert("start endpoint-123")
-        endpoints.run_and_assert("stop endpoint-123")
-        endpoints.run_and_assert("update endpoint-123 --min-replicas 2 --max-replicas 4 --inactive-timeout 60")
 
     def test_evals_json_mode(self, cli_runner: CliRunner) -> None:
         evals = JSONValidator("evals", cli_runner)
@@ -191,12 +161,6 @@ class TestJSONMode:
         fine_tuning.run_and_assert("list-checkpoints ft-123")
         fine_tuning.run_and_assert("preview --training-file file-123 --model deepseek-ai/DeepSeek-R1")
         fine_tuning.skip.run_and_assert("retrieve-checkpoint ft-123/checkpoint-123")
-
-    def test_models_json_mode(self, cli_runner: CliRunner) -> None:
-        models = JSONValidator("models", cli_runner)
-        models.run_and_assert("list")
-        models.run_and_assert("list --type dedicated")
-        models.run_and_assert("upload --model-name model-123/version-123 --model-source s3://model-123/version-123")
 
     def test_clusters_json_mode(self, cli_runner: CliRunner) -> None:
         clusters = JSONValidator(("clusters",), cli_runner)

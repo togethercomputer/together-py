@@ -10,24 +10,24 @@ from rich.table import Table
 from cyclopts.validators import Number
 
 from together import ConflictError, omit
-from together.types.beta import Model, Endpoint, DeploymentAutoscalingParam
+from together.types import Model, Endpoint, DeploymentAutoscalingParam
 from together._utils._json import openapi_dumps
-from together.types.beta.models import Config
+from together.types.models import Config
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve
+from together.types.endpoints.deployment_create_params import (
+    Placement,
+    PlacementProfile,
+)
 from together.lib.cli.utils._assert_explicit_project_id import assert_explicit_project_id
 from together.lib.cli.api.beta.endpoints._utils._parameters import (
     ModelParameter,
     PlacementGroup,
     PlacementModel,
     placement_model,
-)
-from together.types.beta.endpoints.deployment_create_params import (
-    Placement,
-    PlacementProfile,
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     MODEL_PATH_RE,
@@ -358,7 +358,7 @@ async def deploy(
     try:
         deployment = await show_loading_status(
             "Creating beta endpoint deployment...",
-            config.client.beta.endpoints.deployments.create(
+            config.client.endpoints.deployments.create(
                 endpoint.id,
                 name=deployment_name,
                 model=model_path,
@@ -375,7 +375,7 @@ async def deploy(
         )
     except Exception as e:
         if is_new_endpoint:
-            await config.client.beta.endpoints.delete(endpoint.id)
+            await config.client.endpoints.delete(endpoint.id)
             if not config.json:
                 console.print("Error creating deployment. Rolling back.")
         raise e
@@ -389,7 +389,7 @@ async def deploy(
         )
         endpoint = await show_loading_status(
             "Updating endpoint traffic split...",
-            config.client.beta.endpoints.update(
+            config.client.endpoints.update(
                 endpoint.id,
                 traffic_split=traffic_split,
                 update_mask="trafficSplit",
@@ -545,7 +545,7 @@ async def _deploy_adapter(
         try:
             deployment = await show_loading_status(
                 "Creating beta endpoint deployment...",
-                config.client.beta.endpoints.deployments.create(
+                config.client.endpoints.deployments.create(
                     endpoint.id,
                     name=deployment_name,
                     model=construct_model_path(base),
@@ -562,7 +562,7 @@ async def _deploy_adapter(
             created_deployment = True
         except Exception as e:
             if is_new_endpoint:
-                await config.client.beta.endpoints.delete(endpoint.id)
+                await config.client.endpoints.delete(endpoint.id)
                 if not config.json:
                     console.print("Error creating deployment. Rolling back.")
             raise e
@@ -572,7 +572,7 @@ async def _deploy_adapter(
     try:
         attached = await show_loading_status(
             "Attaching adapter...",
-            config.client.beta.endpoints.adapters.create(
+            config.client.endpoints.adapters.create(
                 endpoint_id=endpoint.id,
                 deployment_id=deployment.id,
                 adapter_model_id=adapter.id,
@@ -583,13 +583,13 @@ async def _deploy_adapter(
         if (created_deployment or is_new_endpoint) and not config.json:
             console.print("Error attaching adapter. Rolling back.")
         if created_deployment:
-            await config.client.beta.endpoints.deployments.delete(
+            await config.client.endpoints.deployments.delete(
                 deployment.id,
                 endpoint_id=endpoint.id,
                 etag=deployment.etag or omit,
             )
         if is_new_endpoint:
-            await config.client.beta.endpoints.delete(endpoint.id)
+            await config.client.endpoints.delete(endpoint.id)
         raise e
 
     if traffic_weight is not None:
@@ -601,7 +601,7 @@ async def _deploy_adapter(
         )
         endpoint = await show_loading_status(
             "Updating endpoint traffic split...",
-            config.client.beta.endpoints.update(
+            config.client.endpoints.update(
                 endpoint.id,
                 traffic_split=traffic_split,
                 update_mask="trafficSplit",
@@ -653,7 +653,7 @@ def _adapter_create_flags_ignored(
 
 async def _peek_endpoint(config: CLIConfigParameter, endpoint_input: str) -> Endpoint | None:
     if endpoint_input.startswith("ep_"):
-        return await config.client.beta.endpoints.retrieve(id=endpoint_input)
+        return await config.client.endpoints.retrieve(id=endpoint_input)
     try:
         return await resolve_endpoint(config, endpoint_input)
     except ValueError:
@@ -754,12 +754,12 @@ def _print_deployment_preview(
 async def _find_or_create_endpoint(config: CLIConfigParameter, endpoint_input: str) -> tuple[Endpoint, bool]:
     # If the user gave us an endpoint ID, we can just retrieve it.
     if endpoint_input.startswith("ep_"):
-        endpoint = await config.client.beta.endpoints.retrieve(id=endpoint_input)
+        endpoint = await config.client.endpoints.retrieve(id=endpoint_input)
         return endpoint, False
 
     # Create first; on name conflict, reuse the existing endpoint.
     try:
-        endpoint = await config.client.beta.endpoints.create(name=endpoint_input)
+        endpoint = await config.client.endpoints.create(name=endpoint_input)
         return endpoint, True
     except ConflictError:
         return await resolve_endpoint(config, endpoint_input), False

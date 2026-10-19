@@ -443,9 +443,9 @@ def test_parse_command_and_flags_normalizes_minus_d_alias_to_delete() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "-d", "ep-1", "--json", "--yes"])
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "-d", "ep_1", "--json"])
     assert cmd == "endpoints delete"
-    assert "endpoint_id" in flags
+    assert "id" in flags
     assert is_beta is False
 
 
@@ -473,9 +473,9 @@ def test_parse_command_and_flags_normalizes_minus_c_alias_to_create() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "-c", "--model", "model-1"])
-    assert cmd == "endpoints create"
-    assert "model" in flags
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["models", "-c", "--name", "my-model"])
+    assert cmd == "models create"
+    assert "name" in flags
     assert is_beta is False
 
 

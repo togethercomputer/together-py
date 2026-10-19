@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Literal, cast, overload
 
-from together.types.beta import ScalingMetricParam, DeploymentAutoscalingParam
+from together.types import ScalingMetricParam, DeploymentAutoscalingParam
 from together.lib.cli.utils._json_mode import exit_with_message
 
 # Wire format is protobuf Duration JSON, seconds only (e.g. "30s", "600s").

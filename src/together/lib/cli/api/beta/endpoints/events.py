@@ -13,7 +13,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter
-from together.types.beta.endpoint_list_events_response import EndpointListEventsResponse
+from together.types.endpoint_list_events_response import EndpointListEventsResponse
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_endpoint
 
 LevelInput = Literal["debug", "info", "warn", "warning", "error"]
@@ -98,7 +98,7 @@ async def events(
 
     response = await show_loading_status(
         "Loading endpoint events...",
-        config.client.beta.endpoints.list_events(
+        config.client.endpoints.list_events(
             endpoint.id,
             after=after or omit,
             deployment_ids=deployment_ids.split(",") if deployment_ids else omit,

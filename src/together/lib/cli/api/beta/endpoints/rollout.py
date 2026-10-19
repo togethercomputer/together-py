@@ -10,17 +10,17 @@ from cyclopts.validators import Number, mutually_exclusive
 
 from together import AsyncClient, omit
 from together._utils._json import openapi_dumps
+from together.types.endpoint import Endpoint
 from together.lib.cli.utils._exit import CliDiagnosticExit
-from together.types.beta.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console, error_console
+from together.types.endpoints.rollout import Rollout
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.endpoints.rollout import Rollout
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve
-from together.types.beta.endpoints.canary_config_param import CanaryConfigParam as Canary
-from together.types.beta.endpoints.rolling_config_param import RollingConfigParam as Rolling
+from together.types.endpoints.canary_config_param import CanaryConfigParam as Canary
+from together.types.endpoints.rolling_config_param import RollingConfigParam as Rolling
+from together.types.endpoints.blue_green_config_param import BlueGreenConfigParam as BlueGreen
 from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
-from together.types.beta.endpoints.blue_green_config_param import BlueGreenConfigParam as BlueGreen
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import normalize_duration
 from together.lib.cli.api.beta.endpoints._utils._build_rollout_metric import (
@@ -458,7 +458,7 @@ async def _control_rollout(
         cancel_disposition = cancel[0] if cancel else None
         rollout = await show_loading_status(
             "Cancelling rollout...",
-            config.client.beta.endpoints.rollouts.cancel(
+            config.client.endpoints.rollouts.cancel(
                 id=rollout_id,
                 endpoint_id=existing_rollout.endpoint_id,
                 reason=reason or "Cancelled via tg beta endpoints rollout --cancel",
@@ -475,7 +475,7 @@ async def _control_rollout(
     if pause:
         rollout = await show_loading_status(
             "Pausing rollout...",
-            config.client.beta.endpoints.rollouts.pause(
+            config.client.endpoints.rollouts.pause(
                 id=rollout_id,
                 endpoint_id=existing_rollout.endpoint_id,
                 reason=reason or "Paused via tg beta endpoints rollout --pause",
@@ -487,7 +487,7 @@ async def _control_rollout(
     if resume:
         rollout = await show_loading_status(
             "Resuming rollout...",
-            config.client.beta.endpoints.rollouts.resume(
+            config.client.endpoints.rollouts.resume(
                 id=rollout_id,
                 endpoint_id=existing_rollout.endpoint_id,
                 etag=existing_rollout.etag or omit,
@@ -500,7 +500,7 @@ async def _control_rollout(
 
     rollout = await show_loading_status(
         "Promoting rollout...",
-        config.client.beta.endpoints.rollouts.promote(
+        config.client.endpoints.rollouts.promote(
             id=rollout_id,
             endpoint_id=existing_rollout.endpoint_id,
             etag=existing_rollout.etag or omit,
@@ -583,7 +583,7 @@ async def _create_and_start_rollout(
     try:
         rollout = await show_loading_status(
             "Creating rollout...",
-            config.client.beta.endpoints.rollouts.create(
+            config.client.endpoints.rollouts.create(
                 endpoint_id=endpoint.id,
                 source_deployment_id=source_id,
                 target_deployment_id=target_id,
@@ -599,7 +599,7 @@ async def _create_and_start_rollout(
 
         rollout = await show_loading_status(
             "Starting rollout...",
-            config.client.beta.endpoints.rollouts.start(
+            config.client.endpoints.rollouts.start(
                 id=rollout.id,
                 endpoint_id=endpoint.id,
             ),
@@ -806,7 +806,7 @@ async def _fallback_active_rollout_from_list(client: AsyncClient, endpoint_id: s
     rollout to pause/resume/etc.
     """
     candidates: list[Rollout] = []
-    async for rollout in client.beta.endpoints.rollouts.list(endpoint_id=endpoint_id, limit=50):
+    async for rollout in client.endpoints.rollouts.list(endpoint_id=endpoint_id, limit=50):
         if rollout.state not in _TERMINAL_ROLLOUT_STATES:
             candidates.append(rollout)
 
@@ -821,9 +821,9 @@ async def _active_rollout_for_endpoint(config: CLIConfigParameter, endpoint_ref:
     # List stubs (name lookup) can omit active_rollout_id — re-fetch for the
     # canonical value. ep_ refs already went through retrieve; trust None.
     if not endpoint_ref.startswith("ep_"):
-        endpoint = await config.client.beta.endpoints.retrieve(endpoint.id)
+        endpoint = await config.client.endpoints.retrieve(endpoint.id)
     if endpoint.active_rollout_id:
-        rollout = await config.client.beta.endpoints.rollouts.retrieve(
+        rollout = await config.client.endpoints.rollouts.retrieve(
             endpoint.active_rollout_id,
             endpoint_id=endpoint.id,
         )
@@ -839,9 +839,9 @@ async def _active_rollout_for_endpoint(config: CLIConfigParameter, endpoint_ref:
 async def _active_rollout_for_deployment(client: AsyncClient, deployment_ref: str) -> Rollout:
     endpoint, _deployment_id = await resolve_deployment_id(client, deployment_ref)
     if endpoint.active_rollout_id is None:
-        endpoint = await client.beta.endpoints.retrieve(endpoint.id)
+        endpoint = await client.endpoints.retrieve(endpoint.id)
     if endpoint.active_rollout_id:
-        rollout = await client.beta.endpoints.rollouts.retrieve(
+        rollout = await client.endpoints.rollouts.retrieve(
             endpoint.active_rollout_id,
             endpoint_id=endpoint.id,
         )

@@ -4,14 +4,14 @@ import re
 from typing import NamedTuple
 
 from together import NotFoundError
-from together.types.beta import Model, Endpoint
+from together.types import Model, Endpoint
+from together.types.models.config import Config
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._whoami import project_of, fetch_whoami
+from together.types.supported_model import SupportedModel
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._json_mode import is_json_mode
-from together.types.beta.models.config import Config
-from together.types.beta.supported_model import SupportedModel
-from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
+from together.types.supported_model_deployment_profile import SupportedModelDeploymentProfile
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     find_config,
     choose_config,
@@ -75,7 +75,7 @@ async def resolve_model_reference(config: CLIConfigParameter, model_input: str) 
             return ResolvedModelReference(None, model.base_model_id)
         return ResolvedModelReference(construct_model_path(model), None)
 
-    supported_models = await config.client.beta.models.list_supported(search=model_input)
+    supported_models = await config.client.models.list_supported(search=model_input)
     exact_matches = [m for m in supported_models.data if m.name == model_input]
     matches = exact_matches or supported_models.data
     if not matches:
@@ -121,7 +121,7 @@ async def resolve_model_display_name(
     if match is None:
         return fallback_name
     try:
-        model = await config.client.beta.models.retrieve(id=match.group(2), project_id=match.group(1))
+        model = await config.client.models.retrieve(id=match.group(2), project_id=match.group(1))
     except Exception:
         return fallback_name
     return model.name or fallback_name
@@ -132,7 +132,7 @@ async def load_model(config: CLIConfigParameter, model_input: str) -> Model | No
     path_match = MODEL_PATH_RE.match(model_input)
     if path_match:
         try:
-            return await config.client.beta.models.retrieve(id=path_match.group(2), project_id=path_match.group(1))
+            return await config.client.models.retrieve(id=path_match.group(2), project_id=path_match.group(1))
         except NotFoundError:
             return None
 
@@ -144,7 +144,7 @@ async def load_model(config: CLIConfigParameter, model_input: str) -> Model | No
         if not config.project_id:
             return None
         try:
-            return await config.client.beta.models.retrieve(id=model_input, project_id=config.project_id)
+            return await config.client.models.retrieve(id=model_input, project_id=config.project_id)
         except (NotFoundError, ValueError):
             return None
 
@@ -280,7 +280,7 @@ async def _retrieve_model_from_reference(
         raise ValueError(f"Config {selected.id} has no usable reference model path.")
 
     try:
-        return await config.client.beta.models.retrieve(id=model_id, project_id=project_id)
+        return await config.client.models.retrieve(id=model_id, project_id=project_id)
     except NotFoundError:
         raise ValueError(f"Model {model_input} not found.") from None
 
@@ -288,7 +288,7 @@ async def _retrieve_model_from_reference(
 async def _find_private_model_by_name(config: CLIConfigParameter, name: str) -> Model:
     bare = name.rsplit("/", 1)[-1]
     matches: list[Model] = []
-    async for model in config.client.beta.models.list():
+    async for model in config.client.models.list():
         if model.name == name or model.name == bare or model.name.rsplit("/", 1)[-1] == bare:
             matches.append(model)
 
@@ -447,7 +447,7 @@ async def _resolve_public_model_and_config(
     *,
     config_id: str | None = None,
 ) -> ResolvedModelAndConfig:
-    supported_models = await config.client.beta.models.list_supported(search=model_input)
+    supported_models = await config.client.models.list_supported(search=model_input)
     if not supported_models.data:
         raise ValueError(f"Model {model_input} not found.")
     if len(supported_models.data) != 1:
@@ -558,11 +558,11 @@ def construct_model_path(model: Model, revision_id: str | None = None) -> str:
 
 async def resolve_endpoint(config: CLIConfigParameter, endpoint_id_or_name: str) -> Endpoint:
     if endpoint_id_or_name.startswith("ep_"):
-        return await config.client.beta.endpoints.retrieve(id=endpoint_id_or_name)
+        return await config.client.endpoints.retrieve(id=endpoint_id_or_name)
 
     bare_name = endpoint_id_or_name.rsplit("/", 1)[-1]
     # Exact name filter avoids missing endpoints beyond the first list page.
-    endpoints = await config.client.beta.endpoints.list(filter=f'name="{bare_name}"')
+    endpoints = await config.client.endpoints.list(filter=f'name="{bare_name}"')
 
     project = project_of(await fetch_whoami(config.client))
     slug = project.slug if project is not None else None

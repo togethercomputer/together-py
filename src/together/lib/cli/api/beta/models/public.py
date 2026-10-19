@@ -36,7 +36,7 @@ async def public(
     """List platform-supported base models usable when creating a beta model."""
     response = await show_loading_status(
         "Loading supported models...",
-        config.client.beta.models.list_supported(
+        config.client.models.list_supported(
             limit=limit if limit is not None else omit,
             after=after or omit,
             search=search or omit,

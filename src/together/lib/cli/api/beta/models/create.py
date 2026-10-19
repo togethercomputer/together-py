@@ -24,7 +24,7 @@ class PromptBaseModel(PromptParameter):
     async def preprompt(self, config: CLIConfig) -> None:
         self.choices = []
 
-        async for model in config.client.beta.models.list_supported():
+        async for model in config.client.models.list_supported():
             for profile in model.deployment_profiles:
                 match = MODEL_PATH_RE.match(profile.model)
                 if match:
@@ -59,7 +59,7 @@ async def create(
 
     response = await show_loading_status(
         "Creating beta model...",
-        config.client.beta.models.create(name=name, base_model_id=base_model_id, type=type),
+        config.client.models.create(name=name, base_model_id=base_model_id, type=type),
     )
 
     if config.json:

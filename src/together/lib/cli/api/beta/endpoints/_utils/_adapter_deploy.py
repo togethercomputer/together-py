@@ -4,9 +4,9 @@ import re
 from typing import Any, cast
 
 from together import NotFoundError
-from together.types.beta import Model, EndpointDeployment
+from together.types import Model, EndpointDeployment
+from together.types.models.config import Config
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.types.beta.models.config import Config
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     find_config,
@@ -154,7 +154,7 @@ async def load_client_project_adapter(config: CLIConfigParameter, model_input: s
     if not project_id:
         return None
     try:
-        model = await config.client.beta.models.retrieve(id=model_input, project_id=project_id)
+        model = await config.client.models.retrieve(id=model_input, project_id=project_id)
     except (NotFoundError, ValueError):
         return None
     if not is_adapter_model(model):
@@ -170,13 +170,13 @@ async def load_base_model(config: CLIConfigParameter, adapter: Model) -> Model:
     match = MODEL_PATH_RE.match(adapter.base_model or "")
     if match:
         try:
-            return await config.client.beta.models.retrieve(id=match.group(2), project_id=match.group(1))
+            return await config.client.models.retrieve(id=match.group(2), project_id=match.group(1))
         except NotFoundError:
             raise ValueError(f"Base model {adapter.base_model} for adapter {label} was not found.") from None
 
     assert adapter.base_model_id is not None
     try:
-        return await config.client.beta.models.retrieve(
+        return await config.client.models.retrieve(
             id=adapter.base_model_id,
             project_id=adapter.project_id,
         )
@@ -186,7 +186,7 @@ async def load_base_model(config: CLIConfigParameter, adapter: Model) -> Model:
 
 async def list_model_configs(config: CLIConfigParameter, model_id: str) -> list[Config]:
     configs: list[Config] = []
-    async for item in config.client.beta.models.configs.list(reference_model_id=model_id):
+    async for item in config.client.models.configs.list(reference_model_id=model_id):
         configs.append(item)
     return configs
 
@@ -208,7 +208,7 @@ async def find_compatible_deployment(
     is attached. Returns None when no such deployment exists, so the caller creates it.
     """
     deployments: list[EndpointDeployment] = []
-    async for deployment in config.client.beta.endpoints.deployments.list(endpoint_id):
+    async for deployment in config.client.endpoints.deployments.list(endpoint_id):
         deployments.append(deployment)
 
     if deployment_name is not None:
@@ -261,7 +261,7 @@ async def _config_for_deployment(
     if match is None:
         return None
     try:
-        loaded = await config.client.beta.models.configs.retrieve(id=match.group(2), project_id=match.group(1))
+        loaded = await config.client.models.configs.retrieve(id=match.group(2), project_id=match.group(1))
     except NotFoundError:
         return None
     if loaded.id:

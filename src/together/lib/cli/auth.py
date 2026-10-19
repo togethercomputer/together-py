@@ -57,7 +57,7 @@ CLI_CLIENT_ID = "app_CfXyxzEgNqQmH1PJEr2Xw"
 _CLIENT_ID_ENV = "OIDC_ID"
 DEFAULT_CREDENTIALS_NAME = "default"
 
-_PRODUCTION_API_BASE_URL = "https://api.together.ai/v1"
+_PRODUCTION_API_BASE_URL = "https://api.together.ai"
 _CONFIG_DIR_NAME = "together"
 _CREDENTIALS_FILE_NAME = "credentials.json"
 _FILE_VERSION = 1
@@ -103,10 +103,14 @@ class StoredCredentials:
 
     @property
     def api_base_url(self) -> Optional[str]:
-        """API base URL of the environment whose issuer minted these credentials (`{issuer}/v1`)."""
+        """API root for the issuer that minted these credentials.
+
+        SDK paths include their own `/v1` or `/v2` prefix, so this is the issuer
+        itself, not `{issuer}/v1`.
+        """
         if not self.issuer:
             return None
-        return self.issuer.rstrip("/") + "/v1"
+        return self.issuer.rstrip("/")
 
     def require_issuer(self) -> str:
         """The issuer that minted these credentials. Stored tokens are only ever sent back to it."""
@@ -260,9 +264,10 @@ def save_stored_credentials(credentials: StoredCredentials) -> Path:
 
 
 def load_stored_base_url() -> Optional[str]:
-    """API base URL implied by the current entry's issuer, or None when it is production.
+    """API root implied by the current entry's issuer, or None when it is production.
 
-    Returning None for production keeps the SDK default (and its non-overridden v2 routing).
+    Returning None for production keeps the SDK default. That leaves chat completions on
+    the inference host and keeps `/v1` and `/v2` paths relative to `https://api.together.ai`.
     """
     stored = load_stored_credentials()
     base_url = stored.api_base_url if stored is not None else None
@@ -271,17 +276,40 @@ def load_stored_base_url() -> Optional[str]:
     return base_url
 
 
-def issuer_from_base_url(base_url: str) -> str:
-    """OIDC issuer for an API base URL: the base URL without its trailing `/v1`.
-
-    Inverse of `StoredCredentials.api_base_url`, which maps a stored issuer back to `{issuer}/v1`.
-    """
-    parsed = urllib.parse.urlparse(base_url)
+def _strip_trailing_v1(url: str) -> str:
+    """Drop a trailing `/v1` so the client root matches SDK paths that already include a version."""
+    parsed = urllib.parse.urlparse(url)
     if not parsed.scheme or not parsed.netloc:
-        raise TogetherError(f"Base URL must be an absolute http(s) URL, got {base_url!r}")
+        return url
     path = parsed.path.rstrip("/")
     if path.endswith("/v1"):
         path = path[: -len("/v1")]
+    return urllib.parse.urlunparse(parsed._replace(path=path))
+
+
+def normalize_client_base_url(base_url: Optional[str]) -> Optional[str]:
+    """Base URL passed to `AsyncTogether`.
+
+    Older CLIs and `TOGETHER_BASE_URL` values used `https://api.together.ai/v1`. The SDK
+    now owns the version prefix (`/v1/...`, `/v2/...`, `/v3/whoami`), so a trailing `/v1`
+    would double it.
+    """
+    if base_url is None:
+        return None
+    stripped = base_url.strip()
+    if not stripped:
+        return base_url
+    return _strip_trailing_v1(stripped)
+
+
+def issuer_from_base_url(base_url: str) -> str:
+    """OIDC issuer for an API base URL: the base URL without its trailing `/v1`."""
+    parsed = urllib.parse.urlparse(base_url)
+    if not parsed.scheme or not parsed.netloc:
+        raise TogetherError(f"Base URL must be an absolute http(s) URL, got {base_url!r}")
+    normalized = _strip_trailing_v1(base_url)
+    parsed = urllib.parse.urlparse(normalized)
+    path = parsed.path.rstrip("/")
     return f"{parsed.scheme}://{parsed.netloc}{path}"
 
 

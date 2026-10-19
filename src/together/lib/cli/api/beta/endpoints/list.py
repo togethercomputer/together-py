@@ -7,9 +7,9 @@ from typing_extensions import Annotated
 from cyclopts import Parameter
 
 from together import omit
-from together.types.beta import EndpointDeploymentSummary
+from together.types import EndpointDeploymentSummary
 from together._utils._json import openapi_dumps
-from together.types.beta.endpoint import Endpoint
+from together.types.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._whoami import fetch_whoami, organization_of
 from together.lib.cli.utils._console import console
@@ -65,7 +65,7 @@ async def list(
             raise ValueError("This credential has no organization. Run `tg whoami` to see the current identity.")
         response = await show_loading_status(
             "Loading org-scoped endpoints...",
-            config.client.beta.endpoints.list_org_scoped(
+            config.client.endpoints.list_org_scoped(
                 organization_id=organization.id,
                 limit=limit if limit is not None else omit,
                 after=after or omit,
@@ -76,7 +76,7 @@ async def list(
   [dim]-[/dim] [primary]tg beta endpoints deploy <MODEL_ID> --endpoint <ENDPOINT_NAME>[/primary]"""
         response = await show_loading_status(
             "Loading beta endpoints...",
-            config.client.beta.endpoints.list(
+            config.client.endpoints.list(
                 limit=limit if limit is not None else omit,
                 after=after or omit,
             ),

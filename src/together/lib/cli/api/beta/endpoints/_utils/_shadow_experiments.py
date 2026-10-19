@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from together import AsyncClient
-from together.types.beta.endpoints.shadow_experiment import ShadowExperiment
+from together.types.endpoints.shadow_experiment import ShadowExperiment
 
 
 async def find_shadow_for_deployment(
@@ -9,7 +9,7 @@ async def find_shadow_for_deployment(
     endpoint_id: str,
     deployment_id: str,
 ) -> ShadowExperiment | None:
-    page = await client.beta.endpoints.shadow_experiments.list(
+    page = await client.endpoints.shadow_experiments.list(
         endpoint_id=endpoint_id,
         include_targets=True,
     )

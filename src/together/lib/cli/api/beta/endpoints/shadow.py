@@ -8,22 +8,22 @@ from cyclopts import Parameter
 from cyclopts.validators import Number as CycloptsNumberValidator
 
 from together import APIError, AsyncClient
-from together.types.beta import ShadowSourceParam, ShadowEndpointSourceParam
+from together.types import ShadowSourceParam, ShadowEndpointSourceParam
 from together._utils._json import openapi_dumps
+from together.types.endpoints import ShadowExperiment
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
-from together.types.beta.endpoints import ShadowExperiment
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.endpoints.retrieve import retrieve
-from together.types.beta.shadow_endpoint_source_param import (
+from together.types.shadow_endpoint_source_param import (
     Sampling,
     SamplingUniform,
     SamplingKeyBased,
     SamplingAdaptiveUniform,
     SamplingAdaptiveKeyBased,
 )
+from together.lib.cli.api.beta.endpoints.retrieve import retrieve
 from together.lib.cli.api.beta.endpoints._utils._parameters import ModelParameter, EndpointPromptParameter
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     resolve_endpoint,
@@ -118,7 +118,7 @@ async def shadow(
 
     deployment = await show_loading_status(
         "Creating shadow deployment...",
-        config.client.beta.endpoints.deployments.create(
+        config.client.endpoints.deployments.create(
             endpoint_id=endpoint_id,
             name=name,
             model=construct_model_path(resolved_model, resolved.revision_id),
@@ -132,7 +132,7 @@ async def shadow(
 
     await show_loading_status(
         "Adding shadow experiment to deployment...",
-        config.client.beta.endpoints.shadow_experiments.targets.create(
+        config.client.endpoints.shadow_experiments.targets.create(
             endpoint_id=endpoint_id,
             experiment_id=experiment.id,
             name=name + "-target",
@@ -206,7 +206,7 @@ async def create_or_find_shadow_experiment(
     try:
         return await show_loading_status(
             "Creating shadow experiment...",
-            client.beta.endpoints.shadow_experiments.create(
+            client.endpoints.shadow_experiments.create(
                 endpoint_id=endpoint_id,
                 name=name,
                 source=source,
@@ -215,7 +215,7 @@ async def create_or_find_shadow_experiment(
         )
     except APIError as e:
         if "already exists" in e.message.lower():
-            async for experiment in client.beta.endpoints.shadow_experiments.list(endpoint_id=endpoint_id):
+            async for experiment in client.endpoints.shadow_experiments.list(endpoint_id=endpoint_id):
                 if experiment.name == name:
                     return experiment
             raise ValueError(

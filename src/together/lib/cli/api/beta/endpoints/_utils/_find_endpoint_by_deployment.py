@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Tuple, Optional
 
 from together import AsyncClient, omit
-from together.types.beta import Endpoint
+from together.types import Endpoint
 
 
 class AmbiguousDeploymentError(ValueError):
@@ -31,7 +31,7 @@ async def _collect_deployment_matches(
     matches: List[Tuple[Endpoint, str]] = []
     cursor: Optional[str] = None
     while True:
-        page = await client.beta.endpoints.list(after=cursor or omit)
+        page = await client.endpoints.list(after=cursor or omit)
         for endpoint in page.data:
             for deployment in endpoint.deployments or []:
                 if _deployment_matches(deployment_id_or_name, deployment.id, deployment.name):
@@ -96,7 +96,7 @@ async def resolve_deployment_ids(
     done = [False] * len(deployment_id_or_names)
     cursor: Optional[str] = None
     while True:
-        page = await client.beta.endpoints.list(after=cursor or omit)
+        page = await client.endpoints.list(after=cursor or omit)
         for endpoint in page.data:
             for deployment in endpoint.deployments or []:
                 for i, ref in enumerate(deployment_id_or_names):

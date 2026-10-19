@@ -6,14 +6,14 @@ from rich.rule import Rule
 from rich.table import Table
 from rich.padding import Padding
 
+from together.types import Model, ModelWeights
 from together.lib.utils import convert_bytes
-from together.types.beta import Model, ModelWeights
+from together.types.models import Config
 from together.lib.utils.tools import format_datetime
-from together.types.beta.models import Config
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
-from together.types.beta.model_list_files_response import ModelListFilesResponse
+from together.types.model_list_files_response import ModelListFilesResponse
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model_display_name
 
 _DETAIL_LABEL_WIDTH = 17

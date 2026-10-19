@@ -50,7 +50,7 @@ def _file_response(**kwargs: Any) -> FileResponse:
 class TestEvalsList:
     @pytest.mark.respx(base_url=base_url)
     def test_list_passes_status_and_limit(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/evaluation").mock(return_value=httpx.Response(200, json=[_EVAL_JOB]))
+        route = respx_mock.get("/v1/evaluation").mock(return_value=httpx.Response(200, json=[_EVAL_JOB]))
         result = cli_runner.invoke(["evals", "list", "--status", "completed", "--limit", "5"])
         assert result.exit_code == 0
         assert "eval-wf-1" in result.output
@@ -60,14 +60,14 @@ class TestEvalsList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_requires_nothing(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/evaluation").mock(return_value=httpx.Response(200, json=[]))
+        respx_mock.get("/v1/evaluation").mock(return_value=httpx.Response(200, json=[]))
         assert cli_runner.invoke(["evals", "list"]).exit_code == 0
 
 
 class TestEvalsRetrieveAndStatus:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/evaluation/eval-wf-1").mock(return_value=httpx.Response(200, json=_EVAL_JOB))
+        respx_mock.get("/v1/evaluation/eval-wf-1").mock(return_value=httpx.Response(200, json=_EVAL_JOB))
         result = cli_runner.invoke(["evals", "retrieve", "eval-wf-1", "--json"])
         assert result.exit_code == 0
         payload = json.loads(result.out_out.lstrip("\n"))
@@ -75,7 +75,7 @@ class TestEvalsRetrieveAndStatus:
 
     @pytest.mark.respx(base_url=base_url)
     def test_status(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/evaluation/eval-wf-1/status").mock(return_value=httpx.Response(200, json=_EVAL_STATUS))
+        respx_mock.get("/v1/evaluation/eval-wf-1/status").mock(return_value=httpx.Response(200, json=_EVAL_STATUS))
         result = cli_runner.invoke(["evals", "status", "eval-wf-1"])
         assert result.exit_code == 0
         assert "Status: completed" in result.output
@@ -86,7 +86,7 @@ class TestEvalsCreate:
     def test_compare_passes_disable_position_bias_correction(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        route = respx_mock.post("/evaluation").mock(
+        route = respx_mock.post("/v1/evaluation").mock(
             return_value=httpx.Response(200, json={"workflow_id": "eval-wf-1", "status": "pending"})
         )
 
@@ -125,7 +125,7 @@ class TestEvalsCreate:
         input_file = tmp_path / "eval-input.jsonl"
         input_file.write_text('{"prompt": "hello", "response_a": "a", "response_b": "b"}\n')
         uploaded = _file_response(id="file-uploaded")
-        route = respx_mock.post("/evaluation").mock(
+        route = respx_mock.post("/v1/evaluation").mock(
             return_value=httpx.Response(200, json={"workflow_id": "eval-wf-1", "status": "pending"})
         )
 
@@ -170,7 +170,7 @@ class TestEvalsCreate:
         input_file = tmp_path / "eval-input.jsonl"
         input_file.write_text('{"prompt": "hello", "response_a": "a", "response_b": "b"}\n')
         uploaded = _file_response(id="file-uploaded")
-        respx_mock.post("/evaluation").mock(
+        respx_mock.post("/v1/evaluation").mock(
             return_value=httpx.Response(200, json={"workflow_id": "eval-wf-1", "status": "pending"})
         )
 

@@ -40,7 +40,7 @@ async def update(
 
     response = await show_loading_status(
         "Updating beta model...",
-        config.client.beta.models.update(
+        config.client.models.update(
             id,
             **body,
             update_mask=",".join(update_mask),

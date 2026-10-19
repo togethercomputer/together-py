@@ -33,7 +33,7 @@ def _project_body(
 class TestProjectsList:
     @pytest.mark.respx(base_url=base_url)
     def test_list_sends_cursor_pagination(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.get("/projects").mock(
+        route = respx_mock.get("/v1/projects").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_project_body()], "next_cursor": "next"},
@@ -55,7 +55,7 @@ class TestProjectsList:
     def test_list_table_marks_current_project(
         self, command: str, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/projects").mock(
+        respx_mock.get("/v1/projects").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -92,7 +92,7 @@ class TestProjectsList:
                 },
             )
         )
-        respx_mock.get("/projects").mock(
+        respx_mock.get("/v1/projects").mock(
             return_value=httpx.Response(
                 200,
                 json={"object": "list", "data": [_project_body()], "next_cursor": None},
@@ -108,7 +108,7 @@ class TestProjectsList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_empty(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/projects").mock(
+        respx_mock.get("/v1/projects").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
 

@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from together.lib.cli.utils.config import CLIConfig
-from together.types.beta.supported_model import SupportedModel
+from together.types.supported_model import SupportedModel
+from together.types.supported_model_deployment_profile import SupportedModelDeploymentProfile
 from together.lib.cli.api.beta.models._resolve_base_model import resolve_base_model_id
-from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
 
 
 def _profile(**overrides: Any) -> SupportedModelDeploymentProfile:
@@ -58,20 +58,20 @@ def _cli_config(client: Any) -> CLIConfig:
 @pytest.mark.asyncio
 async def test_model_id_passes_through_without_lookup() -> None:
     client = MagicMock()
-    client.beta.models.list_supported = AsyncMock()
+    client.models.list_supported = AsyncMock()
 
     assert await resolve_base_model_id(_cli_config(client), "ml_base") == "ml_base"
-    client.beta.models.list_supported.assert_not_awaited()
+    client.models.list_supported.assert_not_awaited()
 
 
 @pytest.mark.asyncio
 async def test_exact_model_name_resolves_to_profile_model_id() -> None:
     client = MagicMock()
-    client.beta.models.list_supported = AsyncMock(return_value=MagicMock(data=[_supported_model()]))
+    client.models.list_supported = AsyncMock(return_value=MagicMock(data=[_supported_model()]))
 
     resolved = await resolve_base_model_id(_cli_config(client), "meta-llama/Llama-3-8B-FP16")
 
-    client.beta.models.list_supported.assert_awaited_once_with(search="meta-llama/Llama-3-8B-FP16")
+    client.models.list_supported.assert_awaited_once_with(search="meta-llama/Llama-3-8B-FP16")
     assert resolved == "ml_base"
 
 
@@ -93,7 +93,7 @@ async def test_exact_model_name_picks_matching_profile_among_many() -> None:
         ),
     ]
     client = MagicMock()
-    client.beta.models.list_supported = AsyncMock(
+    client.models.list_supported = AsyncMock(
         return_value=MagicMock(data=[_supported_model(deploymentProfiles=profiles)]),
     )
 
@@ -104,7 +104,7 @@ async def test_exact_model_name_picks_matching_profile_among_many() -> None:
 @pytest.mark.asyncio
 async def test_no_exact_match_lists_candidates() -> None:
     client = MagicMock()
-    client.beta.models.list_supported = AsyncMock(return_value=MagicMock(data=[_supported_model()]))
+    client.models.list_supported = AsyncMock(return_value=MagicMock(data=[_supported_model()]))
 
     with pytest.raises(ValueError, match="No exact match for base model") as exc:
         await resolve_base_model_id(_cli_config(client), "meta-llama/Llama-3-8B")
@@ -116,7 +116,7 @@ async def test_no_exact_match_lists_candidates() -> None:
 @pytest.mark.asyncio
 async def test_empty_search_results_raise() -> None:
     client = MagicMock()
-    client.beta.models.list_supported = AsyncMock(return_value=MagicMock(data=[]))
+    client.models.list_supported = AsyncMock(return_value=MagicMock(data=[]))
 
     with pytest.raises(ValueError, match='Base model "missing/model" not found'):
         await resolve_base_model_id(_cli_config(client), "missing/model")
@@ -125,7 +125,7 @@ async def test_empty_search_results_raise() -> None:
 @pytest.mark.asyncio
 async def test_ambiguous_exact_name_requires_model_id() -> None:
     client = MagicMock()
-    client.beta.models.list_supported = AsyncMock(
+    client.models.list_supported = AsyncMock(
         return_value=MagicMock(
             data=[
                 _supported_model(

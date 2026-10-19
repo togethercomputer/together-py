@@ -155,9 +155,9 @@ class TestBetaJigSecretsSet:
         self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
     ) -> None:
         scoped = f"{_DEPLOY_NAME}-apikey"
-        respx_mock.get(f"/deployments/{_DEPLOY_NAME}").mock(return_value=httpx.Response(404, json={}))
-        respx_mock.patch(f"/deployments/secrets/{scoped}").mock(return_value=httpx.Response(404, json={}))
-        post = respx_mock.post("/deployments/secrets").mock(
+        respx_mock.get(f"/v1/deployments/{_DEPLOY_NAME}").mock(return_value=httpx.Response(404, json={}))
+        respx_mock.patch(f"/v1/deployments/secrets/{scoped}").mock(return_value=httpx.Response(404, json={}))
+        post = respx_mock.post("/v1/deployments/secrets").mock(
             return_value=httpx.Response(
                 200, json=_secret_api_body(scoped, expires_at="2026-11-14T12:00:00Z", ttl_seconds=604800)
             )
@@ -197,8 +197,8 @@ class TestBetaJigSecretsSet:
         self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
     ) -> None:
         scoped = f"{_DEPLOY_NAME}-apikey"
-        respx_mock.get(f"/deployments/{_DEPLOY_NAME}").mock(return_value=httpx.Response(404, json={}))
-        patch_route = respx_mock.patch(f"/deployments/secrets/{scoped}").mock(
+        respx_mock.get(f"/v1/deployments/{_DEPLOY_NAME}").mock(return_value=httpx.Response(404, json={}))
+        patch_route = respx_mock.patch(f"/v1/deployments/secrets/{scoped}").mock(
             return_value=httpx.Response(200, json=_secret_api_body(scoped))
         )
 
@@ -231,7 +231,7 @@ class TestBetaJigSecretsList:
             json.dumps({_DEPLOY_NAME: {"secrets": {"localonly": f"{_DEPLOY_NAME}-localonly"}}}),
             encoding="utf-8",
         )
-        respx_mock.get("/deployments/secrets").mock(
+        respx_mock.get("/v1/deployments/secrets").mock(
             return_value=httpx.Response(
                 200,
                 json={
@@ -254,7 +254,7 @@ class TestBetaJigSecretsList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_empty_message(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
-        respx_mock.get("/deployments/secrets").mock(
+        respx_mock.get("/v1/deployments/secrets").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": []})
         )
 
@@ -316,7 +316,7 @@ class TestBetaJigLogs:
     @pytest.mark.respx(base_url=base_url)
     def test_logs_forwards_sdk_filters(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         _write_jig_project(tmp_path)
-        route = respx_mock.get(f"/deployments/{_DEPLOY_NAME}/logs").mock(
+        route = respx_mock.get(f"/v1/deployments/{_DEPLOY_NAME}/logs").mock(
             return_value=httpx.Response(200, json={"lines": ["line 1", "line 2"]})
         )
 
@@ -348,7 +348,7 @@ class TestBetaJigVolumes:
     @pytest.mark.respx(base_url=base_url)
     def test_delete(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         _write_jig_project(tmp_path)
-        respx_mock.delete("/deployments/storage/volumes/data-vol").mock(return_value=httpx.Response(200, json={}))
+        respx_mock.delete("/v1/deployments/storage/volumes/data-vol").mock(return_value=httpx.Response(200, json={}))
 
         with _chdir(tmp_path):
             result = cli_runner.invoke(["beta", "jig", "volumes", "delete", "--name", "data-vol"])
@@ -358,7 +358,7 @@ class TestBetaJigVolumes:
     @pytest.mark.respx(base_url=base_url)
     def test_delete_not_found(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         _write_jig_project(tmp_path)
-        respx_mock.delete("/deployments/storage/volumes/missing").mock(
+        respx_mock.delete("/v1/deployments/storage/volumes/missing").mock(
             return_value=httpx.Response(404, json={"error": {"message": "not found"}})
         )
 
@@ -371,7 +371,7 @@ class TestBetaJigVolumes:
     def test_describe_json(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         _write_jig_project(tmp_path)
         payload = _volume_api_body("v1", current_version=2)
-        respx_mock.get("/deployments/storage/volumes/v1").mock(return_value=httpx.Response(200, json=payload))
+        respx_mock.get("/v1/deployments/storage/volumes/v1").mock(return_value=httpx.Response(200, json=payload))
 
         with _chdir(tmp_path):
             result = cli_runner.invoke(["beta", "jig", "volumes", "describe", "--name", "v1", "--json"])
@@ -381,7 +381,7 @@ class TestBetaJigVolumes:
     @pytest.mark.respx(base_url=base_url)
     def test_describe_forwards_version(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         _write_jig_project(tmp_path)
-        route = respx_mock.get("/deployments/storage/volumes/v1").mock(
+        route = respx_mock.get("/v1/deployments/storage/volumes/v1").mock(
             return_value=httpx.Response(200, json=_volume_api_body("v1", current_version=1))
         )
 
@@ -397,7 +397,7 @@ class TestBetaJigVolumes:
     def test_list_json(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         _write_jig_project(tmp_path)
         payload = {"object": "list", "data": [_volume_api_body("a"), _volume_api_body("b")]}
-        respx_mock.get("/deployments/storage/volumes").mock(return_value=httpx.Response(200, json=payload))
+        respx_mock.get("/v1/deployments/storage/volumes").mock(return_value=httpx.Response(200, json=payload))
 
         with _chdir(tmp_path):
             result = cli_runner.invoke(["beta", "jig", "volumes", "list", "--json"])
@@ -411,7 +411,7 @@ class TestBetaJigVolumes:
         src.mkdir()
         (src / "f.txt").write_text("x", encoding="utf-8")
 
-        respx_mock.post("/deployments/storage/volumes").mock(
+        respx_mock.post("/v1/deployments/storage/volumes").mock(
             return_value=httpx.Response(200, json=_volume_api_body("myvol"))
         )
 
@@ -442,10 +442,10 @@ class TestBetaJigVolumes:
         src = tmp_path / "srcdir"
         src.mkdir()
 
-        respx_mock.post("/deployments/storage/volumes").mock(
+        respx_mock.post("/v1/deployments/storage/volumes").mock(
             return_value=httpx.Response(200, json=_volume_api_body("badvol"))
         )
-        del_vol = respx_mock.delete("/deployments/storage/volumes/badvol").mock(
+        del_vol = respx_mock.delete("/v1/deployments/storage/volumes/badvol").mock(
             return_value=httpx.Response(200, json={})
         )
 
@@ -474,10 +474,10 @@ class TestBetaJigVolumes:
         src.mkdir()
         (src / "a.bin").write_bytes(b"\0")
 
-        respx_mock.get("/deployments/storage/volumes/shared").mock(
+        respx_mock.get("/v1/deployments/storage/volumes/shared").mock(
             return_value=httpx.Response(200, json=_volume_api_body("shared", current_version=3))
         )
-        patch_r = respx_mock.patch("/deployments/storage/volumes/shared").mock(
+        patch_r = respx_mock.patch("/v1/deployments/storage/volumes/shared").mock(
             return_value=httpx.Response(200, json=_volume_api_body("shared", current_version=4))
         )
 
@@ -794,7 +794,7 @@ class TestBetaJigS3Volumes:
         self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
     ) -> None:
         _write_jig_project(tmp_path)
-        route = respx_mock.post("/deployments/storage/volumes").mock(
+        route = respx_mock.post("/v1/deployments/storage/volumes").mock(
             return_value=httpx.Response(200, json=_volume_api_body("weights", status="syncing"))
         )
 
@@ -854,16 +854,16 @@ class TestBetaJigS3Volumes:
         self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
     ) -> None:
         _write_jig_project(tmp_path)
-        respx_mock.patch("/deployments/storage/volumes/weights").mock(
+        respx_mock.patch("/v1/deployments/storage/volumes/weights").mock(
             return_value=httpx.Response(200, json=_volume_api_body("weights", current_version=3, status="syncing"))
         )
-        polls = respx_mock.get("/deployments/storage/volumes/weights").mock(
+        polls = respx_mock.get("/v1/deployments/storage/volumes/weights").mock(
             side_effect=[
                 httpx.Response(200, json=_volume_api_body("weights", current_version=3, status="syncing")),
                 httpx.Response(200, json=_volume_api_body("weights", current_version=3, status="ready")),
             ]
         )
-        prewarm = respx_mock.post("/deployments/prewarm").mock(return_value=httpx.Response(200, json={}))
+        prewarm = respx_mock.post("/v1/deployments/prewarm").mock(return_value=httpx.Response(200, json={}))
 
         with patch.object(_jig_mod.time, "sleep"), _chdir(tmp_path):
             result = cli_runner.invoke(
@@ -880,10 +880,10 @@ class TestBetaJigS3Volumes:
     @pytest.mark.respx(base_url=base_url)
     def test_watch_reports_sync_failure(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         _write_jig_project(tmp_path)
-        respx_mock.post("/deployments/storage/volumes").mock(
+        respx_mock.post("/v1/deployments/storage/volumes").mock(
             return_value=httpx.Response(200, json=_volume_api_body("weights", status="syncing"))
         )
-        respx_mock.get("/deployments/storage/volumes/weights").mock(
+        respx_mock.get("/v1/deployments/storage/volumes/weights").mock(
             return_value=httpx.Response(
                 200,
                 json=_volume_api_body("weights", status="failed", status_message="bucket 'my-bucket' does not exist"),
