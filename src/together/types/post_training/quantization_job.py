@@ -38,24 +38,9 @@ class ParamsConfiguration(BaseModel):
     user_id: str
     """User whose scope is used to fetch the model weights."""
 
-    adapter_model_name: Optional[str] = None
-    """The former name of `model_name`."""
-
-    adapter_project_id: Optional[str] = None
-    """The former name of `model_project_id`."""
-
-    adapter_revision_id: Optional[str] = None
-    """The former name of `model_revision_id`."""
-
 
 class ParamsInputs(BaseModel):
     """Inputs requested by the caller."""
-
-    adapter_object_id: Optional[str] = None
-    """The former name of `model_object_id`."""
-
-    adapter_revision_id: Optional[str] = None
-    """The former name of `model_revision_id`. Only valid with `adapter_object_id`."""
 
     calibration_file_id: Optional[str] = None
     """Conversation dataset file ID to use for calibration.

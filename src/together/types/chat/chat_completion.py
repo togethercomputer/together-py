@@ -10,21 +10,13 @@ from .chat_completion_usage import ChatCompletionUsage
 from .chat_completion_prompt import ChatCompletionPrompt
 from .chat_completion_warning import ChatCompletionWarning
 
-__all__ = ["ChatCompletion", "Choice", "ChoiceMessage", "ChoiceMessageFunctionCall"]
-
-
-class ChoiceMessageFunctionCall(BaseModel):
-    arguments: str
-
-    name: str
+__all__ = ["ChatCompletion", "Choice", "ChoiceMessage"]
 
 
 class ChoiceMessage(BaseModel):
     content: Optional[str] = None
 
     role: Literal["assistant"]
-
-    function_call: Optional[ChoiceMessageFunctionCall] = None
 
     reasoning: Optional[str] = None
 

@@ -117,7 +117,7 @@ class TranslationsResource(SyncAPIResource):
         return cast(
             TranslationCreateResponse,
             self._post(
-                "/audio/translations",
+                "/v1/audio/translations",
                 body=maybe_transform(body, translation_create_params.TranslationCreateParams),
                 files=files,
                 options=make_request_options(
@@ -222,7 +222,7 @@ class AsyncTranslationsResource(AsyncAPIResource):
         return cast(
             TranslationCreateResponse,
             await self._post(
-                "/audio/translations",
+                "/v1/audio/translations",
                 body=await async_maybe_transform(body, translation_create_params.TranslationCreateParams),
                 files=files,
                 options=make_request_options(

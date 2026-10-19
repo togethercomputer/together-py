@@ -87,7 +87,6 @@ class ClustersResource(SyncAPIResource):
         add_ons: Iterable[cluster_create_params.GPUClusterCreateRequestNvidiaVersionAddOn] | Omit = omit,
         auto_scale: bool | Omit = omit,
         auto_scale_max_gpus: int | Omit = omit,
-        auto_scaled: bool | Omit = omit,
         capacity_pool_id: str | Omit = omit,
         cluster_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
@@ -150,11 +149,7 @@ class ClustersResource(SyncAPIResource):
               automatically scale the number of GPU worker nodes between num_gpus and
               auto_scale_max_gpus based on the workload.
 
-          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up. This field is
-              required if auto_scaled is true.
-
-          auto_scaled: Whether GPU cluster should be auto-scaled based on the workload. By default, it
-              is not auto-scaled.
+          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up.
 
           capacity_pool_id: ID of the capacity pool to use for the cluster. This field is optional and only
               applicable if the cluster is created from a capacity pool.
@@ -230,7 +225,6 @@ class ClustersResource(SyncAPIResource):
         add_ons: Iterable[cluster_create_params.GPUClusterCreateRequestLegacyNvidiaAddOn] | Omit = omit,
         auto_scale: bool | Omit = omit,
         auto_scale_max_gpus: int | Omit = omit,
-        auto_scaled: bool | Omit = omit,
         capacity_pool_id: str | Omit = omit,
         cluster_config: cluster_create_params.GPUClusterCreateRequestLegacyNvidiaClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
@@ -297,11 +291,7 @@ class ClustersResource(SyncAPIResource):
               automatically scale the number of GPU worker nodes between num_gpus and
               auto_scale_max_gpus based on the workload.
 
-          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up. This field is
-              required if auto_scaled is true.
-
-          auto_scaled: Whether GPU cluster should be auto-scaled based on the workload. By default, it
-              is not auto-scaled.
+          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up.
 
           capacity_pool_id: ID of the capacity pool to use for the cluster. This field is optional and only
               applicable if the cluster is created from a capacity pool.
@@ -377,7 +367,6 @@ class ClustersResource(SyncAPIResource):
         | Omit = omit,
         auto_scale: bool | Omit = omit,
         auto_scale_max_gpus: int | Omit = omit,
-        auto_scaled: bool | Omit = omit,
         capacity_pool_id: str | Omit = omit,
         cluster_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionClusterConfig
         | cluster_create_params.GPUClusterCreateRequestLegacyNvidiaClusterConfig
@@ -410,7 +399,7 @@ class ClustersResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Cluster:
         return self._post(
-            "/compute/clusters",
+            "/v1/compute/clusters",
             body=maybe_transform(
                 {
                     "billing_type": billing_type,
@@ -423,7 +412,6 @@ class ClustersResource(SyncAPIResource):
                     "add_ons": add_ons,
                     "auto_scale": auto_scale,
                     "auto_scale_max_gpus": auto_scale_max_gpus,
-                    "auto_scaled": auto_scaled,
                     "capacity_pool_id": capacity_pool_id,
                     "cluster_config": cluster_config,
                     "cluster_type": cluster_type,
@@ -479,7 +467,7 @@ class ClustersResource(SyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return self._get(
-            path_template("/compute/clusters/{cluster_id}", cluster_id=cluster_id),
+            path_template("/v1/compute/clusters/{cluster_id}", cluster_id=cluster_id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -544,7 +532,7 @@ class ClustersResource(SyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return self._put(
-            path_template("/compute/clusters/{cluster_id}", cluster_id=cluster_id),
+            path_template("/v1/compute/clusters/{cluster_id}", cluster_id=cluster_id),
             body=maybe_transform(
                 {
                     "add_ons": add_ons,
@@ -592,7 +580,7 @@ class ClustersResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get(
-            "/compute/clusters",
+            "/v1/compute/clusters",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -631,7 +619,7 @@ class ClustersResource(SyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return self._delete(
-            path_template("/compute/clusters/{cluster_id}", cluster_id=cluster_id),
+            path_template("/v1/compute/clusters/{cluster_id}", cluster_id=cluster_id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -650,7 +638,7 @@ class ClustersResource(SyncAPIResource):
     ) -> ClusterListRegionsResponse:
         """List regions and corresponding supported driver versions"""
         return self._get(
-            "/compute/regions",
+            "/v1/compute/regions",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -701,7 +689,6 @@ class AsyncClustersResource(AsyncAPIResource):
         add_ons: Iterable[cluster_create_params.GPUClusterCreateRequestNvidiaVersionAddOn] | Omit = omit,
         auto_scale: bool | Omit = omit,
         auto_scale_max_gpus: int | Omit = omit,
-        auto_scaled: bool | Omit = omit,
         capacity_pool_id: str | Omit = omit,
         cluster_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
@@ -764,11 +751,7 @@ class AsyncClustersResource(AsyncAPIResource):
               automatically scale the number of GPU worker nodes between num_gpus and
               auto_scale_max_gpus based on the workload.
 
-          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up. This field is
-              required if auto_scaled is true.
-
-          auto_scaled: Whether GPU cluster should be auto-scaled based on the workload. By default, it
-              is not auto-scaled.
+          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up.
 
           capacity_pool_id: ID of the capacity pool to use for the cluster. This field is optional and only
               applicable if the cluster is created from a capacity pool.
@@ -844,7 +827,6 @@ class AsyncClustersResource(AsyncAPIResource):
         add_ons: Iterable[cluster_create_params.GPUClusterCreateRequestLegacyNvidiaAddOn] | Omit = omit,
         auto_scale: bool | Omit = omit,
         auto_scale_max_gpus: int | Omit = omit,
-        auto_scaled: bool | Omit = omit,
         capacity_pool_id: str | Omit = omit,
         cluster_config: cluster_create_params.GPUClusterCreateRequestLegacyNvidiaClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
@@ -911,11 +893,7 @@ class AsyncClustersResource(AsyncAPIResource):
               automatically scale the number of GPU worker nodes between num_gpus and
               auto_scale_max_gpus based on the workload.
 
-          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up. This field is
-              required if auto_scaled is true.
-
-          auto_scaled: Whether GPU cluster should be auto-scaled based on the workload. By default, it
-              is not auto-scaled.
+          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up.
 
           capacity_pool_id: ID of the capacity pool to use for the cluster. This field is optional and only
               applicable if the cluster is created from a capacity pool.
@@ -991,7 +969,6 @@ class AsyncClustersResource(AsyncAPIResource):
         | Omit = omit,
         auto_scale: bool | Omit = omit,
         auto_scale_max_gpus: int | Omit = omit,
-        auto_scaled: bool | Omit = omit,
         capacity_pool_id: str | Omit = omit,
         cluster_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionClusterConfig
         | cluster_create_params.GPUClusterCreateRequestLegacyNvidiaClusterConfig
@@ -1024,7 +1001,7 @@ class AsyncClustersResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Cluster:
         return await self._post(
-            "/compute/clusters",
+            "/v1/compute/clusters",
             body=await async_maybe_transform(
                 {
                     "billing_type": billing_type,
@@ -1037,7 +1014,6 @@ class AsyncClustersResource(AsyncAPIResource):
                     "add_ons": add_ons,
                     "auto_scale": auto_scale,
                     "auto_scale_max_gpus": auto_scale_max_gpus,
-                    "auto_scaled": auto_scaled,
                     "capacity_pool_id": capacity_pool_id,
                     "cluster_config": cluster_config,
                     "cluster_type": cluster_type,
@@ -1093,7 +1069,7 @@ class AsyncClustersResource(AsyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return await self._get(
-            path_template("/compute/clusters/{cluster_id}", cluster_id=cluster_id),
+            path_template("/v1/compute/clusters/{cluster_id}", cluster_id=cluster_id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1158,7 +1134,7 @@ class AsyncClustersResource(AsyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return await self._put(
-            path_template("/compute/clusters/{cluster_id}", cluster_id=cluster_id),
+            path_template("/v1/compute/clusters/{cluster_id}", cluster_id=cluster_id),
             body=await async_maybe_transform(
                 {
                     "add_ons": add_ons,
@@ -1206,7 +1182,7 @@ class AsyncClustersResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._get(
-            "/compute/clusters",
+            "/v1/compute/clusters",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -1245,7 +1221,7 @@ class AsyncClustersResource(AsyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return await self._delete(
-            path_template("/compute/clusters/{cluster_id}", cluster_id=cluster_id),
+            path_template("/v1/compute/clusters/{cluster_id}", cluster_id=cluster_id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1264,7 +1240,7 @@ class AsyncClustersResource(AsyncAPIResource):
     ) -> ClusterListRegionsResponse:
         """List regions and corresponding supported driver versions"""
         return await self._get(
-            "/compute/regions",
+            "/v1/compute/regions",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

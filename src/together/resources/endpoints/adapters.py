@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import httpx
 
-from ..._types import Body, Query, Headers, NotGiven, not_given
+from ..._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from ..._utils import path_template, maybe_transform, async_maybe_transform
 from ..._compat import cached_property
 from ..._resource import SyncAPIResource, AsyncAPIResource
@@ -14,11 +14,14 @@ from ..._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from ..._base_client import make_request_options
-from ...types.endpoints import adapter_add_params, adapter_remove_params
-from ...types.endpoints.adapter_add_response import AdapterAddResponse
+from ...pagination import SyncCursorPagination, AsyncCursorPagination
+from ..._base_client import AsyncPaginator, make_request_options
+from ...types.endpoints import adapter_list_params, adapter_create_params, adapter_delete_params, adapter_update_params
 from ...types.endpoints.adapter_list_response import AdapterListResponse
-from ...types.endpoints.adapter_remove_response import AdapterRemoveResponse
+from ...types.endpoints.adapter_create_response import AdapterCreateResponse
+from ...types.endpoints.adapter_delete_response import AdapterDeleteResponse
+from ...types.endpoints.adapter_update_response import AdapterUpdateResponse
+from ...types.endpoints.adapter_retrieve_response import AdapterRetrieveResponse
 
 __all__ = ["AdaptersResource", "AsyncAdaptersResource"]
 
@@ -43,21 +46,239 @@ class AdaptersResource(SyncAPIResource):
         """
         return AdaptersResourceWithStreamingResponse(self)
 
+    def create(
+        self,
+        *,
+        project_id: str | None = None,
+        endpoint_id: str,
+        deployment_id: str,
+        adapter_model_id: str,
+        adapter_revision_id: str | Omit = omit,
+        force: bool | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> AdapterCreateResponse:
+        """Attaches a LoRA adapter to a deployment.
+
+        If the deployment is at adapter
+        capacity, force can evict the oldest adapter.
+
+        Args:
+          project_id: Project identifier.
+
+          endpoint_id: Endpoint identifier.
+
+          deployment_id: Deployment identifier.
+
+          adapter_model_id: Adapter model identifier to attach.
+
+          adapter_revision_id: Optional adapter revision to pin. If omitted, the latest revision is resolved at
+              request time.
+
+          force: Whether to evict the oldest adapter if the deployment is at adapter capacity.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not endpoint_id:
+            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if not deployment_id:
+            raise ValueError(f"Expected a non-empty value for `deployment_id` but received {deployment_id!r}")
+        return self._post(
+            path_template(
+                "/v2/projects/{project_id}/endpoints/{endpoint_id}/deployments/{deployment_id}/adapters",
+                project_id=project_id,
+                endpoint_id=endpoint_id,
+                deployment_id=deployment_id,
+            ),
+            body=maybe_transform(
+                {
+                    "adapter_model_id": adapter_model_id,
+                    "adapter_revision_id": adapter_revision_id,
+                    "force": force,
+                },
+                adapter_create_params.AdapterCreateParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=AdapterCreateResponse,
+        )
+
+    def retrieve(
+        self,
+        id: str,
+        *,
+        project_id: str | None = None,
+        endpoint_id: str,
+        deployment_id: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> AdapterRetrieveResponse:
+        """
+        Gets an adapter attachment by its `dad_` id and returns its per-cluster load
+        state.
+
+        Args:
+          project_id: Project identifier.
+
+          endpoint_id: Endpoint identifier.
+
+          deployment_id: Deployment identifier.
+
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not endpoint_id:
+            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if not deployment_id:
+            raise ValueError(f"Expected a non-empty value for `deployment_id` but received {deployment_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            path_template(
+                "/v2/projects/{project_id}/endpoints/{endpoint_id}/deployments/{deployment_id}/adapters/{id}",
+                project_id=project_id,
+                endpoint_id=endpoint_id,
+                deployment_id=deployment_id,
+                id=id,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=AdapterRetrieveResponse,
+        )
+
+    def update(
+        self,
+        id: str,
+        *,
+        project_id: str | None = None,
+        endpoint_id: str,
+        deployment_id: str,
+        adapter_revision_id: str,
+        etag: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> AdapterUpdateResponse:
+        """
+        Updates the pinned revision of an adapter attachment by its `dad_` id using its
+        row-level etag for optimistic concurrency.
+
+        Args:
+          project_id: Project identifier.
+
+          endpoint_id: Endpoint identifier.
+
+          deployment_id: Deployment identifier.
+
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
+
+          adapter_revision_id: New adapter revision to pin.
+
+          etag: Row-level etag from a prior AddAdapter, UpdateAdapter, GetAdapter, or
+              ListAdapters response.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not endpoint_id:
+            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if not deployment_id:
+            raise ValueError(f"Expected a non-empty value for `deployment_id` but received {deployment_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._patch(
+            path_template(
+                "/v2/projects/{project_id}/endpoints/{endpoint_id}/deployments/{deployment_id}/adapters/{id}",
+                project_id=project_id,
+                endpoint_id=endpoint_id,
+                deployment_id=deployment_id,
+                id=id,
+            ),
+            body=maybe_transform(
+                {
+                    "adapter_revision_id": adapter_revision_id,
+                    "etag": etag,
+                },
+                adapter_update_params.AdapterUpdateParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=AdapterUpdateResponse,
+        )
+
     def list(
         self,
         endpoint_id: str,
+        deployment_id: str,
         *,
+        project_id: str | None = None,
+        after: str | Omit = omit,
+        limit: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> AdapterListResponse:
+    ) -> SyncCursorPagination[AdapterListResponse]:
         """
-        Returns all LoRA adapters bound to the specified dedicated endpoint.
+        Lists LoRA adapters attached to a deployment with per-cluster load state.
 
         Args:
+          project_id: Project identifier.
+
+          endpoint_id: Endpoint identifier.
+
+          deployment_id: Deployment identifier.
+
+          after: Cursor from a previous adapter list response.
+
+          limit: Maximum number of adapters to return.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -66,38 +287,68 @@ class AdaptersResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
         if not endpoint_id:
             raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
-        return self._get(
-            path_template("/endpoints/{endpoint_id}/adapters", endpoint_id=endpoint_id),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+        if not deployment_id:
+            raise ValueError(f"Expected a non-empty value for `deployment_id` but received {deployment_id!r}")
+        return self._get_api_list(
+            path_template(
+                "/v2/projects/{project_id}/endpoints/{endpoint_id}/deployments/{deployment_id}/adapters",
+                project_id=project_id,
+                endpoint_id=endpoint_id,
+                deployment_id=deployment_id,
             ),
-            cast_to=AdapterListResponse,
+            page=SyncCursorPagination[AdapterListResponse],
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "after": after,
+                        "limit": limit,
+                    },
+                    adapter_list_params.AdapterListParams,
+                ),
+            ),
+            model=AdapterListResponse,
         )
 
-    def add(
+    def delete(
         self,
-        endpoint_id: str,
+        id: str,
         *,
-        model_id: str,
+        project_id: str | None = None,
+        endpoint_id: str,
+        deployment_id: str,
+        etag: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> AdapterAddResponse:
-        """Adds a LoRA adapter model to a dedicated endpoint.
-
-        After this call, inference
-        requests to the adapter model name will be routed to the specified endpoint. The
-        endpoint must have LoRA enabled, and the adapter's base model must be compatible
-        with the endpoint's model. The endpoint name prefix in model_id must match the
-        resolved endpoint.
+    ) -> AdapterDeleteResponse:
+        """
+        Detaches an adapter attachment by its `dad_` id using its row-level etag for
+        optimistic concurrency.
 
         Args:
-          model_id: Combined identifier in format "endpoint_name:adapter_model_name".
+          project_id: Project identifier.
+
+          endpoint_id: Endpoint identifier.
+
+          deployment_id: Deployment identifier.
+
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
+
+          etag: Adapter etag from a previous add, update, get, or list response. The removal is
+              rejected if the adapter changed after that response.
 
           extra_headers: Send extra headers
 
@@ -107,54 +358,32 @@ class AdaptersResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
         if not endpoint_id:
             raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
-        return self._post(
-            path_template("/endpoints/{endpoint_id}/adapters", endpoint_id=endpoint_id),
-            body=maybe_transform({"model_id": model_id}, adapter_add_params.AdapterAddParams),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=AdapterAddResponse,
-        )
-
-    def remove(
-        self,
-        endpoint_id: str,
-        *,
-        model_id: str,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> AdapterRemoveResponse:
-        """Removes the routing rule that binds an adapter to an endpoint.
-
-        The adapter must
-        be currently bound to this specific endpoint.
-
-        Args:
-          model_id: Combined identifier in format "endpoint_name:adapter_model_name".
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not endpoint_id:
-            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if not deployment_id:
+            raise ValueError(f"Expected a non-empty value for `deployment_id` but received {deployment_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._delete(
-            path_template("/endpoints/{endpoint_id}/adapters", endpoint_id=endpoint_id),
-            body=maybe_transform({"model_id": model_id}, adapter_remove_params.AdapterRemoveParams),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            path_template(
+                "/v2/projects/{project_id}/endpoints/{endpoint_id}/deployments/{deployment_id}/adapters/{id}",
+                project_id=project_id,
+                endpoint_id=endpoint_id,
+                deployment_id=deployment_id,
+                id=id,
             ),
-            cast_to=AdapterRemoveResponse,
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform({"etag": etag}, adapter_delete_params.AdapterDeleteParams),
+            ),
+            cast_to=AdapterDeleteResponse,
         )
 
 
@@ -178,61 +407,40 @@ class AsyncAdaptersResource(AsyncAPIResource):
         """
         return AsyncAdaptersResourceWithStreamingResponse(self)
 
-    async def list(
+    async def create(
         self,
-        endpoint_id: str,
         *,
+        project_id: str | None = None,
+        endpoint_id: str,
+        deployment_id: str,
+        adapter_model_id: str,
+        adapter_revision_id: str | Omit = omit,
+        force: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> AdapterListResponse:
-        """
-        Returns all LoRA adapters bound to the specified dedicated endpoint.
+    ) -> AdapterCreateResponse:
+        """Attaches a LoRA adapter to a deployment.
+
+        If the deployment is at adapter
+        capacity, force can evict the oldest adapter.
 
         Args:
-          extra_headers: Send extra headers
+          project_id: Project identifier.
 
-          extra_query: Add additional query parameters to the request
+          endpoint_id: Endpoint identifier.
 
-          extra_body: Add additional JSON properties to the request
+          deployment_id: Deployment identifier.
 
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not endpoint_id:
-            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
-        return await self._get(
-            path_template("/endpoints/{endpoint_id}/adapters", endpoint_id=endpoint_id),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=AdapterListResponse,
-        )
+          adapter_model_id: Adapter model identifier to attach.
 
-    async def add(
-        self,
-        endpoint_id: str,
-        *,
-        model_id: str,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> AdapterAddResponse:
-        """Adds a LoRA adapter model to a dedicated endpoint.
+          adapter_revision_id: Optional adapter revision to pin. If omitted, the latest revision is resolved at
+              request time.
 
-        After this call, inference
-        requests to the adapter model name will be routed to the specified endpoint. The
-        endpoint must have LoRA enabled, and the adapter's base model must be compatible
-        with the endpoint's model. The endpoint name prefix in model_id must match the
-        resolved endpoint.
-
-        Args:
-          model_id: Combined identifier in format "endpoint_name:adapter_model_name".
+          force: Whether to evict the oldest adapter if the deployment is at adapter capacity.
 
           extra_headers: Send extra headers
 
@@ -242,36 +450,61 @@ class AsyncAdaptersResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
         if not endpoint_id:
             raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if not deployment_id:
+            raise ValueError(f"Expected a non-empty value for `deployment_id` but received {deployment_id!r}")
         return await self._post(
-            path_template("/endpoints/{endpoint_id}/adapters", endpoint_id=endpoint_id),
-            body=await async_maybe_transform({"model_id": model_id}, adapter_add_params.AdapterAddParams),
+            path_template(
+                "/v2/projects/{project_id}/endpoints/{endpoint_id}/deployments/{deployment_id}/adapters",
+                project_id=project_id,
+                endpoint_id=endpoint_id,
+                deployment_id=deployment_id,
+            ),
+            body=await async_maybe_transform(
+                {
+                    "adapter_model_id": adapter_model_id,
+                    "adapter_revision_id": adapter_revision_id,
+                    "force": force,
+                },
+                adapter_create_params.AdapterCreateParams,
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=AdapterAddResponse,
+            cast_to=AdapterCreateResponse,
         )
 
-    async def remove(
+    async def retrieve(
         self,
-        endpoint_id: str,
+        id: str,
         *,
-        model_id: str,
+        project_id: str | None = None,
+        endpoint_id: str,
+        deployment_id: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> AdapterRemoveResponse:
-        """Removes the routing rule that binds an adapter to an endpoint.
-
-        The adapter must
-        be currently bound to this specific endpoint.
+    ) -> AdapterRetrieveResponse:
+        """
+        Gets an adapter attachment by its `dad_` id and returns its per-cluster load
+        state.
 
         Args:
-          model_id: Combined identifier in format "endpoint_name:adapter_model_name".
+          project_id: Project identifier.
+
+          endpoint_id: Endpoint identifier.
+
+          deployment_id: Deployment identifier.
+
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
 
           extra_headers: Send extra headers
 
@@ -281,15 +514,237 @@ class AsyncAdaptersResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
         if not endpoint_id:
             raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
-        return await self._delete(
-            path_template("/endpoints/{endpoint_id}/adapters", endpoint_id=endpoint_id),
-            body=await async_maybe_transform({"model_id": model_id}, adapter_remove_params.AdapterRemoveParams),
+        if not deployment_id:
+            raise ValueError(f"Expected a non-empty value for `deployment_id` but received {deployment_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._get(
+            path_template(
+                "/v2/projects/{project_id}/endpoints/{endpoint_id}/deployments/{deployment_id}/adapters/{id}",
+                project_id=project_id,
+                endpoint_id=endpoint_id,
+                deployment_id=deployment_id,
+                id=id,
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=AdapterRemoveResponse,
+            cast_to=AdapterRetrieveResponse,
+        )
+
+    async def update(
+        self,
+        id: str,
+        *,
+        project_id: str | None = None,
+        endpoint_id: str,
+        deployment_id: str,
+        adapter_revision_id: str,
+        etag: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> AdapterUpdateResponse:
+        """
+        Updates the pinned revision of an adapter attachment by its `dad_` id using its
+        row-level etag for optimistic concurrency.
+
+        Args:
+          project_id: Project identifier.
+
+          endpoint_id: Endpoint identifier.
+
+          deployment_id: Deployment identifier.
+
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
+
+          adapter_revision_id: New adapter revision to pin.
+
+          etag: Row-level etag from a prior AddAdapter, UpdateAdapter, GetAdapter, or
+              ListAdapters response.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not endpoint_id:
+            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if not deployment_id:
+            raise ValueError(f"Expected a non-empty value for `deployment_id` but received {deployment_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._patch(
+            path_template(
+                "/v2/projects/{project_id}/endpoints/{endpoint_id}/deployments/{deployment_id}/adapters/{id}",
+                project_id=project_id,
+                endpoint_id=endpoint_id,
+                deployment_id=deployment_id,
+                id=id,
+            ),
+            body=await async_maybe_transform(
+                {
+                    "adapter_revision_id": adapter_revision_id,
+                    "etag": etag,
+                },
+                adapter_update_params.AdapterUpdateParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=AdapterUpdateResponse,
+        )
+
+    def list(
+        self,
+        endpoint_id: str,
+        deployment_id: str,
+        *,
+        project_id: str | None = None,
+        after: str | Omit = omit,
+        limit: int | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> AsyncPaginator[AdapterListResponse, AsyncCursorPagination[AdapterListResponse]]:
+        """
+        Lists LoRA adapters attached to a deployment with per-cluster load state.
+
+        Args:
+          project_id: Project identifier.
+
+          endpoint_id: Endpoint identifier.
+
+          deployment_id: Deployment identifier.
+
+          after: Cursor from a previous adapter list response.
+
+          limit: Maximum number of adapters to return.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not endpoint_id:
+            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if not deployment_id:
+            raise ValueError(f"Expected a non-empty value for `deployment_id` but received {deployment_id!r}")
+        return self._get_api_list(
+            path_template(
+                "/v2/projects/{project_id}/endpoints/{endpoint_id}/deployments/{deployment_id}/adapters",
+                project_id=project_id,
+                endpoint_id=endpoint_id,
+                deployment_id=deployment_id,
+            ),
+            page=AsyncCursorPagination[AdapterListResponse],
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "after": after,
+                        "limit": limit,
+                    },
+                    adapter_list_params.AdapterListParams,
+                ),
+            ),
+            model=AdapterListResponse,
+        )
+
+    async def delete(
+        self,
+        id: str,
+        *,
+        project_id: str | None = None,
+        endpoint_id: str,
+        deployment_id: str,
+        etag: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> AdapterDeleteResponse:
+        """
+        Detaches an adapter attachment by its `dad_` id using its row-level etag for
+        optimistic concurrency.
+
+        Args:
+          project_id: Project identifier.
+
+          endpoint_id: Endpoint identifier.
+
+          deployment_id: Deployment identifier.
+
+          id: Adapter attachment `dad_` id from a prior add, update, get, or list response.
+
+          etag: Adapter etag from a previous add, update, get, or list response. The removal is
+              rejected if the adapter changed after that response.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not endpoint_id:
+            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if not deployment_id:
+            raise ValueError(f"Expected a non-empty value for `deployment_id` but received {deployment_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._delete(
+            path_template(
+                "/v2/projects/{project_id}/endpoints/{endpoint_id}/deployments/{deployment_id}/adapters/{id}",
+                project_id=project_id,
+                endpoint_id=endpoint_id,
+                deployment_id=deployment_id,
+                id=id,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform({"etag": etag}, adapter_delete_params.AdapterDeleteParams),
+            ),
+            cast_to=AdapterDeleteResponse,
         )
 
 
@@ -297,14 +752,20 @@ class AdaptersResourceWithRawResponse:
     def __init__(self, adapters: AdaptersResource) -> None:
         self._adapters = adapters
 
+        self.create = to_raw_response_wrapper(
+            adapters.create,
+        )
+        self.retrieve = to_raw_response_wrapper(
+            adapters.retrieve,
+        )
+        self.update = to_raw_response_wrapper(
+            adapters.update,
+        )
         self.list = to_raw_response_wrapper(
             adapters.list,
         )
-        self.add = to_raw_response_wrapper(
-            adapters.add,
-        )
-        self.remove = to_raw_response_wrapper(
-            adapters.remove,
+        self.delete = to_raw_response_wrapper(
+            adapters.delete,
         )
 
 
@@ -312,14 +773,20 @@ class AsyncAdaptersResourceWithRawResponse:
     def __init__(self, adapters: AsyncAdaptersResource) -> None:
         self._adapters = adapters
 
+        self.create = async_to_raw_response_wrapper(
+            adapters.create,
+        )
+        self.retrieve = async_to_raw_response_wrapper(
+            adapters.retrieve,
+        )
+        self.update = async_to_raw_response_wrapper(
+            adapters.update,
+        )
         self.list = async_to_raw_response_wrapper(
             adapters.list,
         )
-        self.add = async_to_raw_response_wrapper(
-            adapters.add,
-        )
-        self.remove = async_to_raw_response_wrapper(
-            adapters.remove,
+        self.delete = async_to_raw_response_wrapper(
+            adapters.delete,
         )
 
 
@@ -327,14 +794,20 @@ class AdaptersResourceWithStreamingResponse:
     def __init__(self, adapters: AdaptersResource) -> None:
         self._adapters = adapters
 
+        self.create = to_streamed_response_wrapper(
+            adapters.create,
+        )
+        self.retrieve = to_streamed_response_wrapper(
+            adapters.retrieve,
+        )
+        self.update = to_streamed_response_wrapper(
+            adapters.update,
+        )
         self.list = to_streamed_response_wrapper(
             adapters.list,
         )
-        self.add = to_streamed_response_wrapper(
-            adapters.add,
-        )
-        self.remove = to_streamed_response_wrapper(
-            adapters.remove,
+        self.delete = to_streamed_response_wrapper(
+            adapters.delete,
         )
 
 
@@ -342,12 +815,18 @@ class AsyncAdaptersResourceWithStreamingResponse:
     def __init__(self, adapters: AsyncAdaptersResource) -> None:
         self._adapters = adapters
 
+        self.create = async_to_streamed_response_wrapper(
+            adapters.create,
+        )
+        self.retrieve = async_to_streamed_response_wrapper(
+            adapters.retrieve,
+        )
+        self.update = async_to_streamed_response_wrapper(
+            adapters.update,
+        )
         self.list = async_to_streamed_response_wrapper(
             adapters.list,
         )
-        self.add = async_to_streamed_response_wrapper(
-            adapters.add,
-        )
-        self.remove = async_to_streamed_response_wrapper(
-            adapters.remove,
+        self.delete = async_to_streamed_response_wrapper(
+            adapters.delete,
         )

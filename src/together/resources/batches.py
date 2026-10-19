@@ -89,7 +89,7 @@ class BatchesResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/batches",
+            "/v1/batches",
             body=maybe_transform(
                 {
                     "endpoint": endpoint,
@@ -134,7 +134,7 @@ class BatchesResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/batches/{id}", id=id),
+            path_template("/v1/batches/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -153,7 +153,7 @@ class BatchesResource(SyncAPIResource):
     ) -> BatchListResponse:
         """List all batch jobs for the authenticated user"""
         return self._get(
-            "/batches",
+            "/v1/batches",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -188,7 +188,7 @@ class BatchesResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._post(
-            path_template("/batches/{id}/cancel", id=id),
+            path_template("/v1/batches/{id}/cancel", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -260,7 +260,7 @@ class AsyncBatchesResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/batches",
+            "/v1/batches",
             body=await async_maybe_transform(
                 {
                     "endpoint": endpoint,
@@ -305,7 +305,7 @@ class AsyncBatchesResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/batches/{id}", id=id),
+            path_template("/v1/batches/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -324,7 +324,7 @@ class AsyncBatchesResource(AsyncAPIResource):
     ) -> BatchListResponse:
         """List all batch jobs for the authenticated user"""
         return await self._get(
-            "/batches",
+            "/v1/batches",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -359,7 +359,7 @@ class AsyncBatchesResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._post(
-            path_template("/batches/{id}/cancel", id=id),
+            path_template("/v1/batches/{id}/cancel", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

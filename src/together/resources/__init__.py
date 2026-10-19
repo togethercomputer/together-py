@@ -128,6 +128,14 @@ from .fine_tuning import (
     FineTuningResourceWithStreamingResponse,
     AsyncFineTuningResourceWithStreamingResponse,
 )
+from .organization import (
+    OrganizationResource,
+    AsyncOrganizationResource,
+    OrganizationResourceWithRawResponse,
+    AsyncOrganizationResourceWithRawResponse,
+    OrganizationResourceWithStreamingResponse,
+    AsyncOrganizationResourceWithStreamingResponse,
+)
 from .post_training import (
     PostTrainingResource,
     AsyncPostTrainingResource,
@@ -135,14 +143,6 @@ from .post_training import (
     AsyncPostTrainingResourceWithRawResponse,
     PostTrainingResourceWithStreamingResponse,
     AsyncPostTrainingResourceWithStreamingResponse,
-)
-from .code_interpreter import (
-    CodeInterpreterResource,
-    AsyncCodeInterpreterResource,
-    CodeInterpreterResourceWithRawResponse,
-    AsyncCodeInterpreterResourceWithRawResponse,
-    CodeInterpreterResourceWithStreamingResponse,
-    AsyncCodeInterpreterResourceWithStreamingResponse,
 )
 
 __all__ = [
@@ -152,6 +152,12 @@ __all__ = [
     "AsyncBetaResourceWithRawResponse",
     "BetaResourceWithStreamingResponse",
     "AsyncBetaResourceWithStreamingResponse",
+    "OrganizationResource",
+    "AsyncOrganizationResource",
+    "OrganizationResourceWithRawResponse",
+    "AsyncOrganizationResourceWithRawResponse",
+    "OrganizationResourceWithStreamingResponse",
+    "AsyncOrganizationResourceWithStreamingResponse",
     "PostTrainingResource",
     "AsyncPostTrainingResource",
     "PostTrainingResourceWithRawResponse",
@@ -194,12 +200,6 @@ __all__ = [
     "AsyncFineTuningResourceWithRawResponse",
     "FineTuningResourceWithStreamingResponse",
     "AsyncFineTuningResourceWithStreamingResponse",
-    "CodeInterpreterResource",
-    "AsyncCodeInterpreterResource",
-    "CodeInterpreterResourceWithRawResponse",
-    "AsyncCodeInterpreterResourceWithRawResponse",
-    "CodeInterpreterResourceWithStreamingResponse",
-    "AsyncCodeInterpreterResourceWithStreamingResponse",
     "ImagesResource",
     "AsyncImagesResource",
     "ImagesResourceWithRawResponse",

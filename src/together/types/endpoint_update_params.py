@@ -2,27 +2,37 @@
 
 from __future__ import annotations
 
-from typing import Optional
-from typing_extensions import Literal, TypedDict
+from typing import Iterable
+from typing_extensions import Literal, Annotated, TypedDict
 
-from .autoscaling_param import AutoscalingParam
+from .._utils import PropertyInfo
+from .endpoint_traffic_split_entry_param import EndpointTrafficSplitEntryParam
 
 __all__ = ["EndpointUpdateParams"]
 
 
 class EndpointUpdateParams(TypedDict, total=False):
-    autoscaling: AutoscalingParam
-    """New autoscaling configuration for the endpoint"""
+    project_id: Annotated[str, PropertyInfo(alias="projectId")]
+    """Project identifier."""
 
-    display_name: str
-    """A human-readable name for the endpoint"""
+    update_mask: Annotated[str, PropertyInfo(alias="updateMask")]
+    """Fields to update. If not set, the fields populated are updated."""
 
-    inactive_timeout: Optional[int]
-    """The number of minutes of inactivity after which the endpoint stops
-    automatically.
+    etag: str
+    """Current endpoint version.
 
-    Set to 0 to disable automatic timeout.
+    The update is rejected if this value no longer matches.
     """
 
-    state: Literal["STARTED", "STOPPED"]
-    """The desired state of the endpoint"""
+    name: str
+    """Updated endpoint string."""
+
+    traffic_split: Annotated[Iterable[EndpointTrafficSplitEntryParam], PropertyInfo(alias="trafficSplit")]
+    """Replacement live traffic split. Use an empty list to stop routing live traffic."""
+
+    visibility: Literal["VISIBILITY_PRIVATE", "VISIBILITY_INTERNAL"]
+    """Who can discover the endpoint.
+
+    `VISIBILITY_PRIVATE` restricts it to the project; `VISIBILITY_INTERNAL` shares
+    it with the organization.
+    """

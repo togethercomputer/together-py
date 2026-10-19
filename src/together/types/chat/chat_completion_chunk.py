@@ -8,21 +8,13 @@ from ..tool_choice import ToolChoice
 from .chat_completion_usage import ChatCompletionUsage
 from .chat_completion_warning import ChatCompletionWarning
 
-__all__ = ["ChatCompletionChunk", "Choice", "ChoiceDelta", "ChoiceDeltaFunctionCall"]
-
-
-class ChoiceDeltaFunctionCall(BaseModel):
-    arguments: str
-
-    name: str
+__all__ = ["ChatCompletionChunk", "Choice", "ChoiceDelta"]
 
 
 class ChoiceDelta(BaseModel):
     role: Literal["system", "user", "assistant", "function", "tool"]
 
     content: Optional[str] = None
-
-    function_call: Optional[ChoiceDeltaFunctionCall] = None
 
     reasoning: Optional[str] = None
 

@@ -324,7 +324,7 @@ class SpeechResource(SyncAPIResource):
     ) -> BinaryAPIResponse | Stream[AudioSpeechStreamChunk]:
         extra_headers = {"Accept": "application/octet-stream", **(extra_headers or {})}
         return self._post(
-            "/audio/speech",
+            "/v1/audio/speech",
             body=maybe_transform(
                 {
                     "input": input,
@@ -646,7 +646,7 @@ class AsyncSpeechResource(AsyncAPIResource):
     ) -> AsyncBinaryAPIResponse | AsyncStream[AudioSpeechStreamChunk]:
         extra_headers = {"Accept": "application/octet-stream", **(extra_headers or {})}
         return await self._post(
-            "/audio/speech",
+            "/v1/audio/speech",
             body=await async_maybe_transform(
                 {
                     "input": input,

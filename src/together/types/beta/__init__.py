@@ -2,91 +2,15 @@
 
 from __future__ import annotations
 
-from .model import Model as Model
-from .endpoint import Endpoint as Endpoint
-from .ab_member import AbMember as AbMember
 from .deployment import Deployment as Deployment
-from .runtime_info import RuntimeInfo as RuntimeInfo
-from .error_metrics import ErrorMetrics as ErrorMetrics
-from .model_weights import ModelWeights as ModelWeights
-from .scaling_rules import ScalingRules as ScalingRules
-from .token_metrics import TokenMetrics as TokenMetrics
-from .scaling_metric import ScalingMetric as ScalingMetric
-from .scaling_policy import ScalingPolicy as ScalingPolicy
-from .ab_member_param import AbMemberParam as AbMemberParam
 from .deployment_logs import DeploymentLogs as DeploymentLogs
-from .latency_metrics import LatencyMetrics as LatencyMetrics
-from .request_metrics import RequestMetrics as RequestMetrics
-from .supported_model import SupportedModel as SupportedModel
-from .model_parameters import ModelParameters as ModelParameters
-from .deployment_status import DeploymentStatus as DeploymentStatus
 from .jig_deploy_params import JigDeployParams as JigDeployParams
 from .jig_list_response import JigListResponse as JigListResponse
 from .jig_update_params import JigUpdateParams as JigUpdateParams
-from .model_dtype_count import ModelDtypeCount as ModelDtypeCount
-from .model_list_params import ModelListParams as ModelListParams
-from .deployment_metrics import DeploymentMetrics as DeploymentMetrics
-from .metrics_time_range import MetricsTimeRange as MetricsTimeRange
-from .throughput_metrics import ThroughputMetrics as ThroughputMetrics
 from .deployment_revision import DeploymentRevision as DeploymentRevision
-from .endpoint_deployment import EndpointDeployment as EndpointDeployment
 from .jig_rollback_params import JigRollbackParams as JigRollbackParams
-from .model_create_params import ModelCreateParams as ModelCreateParams
-from .model_update_params import ModelUpdateParams as ModelUpdateParams
-from .scaling_rules_param import ScalingRulesParam as ScalingRulesParam
-from .shadow_source_param import ShadowSourceParam as ShadowSourceParam
-from .endpoint_list_params import EndpointListParams as EndpointListParams
-from .resource_utilization import ResourceUtilization as ResourceUtilization
-from .scaling_metric_param import ScalingMetricParam as ScalingMetricParam
-from .scaling_policy_param import ScalingPolicyParam as ScalingPolicyParam
-from .model_delete_response import ModelDeleteResponse as ModelDeleteResponse
-from .deployment_autoscaling import DeploymentAutoscaling as DeploymentAutoscaling
-from .endpoint_create_params import EndpointCreateParams as EndpointCreateParams
-from .endpoint_delete_params import EndpointDeleteParams as EndpointDeleteParams
-from .endpoint_update_params import EndpointUpdateParams as EndpointUpdateParams
-from .shadow_source_response import ShadowSourceResponse as ShadowSourceResponse
-from .time_series_data_point import TimeSeriesDataPoint as TimeSeriesDataPoint
-from .model_list_files_params import ModelListFilesParams as ModelListFilesParams
-from .endpoint_delete_response import EndpointDeleteResponse as EndpointDeleteResponse
 from .jig_retrieve_logs_params import JigRetrieveLogsParams as JigRetrieveLogsParams
 from .deployment_revision_event import DeploymentRevisionEvent as DeploymentRevisionEvent
-from .endpoint_analytics_params import EndpointAnalyticsParams as EndpointAnalyticsParams
 from .jig_list_revisions_params import JigListRevisionsParams as JigListRevisionsParams
-from .model_list_files_response import ModelListFilesResponse as ModelListFilesResponse
 from .container_deployment_status import ContainerDeploymentStatus as ContainerDeploymentStatus
-from .deployment_placement_config import DeploymentPlacementConfig as DeploymentPlacementConfig
-from .endpoint_analytics_response import EndpointAnalyticsResponse as EndpointAnalyticsResponse
-from .endpoint_deployment_summary import EndpointDeploymentSummary as EndpointDeploymentSummary
-from .endpoint_list_events_params import EndpointListEventsParams as EndpointListEventsParams
-from .model_list_supported_params import ModelListSupportedParams as ModelListSupportedParams
-from .deployment_autoscaling_param import DeploymentAutoscalingParam as DeploymentAutoscalingParam
-from .endpoint_traffic_split_entry import EndpointTrafficSplitEntry as EndpointTrafficSplitEntry
-from .model_list_org_scoped_params import ModelListOrgScopedParams as ModelListOrgScopedParams
-from .shadow_endpoint_source_param import ShadowEndpointSourceParam as ShadowEndpointSourceParam
-from .endpoint_list_events_response import EndpointListEventsResponse as EndpointListEventsResponse
-from .model_list_revisions_response import ModelListRevisionsResponse as ModelListRevisionsResponse
-from .shadow_uniform_sampling_param import ShadowUniformSamplingParam as ShadowUniformSamplingParam
 from .deployment_revision_event_list import DeploymentRevisionEventList as DeploymentRevisionEventList
-from .endpoint_list_org_scoped_params import EndpointListOrgScopedParams as EndpointListOrgScopedParams
-from .shadow_endpoint_source_response import ShadowEndpointSourceResponse as ShadowEndpointSourceResponse
-from .shadow_key_based_sampling_param import ShadowKeyBasedSamplingParam as ShadowKeyBasedSamplingParam
-from .shadow_uniform_sampling_response import ShadowUniformSamplingResponse as ShadowUniformSamplingResponse
-from .deployment_placement_config_param import DeploymentPlacementConfigParam as DeploymentPlacementConfigParam
-from .endpoint_traffic_split_entry_param import EndpointTrafficSplitEntryParam as EndpointTrafficSplitEntryParam
-from .shadow_key_based_sampling_response import ShadowKeyBasedSamplingResponse as ShadowKeyBasedSamplingResponse
-from .supported_model_deployment_profile import SupportedModelDeploymentProfile as SupportedModelDeploymentProfile
-from .shadow_adaptive_uniform_sampling_param import (
-    ShadowAdaptiveUniformSamplingParam as ShadowAdaptiveUniformSamplingParam,
-)
-from .supported_model_performance_benchmarks import (
-    SupportedModelPerformanceBenchmarks as SupportedModelPerformanceBenchmarks,
-)
-from .shadow_adaptive_key_based_sampling_param import (
-    ShadowAdaptiveKeyBasedSamplingParam as ShadowAdaptiveKeyBasedSamplingParam,
-)
-from .shadow_adaptive_uniform_sampling_response import (
-    ShadowAdaptiveUniformSamplingResponse as ShadowAdaptiveUniformSamplingResponse,
-)
-from .shadow_adaptive_key_based_sampling_response import (
-    ShadowAdaptiveKeyBasedSamplingResponse as ShadowAdaptiveKeyBasedSamplingResponse,
-)

@@ -7,7 +7,7 @@ from .._models import BaseModel
 from .tool_choice import ToolChoice
 from .chat.chat_completion_usage import ChatCompletionUsage
 
-__all__ = ["CompletionChunk", "Token", "Choice", "ChoiceDelta", "ChoiceDeltaFunctionCall"]
+__all__ = ["CompletionChunk", "Token", "Choice", "ChoiceDelta"]
 
 
 class Token(BaseModel):
@@ -20,18 +20,10 @@ class Token(BaseModel):
     text: str
 
 
-class ChoiceDeltaFunctionCall(BaseModel):
-    arguments: str
-
-    name: str
-
-
 class ChoiceDelta(BaseModel):
     role: Literal["system", "user", "assistant", "function", "tool"]
 
     content: Optional[str] = None
-
-    function_call: Optional[ChoiceDeltaFunctionCall] = None
 
     reasoning: Optional[str] = None
 

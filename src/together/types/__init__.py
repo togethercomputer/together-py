@@ -1,9 +1,12 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from __future__ import annotations  # noqa
+from __future__ import annotations
 
+from .model import Model as Model
 from .cluster import Cluster as Cluster
 from .project import Project as Project
+from .endpoint import Endpoint as Endpoint
+from .ab_member import AbMember as AbMember
 from .batch_job import BatchJob as BatchJob
 from .embedding import Embedding as Embedding
 from .file_list import FileList as FileList
@@ -12,40 +15,65 @@ from .log_probs import LogProbs as LogProbs
 from .video_job import VideoJob as VideoJob
 from .completion import Completion as Completion
 from .image_file import ImageFile as ImageFile
-from .autoscaling import Autoscaling as Autoscaling
 from .tool_choice import ToolChoice as ToolChoice
 from .tools_param import ToolsParam as ToolsParam
+from .whoami_user import WhoamiUser as WhoamiUser
 from .file_purpose import FilePurpose as FilePurpose
-from .model_object import ModelObject as ModelObject
+from .runtime_info import RuntimeInfo as RuntimeInfo
+from .error_metrics import ErrorMetrics as ErrorMetrics
 from .file_response import FileResponse as FileResponse
+from .model_weights import ModelWeights as ModelWeights
+from .scaling_rules import ScalingRules as ScalingRules
+from .token_metrics import TokenMetrics as TokenMetrics
 from .evaluation_job import EvaluationJob as EvaluationJob
 from .finetune_event import FinetuneEvent as FinetuneEvent
 from .image_data_b64 import ImageDataB64 as ImageDataB64
 from .image_data_url import ImageDataURL as ImageDataURL
+from .scaling_metric import ScalingMetric as ScalingMetric
+from .scaling_policy import ScalingPolicy as ScalingPolicy
+from .whoami_api_key import WhoamiAPIKey as WhoamiAPIKey
+from .whoami_project import WhoamiProject as WhoamiProject
+from .ab_member_param import AbMemberParam as AbMemberParam
+from .latency_metrics import LatencyMetrics as LatencyMetrics
+from .request_metrics import RequestMetrics as RequestMetrics
+from .supported_model import SupportedModel as SupportedModel
 from .whoami_response import WhoamiResponse as WhoamiResponse
+from .whoami_user_jwt import WhoamiUserJwt as WhoamiUserJwt
 from .completion_chunk import CompletionChunk as CompletionChunk
 from .eval_list_params import EvalListParams as EvalListParams
-from .execute_response import ExecuteResponse as ExecuteResponse
-from .autoscaling_param import AutoscalingParam as AutoscalingParam
+from .model_parameters import ModelParameters as ModelParameters
+from .deployment_status import DeploymentStatus as DeploymentStatus
 from .finetune_response import FinetuneResponse as FinetuneResponse
+from .model_dtype_count import ModelDtypeCount as ModelDtypeCount
 from .model_list_params import ModelListParams as ModelListParams
 from .tool_choice_param import ToolChoiceParam as ToolChoiceParam
-from .dedicated_endpoint import DedicatedEndpoint as DedicatedEndpoint
+from .deployment_metrics import DeploymentMetrics as DeploymentMetrics
 from .eval_create_params import EvalCreateParams as EvalCreateParams
 from .eval_list_response import EvalListResponse as EvalListResponse
+from .metrics_time_range import MetricsTimeRange as MetricsTimeRange
+from .throughput_metrics import ThroughputMetrics as ThroughputMetrics
+from .whoami_org_api_key import WhoamiOrgAPIKey as WhoamiOrgAPIKey
 from .batch_create_params import BatchCreateParams as BatchCreateParams
 from .batch_list_response import BatchListResponse as BatchListResponse
 from .cluster_list_params import ClusterListParams as ClusterListParams
+from .endpoint_deployment import EndpointDeployment as EndpointDeployment
 from .finetune_event_type import FinetuneEventType as FinetuneEventType
-from .model_list_response import ModelListResponse as ModelListResponse
-from .model_upload_params import ModelUploadParams as ModelUploadParams
+from .model_create_params import ModelCreateParams as ModelCreateParams
+from .model_update_params import ModelUpdateParams as ModelUpdateParams
 from .project_list_params import ProjectListParams as ProjectListParams
+from .scaling_rules_param import ScalingRulesParam as ScalingRulesParam
+from .shadow_source_param import ShadowSourceParam as ShadowSourceParam
 from .video_create_params import VideoCreateParams as VideoCreateParams
+from .whoami_organization import WhoamiOrganization as WhoamiOrganization
+from .whoami_user_org_jwt import WhoamiUserOrgJwt as WhoamiUserOrgJwt
 from .endpoint_list_params import EndpointListParams as EndpointListParams
 from .eval_create_response import EvalCreateResponse as EvalCreateResponse
 from .eval_status_response import EvalStatusResponse as EvalStatusResponse
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
 from .rerank_create_params import RerankCreateParams as RerankCreateParams
+from .resource_utilization import ResourceUtilization as ResourceUtilization
+from .scaling_metric_param import ScalingMetricParam as ScalingMetricParam
+from .scaling_policy_param import ScalingPolicyParam as ScalingPolicyParam
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
 from .cluster_create_params import ClusterCreateParams as ClusterCreateParams
 from .cluster_list_response import ClusterListResponse as ClusterListResponse
@@ -53,49 +81,75 @@ from .cluster_update_params import ClusterUpdateParams as ClusterUpdateParams
 from .fine_tune_preview_row import FineTunePreviewRow as FineTunePreviewRow
 from .finetune_model_limits import FinetuneModelLimits as FinetuneModelLimits
 from .image_generate_params import ImageGenerateParams as ImageGenerateParams
-from .model_upload_response import ModelUploadResponse as ModelUploadResponse
+from .model_delete_response import ModelDeleteResponse as ModelDeleteResponse
+from .deployment_autoscaling import DeploymentAutoscaling as DeploymentAutoscaling
 from .endpoint_create_params import EndpointCreateParams as EndpointCreateParams
-from .endpoint_list_response import EndpointListResponse as EndpointListResponse
+from .endpoint_delete_params import EndpointDeleteParams as EndpointDeleteParams
 from .endpoint_update_params import EndpointUpdateParams as EndpointUpdateParams
 from .rerank_create_response import RerankCreateResponse as RerankCreateResponse
+from .shadow_source_response import ShadowSourceResponse as ShadowSourceResponse
+from .time_series_data_point import TimeSeriesDataPoint as TimeSeriesDataPoint
+from .whoami_project_api_key import WhoamiProjectAPIKey as WhoamiProjectAPIKey
 from .cluster_delete_response import ClusterDeleteResponse as ClusterDeleteResponse
 from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreateParams
+from .model_list_files_params import ModelListFilesParams as ModelListFilesParams
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
+from .endpoint_delete_response import EndpointDeleteResponse as EndpointDeleteResponse
 from .audio_speech_stream_chunk import AudioSpeechStreamChunk as AudioSpeechStreamChunk
-from .fine_tuning_delete_params import FineTuningDeleteParams as FineTuningDeleteParams
+from .endpoint_analytics_params import EndpointAnalyticsParams as EndpointAnalyticsParams
 from .fine_tuning_list_response import FineTuningListResponse as FineTuningListResponse
+from .model_list_files_response import ModelListFilesResponse as ModelListFilesResponse
 from .fine_tune_preview_response import FineTunePreviewResponse as FineTunePreviewResponse
 from .fine_tuning_content_params import FineTuningContentParams as FineTuningContentParams
 from .fine_tuning_preview_params import FineTuningPreviewParams as FineTuningPreviewParams
+from .deployment_placement_config import DeploymentPlacementConfig as DeploymentPlacementConfig
+from .endpoint_analytics_response import EndpointAnalyticsResponse as EndpointAnalyticsResponse
+from .endpoint_deployment_summary import EndpointDeploymentSummary as EndpointDeploymentSummary
+from .endpoint_list_events_params import EndpointListEventsParams as EndpointListEventsParams
 from .fine_tuning_cancel_response import FineTuningCancelResponse as FineTuningCancelResponse
 from .fine_tuning_delete_response import FineTuningDeleteResponse as FineTuningDeleteResponse
+from .model_list_supported_params import ModelListSupportedParams as ModelListSupportedParams
+from .whoami_user_org_project_jwt import WhoamiUserOrgProjectJwt as WhoamiUserOrgProjectJwt
+from .deployment_autoscaling_param import DeploymentAutoscalingParam as DeploymentAutoscalingParam
+from .endpoint_traffic_split_entry import EndpointTrafficSplitEntry as EndpointTrafficSplitEntry
+from .model_list_org_scoped_params import ModelListOrgScopedParams as ModelListOrgScopedParams
+from .shadow_endpoint_source_param import ShadowEndpointSourceParam as ShadowEndpointSourceParam
 from .cluster_list_regions_response import ClusterListRegionsResponse as ClusterListRegionsResponse
-from .endpoint_list_hardware_params import EndpointListHardwareParams as EndpointListHardwareParams
-from .endpoint_list_avzones_response import EndpointListAvzonesResponse as EndpointListAvzonesResponse
-from .code_interpreter_execute_params import CodeInterpreterExecuteParams as CodeInterpreterExecuteParams
-from .endpoint_list_hardware_response import EndpointListHardwareResponse as EndpointListHardwareResponse
+from .endpoint_list_events_response import EndpointListEventsResponse as EndpointListEventsResponse
+from .model_list_revisions_response import ModelListRevisionsResponse as ModelListRevisionsResponse
+from .shadow_uniform_sampling_param import ShadowUniformSamplingParam as ShadowUniformSamplingParam
+from .endpoint_list_org_scoped_params import EndpointListOrgScopedParams as EndpointListOrgScopedParams
 from .fine_tuning_list_metrics_params import FineTuningListMetricsParams as FineTuningListMetricsParams
 from .fine_tuning_model_limits_params import FineTuningModelLimitsParams as FineTuningModelLimitsParams
+from .shadow_endpoint_source_response import ShadowEndpointSourceResponse as ShadowEndpointSourceResponse
+from .shadow_key_based_sampling_param import ShadowKeyBasedSamplingParam as ShadowKeyBasedSamplingParam
 from .fine_tuning_list_events_response import FineTuningListEventsResponse as FineTuningListEventsResponse
+from .shadow_uniform_sampling_response import ShadowUniformSamplingResponse as ShadowUniformSamplingResponse
+from .deployment_placement_config_param import DeploymentPlacementConfigParam as DeploymentPlacementConfigParam
 from .fine_tuning_estimate_price_params import FineTuningEstimatePriceParams as FineTuningEstimatePriceParams
 from .fine_tuning_list_metrics_response import FineTuningListMetricsResponse as FineTuningListMetricsResponse
-from .fine_tuning_model_limits_response import FineTuningModelLimitsResponse as FineTuningModelLimitsResponse
+from .endpoint_traffic_split_entry_param import EndpointTrafficSplitEntryParam as EndpointTrafficSplitEntryParam
+from .shadow_key_based_sampling_response import ShadowKeyBasedSamplingResponse as ShadowKeyBasedSamplingResponse
+from .supported_model_deployment_profile import SupportedModelDeploymentProfile as SupportedModelDeploymentProfile
 from .fine_tuning_estimate_price_response import FineTuningEstimatePriceResponse as FineTuningEstimatePriceResponse
 from .fine_tuning_list_checkpoints_response import (
     FineTuningListCheckpointsResponse as FineTuningListCheckpointsResponse,
 )
+from .shadow_adaptive_uniform_sampling_param import (
+    ShadowAdaptiveUniformSamplingParam as ShadowAdaptiveUniformSamplingParam,
+)
+from .supported_model_performance_benchmarks import (
+    SupportedModelPerformanceBenchmarks as SupportedModelPerformanceBenchmarks,
+)
+from .shadow_adaptive_key_based_sampling_param import (
+    ShadowAdaptiveKeyBasedSamplingParam as ShadowAdaptiveKeyBasedSamplingParam,
+)
+from .shadow_adaptive_uniform_sampling_response import (
+    ShadowAdaptiveUniformSamplingResponse as ShadowAdaptiveUniformSamplingResponse,
+)
+from .shadow_adaptive_key_based_sampling_response import (
+    ShadowAdaptiveKeyBasedSamplingResponse as ShadowAdaptiveKeyBasedSamplingResponse,
+)
 from .fine_tune_tokenized_dataset_retrieve_response import (
     FineTuneTokenizedDatasetRetrieveResponse as FineTuneTokenizedDatasetRetrieveResponse,
 )
-
-# Manually added to minimize breaking changes from V1
-from .chat.chat_completion import ChatCompletion
-from .chat.chat_completion_chunk import ChatCompletionChunk as ChatCompletionChunk
-from .chat.chat_completion_usage import ChatCompletionUsage
-
-UsageData = ChatCompletionUsage
-ChatCompletionResponse = ChatCompletion
-CompletionResponse = Completion
-ListEndpoint = EndpointListResponse
-ImageRequest = ImageGenerateParams
-ImageResponse = ImageFile

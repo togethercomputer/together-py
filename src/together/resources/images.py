@@ -127,7 +127,7 @@ class ImagesResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/images/generations",
+            "/v1/images/generations",
             body=maybe_transform(
                 {
                     "model": model,
@@ -258,7 +258,7 @@ class AsyncImagesResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/images/generations",
+            "/v1/images/generations",
             body=await async_maybe_transform(
                 {
                     "model": model,

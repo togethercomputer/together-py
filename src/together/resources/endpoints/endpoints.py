@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Union, Iterable
+from datetime import datetime
 from typing_extensions import Literal
 
 import httpx
@@ -10,10 +11,13 @@ import httpx
 from ...types import (
     endpoint_list_params,
     endpoint_create_params,
+    endpoint_delete_params,
     endpoint_update_params,
-    endpoint_list_hardware_params,
+    endpoint_analytics_params,
+    endpoint_list_events_params,
+    endpoint_list_org_scoped_params,
 )
-from ..._types import Body, Omit, Query, Headers, NoneType, NotGiven, omit, not_given
+from ..._types import Body, Omit, Query, Headers, NotGiven, SequenceNotStr, omit, not_given
 from ..._utils import path_template, maybe_transform, async_maybe_transform
 from .adapters import (
     AdaptersResource,
@@ -23,6 +27,22 @@ from .adapters import (
     AdaptersResourceWithStreamingResponse,
     AsyncAdaptersResourceWithStreamingResponse,
 )
+from .hardware import (
+    HardwareResource,
+    AsyncHardwareResource,
+    HardwareResourceWithRawResponse,
+    AsyncHardwareResourceWithRawResponse,
+    HardwareResourceWithStreamingResponse,
+    AsyncHardwareResourceWithStreamingResponse,
+)
+from .rollouts import (
+    RolloutsResource,
+    AsyncRolloutsResource,
+    RolloutsResourceWithRawResponse,
+    AsyncRolloutsResourceWithRawResponse,
+    RolloutsResourceWithStreamingResponse,
+    AsyncRolloutsResourceWithStreamingResponse,
+)
 from ..._compat import cached_property
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ..._response import (
@@ -31,20 +51,77 @@ from ..._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from ..._base_client import make_request_options
-from ...types.autoscaling_param import AutoscalingParam
-from ...types.dedicated_endpoint import DedicatedEndpoint
-from ...types.endpoint_list_response import EndpointListResponse
-from ...types.endpoint_list_avzones_response import EndpointListAvzonesResponse
-from ...types.endpoint_list_hardware_response import EndpointListHardwareResponse
+from .deployments import (
+    DeploymentsResource,
+    AsyncDeploymentsResource,
+    DeploymentsResourceWithRawResponse,
+    AsyncDeploymentsResourceWithRawResponse,
+    DeploymentsResourceWithStreamingResponse,
+    AsyncDeploymentsResourceWithStreamingResponse,
+)
+from ...pagination import SyncCursorPagination, AsyncCursorPagination
+from ..._base_client import AsyncPaginator, make_request_options
+from .ab_experiments import (
+    AbExperimentsResource,
+    AsyncAbExperimentsResource,
+    AbExperimentsResourceWithRawResponse,
+    AsyncAbExperimentsResourceWithRawResponse,
+    AbExperimentsResourceWithStreamingResponse,
+    AsyncAbExperimentsResourceWithStreamingResponse,
+)
+from ...types.endpoint import Endpoint
+from .placement_profiles import (
+    PlacementProfilesResource,
+    AsyncPlacementProfilesResource,
+    PlacementProfilesResourceWithRawResponse,
+    AsyncPlacementProfilesResourceWithRawResponse,
+    PlacementProfilesResourceWithStreamingResponse,
+    AsyncPlacementProfilesResourceWithStreamingResponse,
+)
+from ...types.endpoint_delete_response import EndpointDeleteResponse
+from ...types.endpoint_analytics_response import EndpointAnalyticsResponse
+from ...types.endpoint_list_events_response import EndpointListEventsResponse
+from .shadow_experiments.shadow_experiments import (
+    ShadowExperimentsResource,
+    AsyncShadowExperimentsResource,
+    ShadowExperimentsResourceWithRawResponse,
+    AsyncShadowExperimentsResourceWithRawResponse,
+    ShadowExperimentsResourceWithStreamingResponse,
+    AsyncShadowExperimentsResourceWithStreamingResponse,
+)
+from ...types.endpoint_traffic_split_entry_param import EndpointTrafficSplitEntryParam
 
 __all__ = ["EndpointsResource", "AsyncEndpointsResource"]
 
 
 class EndpointsResource(SyncAPIResource):
     @cached_property
+    def placement_profiles(self) -> PlacementProfilesResource:
+        return PlacementProfilesResource(self._client)
+
+    @cached_property
+    def ab_experiments(self) -> AbExperimentsResource:
+        return AbExperimentsResource(self._client)
+
+    @cached_property
+    def shadow_experiments(self) -> ShadowExperimentsResource:
+        return ShadowExperimentsResource(self._client)
+
+    @cached_property
+    def rollouts(self) -> RolloutsResource:
+        return RolloutsResource(self._client)
+
+    @cached_property
+    def hardware(self) -> HardwareResource:
+        return HardwareResource(self._client)
+
+    @cached_property
     def adapters(self) -> AdaptersResource:
         return AdaptersResource(self._client)
+
+    @cached_property
+    def deployments(self) -> DeploymentsResource:
+        return DeploymentsResource(self._client)
 
     @cached_property
     def with_raw_response(self) -> EndpointsResourceWithRawResponse:
@@ -68,47 +145,29 @@ class EndpointsResource(SyncAPIResource):
     def create(
         self,
         *,
-        autoscaling: AutoscalingParam,
-        hardware: str,
-        model: str,
-        availability_zone: str | Omit = omit,
-        disable_prompt_cache: bool | Omit = omit,
-        disable_speculative_decoding: bool | Omit = omit,
-        display_name: str | Omit = omit,
-        inactive_timeout: Optional[int] | Omit = omit,
-        state: Literal["STARTED", "STOPPED"] | Omit = omit,
+        project_id: str | None = None,
+        name: str,
+        visibility: Literal["VISIBILITY_PRIVATE", "VISIBILITY_INTERNAL"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> DedicatedEndpoint:
-        """Creates a new dedicated endpoint for serving models.
+    ) -> Endpoint:
+        """Creates a stable, inference-addressable endpoint.
 
-        The endpoint starts
-        automatically after creation. You can deploy any supported model on hardware
-        configurations that meet the model's requirements.
+        Add one or more deployments
+        and configure its traffic split before sending inference requests to the
+        endpoint name.
 
         Args:
-          autoscaling: Configuration for automatic scaling of the endpoint
+          project_id: Project identifier.
 
-          hardware: The hardware configuration to use for this endpoint
+          name: Inference-addressable endpoint name to create.
 
-          model: The model to deploy on this endpoint
-
-          availability_zone: Create the endpoint in a specified availability zone (e.g., us-central-4b)
-
-          disable_prompt_cache: This parameter is deprecated and no longer has any effect.
-
-          disable_speculative_decoding: Whether to disable speculative decoding for this endpoint
-
-          display_name: A human-readable name for the endpoint
-
-          inactive_timeout: The number of minutes of inactivity after which the endpoint stops
-              automatically. Set to null, omit, or set to 0 to disable automatic timeout.
-
-          state: The desired state of the endpoint
+          visibility: Who can discover the endpoint. `VISIBILITY_PRIVATE` restricts it to the project;
+              `VISIBILITY_INTERNAL` shares it with the organization.
 
           extra_headers: Send extra headers
 
@@ -118,45 +177,45 @@ class EndpointsResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
         return self._post(
-            "/endpoints",
+            path_template("/v2/projects/{project_id}/endpoints", project_id=project_id),
             body=maybe_transform(
                 {
-                    "autoscaling": autoscaling,
-                    "hardware": hardware,
-                    "model": model,
-                    "availability_zone": availability_zone,
-                    "disable_prompt_cache": disable_prompt_cache,
-                    "disable_speculative_decoding": disable_speculative_decoding,
-                    "display_name": display_name,
-                    "inactive_timeout": inactive_timeout,
-                    "state": state,
+                    "name": name,
+                    "visibility": visibility,
                 },
                 endpoint_create_params.EndpointCreateParams,
             ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=DedicatedEndpoint,
+            cast_to=Endpoint,
         )
 
     def retrieve(
         self,
-        endpoint_id: str,
+        id: str,
         *,
+        project_id: str | None = None,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> DedicatedEndpoint:
+    ) -> Endpoint:
         """
-        Retrieves details about a specific endpoint, including its current state,
-        configuration, and scaling settings.
+        Retrieves an endpoint and lightweight summaries of the deployments attached to
+        it.
 
         Args:
-          endpoint_id: The ID of the endpoint to retrieve
+          project_id: Project identifier.
+
+          id: Endpoint identifier.
 
           extra_headers: Send extra headers
 
@@ -166,47 +225,58 @@ class EndpointsResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        if not endpoint_id:
-            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/endpoints/{endpoint_id}", endpoint_id=endpoint_id),
+            path_template("/v2/projects/{project_id}/endpoints/{id}", project_id=project_id, id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=DedicatedEndpoint,
+            cast_to=Endpoint,
         )
 
     def update(
         self,
-        endpoint_id: str,
+        id: str,
         *,
-        autoscaling: AutoscalingParam | Omit = omit,
-        display_name: str | Omit = omit,
-        inactive_timeout: Optional[int] | Omit = omit,
-        state: Literal["STARTED", "STOPPED"] | Omit = omit,
+        project_id: str | None = None,
+        update_mask: str | Omit = omit,
+        etag: str | Omit = omit,
+        name: str | Omit = omit,
+        traffic_split: Iterable[EndpointTrafficSplitEntryParam] | Omit = omit,
+        visibility: Literal["VISIBILITY_PRIVATE", "VISIBILITY_INTERNAL"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> DedicatedEndpoint:
-        """Updates an existing endpoint's configuration.
-
-        You can modify the display name,
-        autoscaling settings, or change the endpoint's state (start/stop).
+    ) -> Endpoint:
+        """
+        Updates mutable endpoint fields such as its endpoint string, visibility, or
+        deployment traffic split. Use `updateMask` to select fields explicitly and
+        `etag` in the request body for optimistic concurrency.
 
         Args:
-          endpoint_id: The ID of the endpoint to update
+          project_id: Project identifier.
 
-          autoscaling: New autoscaling configuration for the endpoint
+          id: Endpoint identifier.
 
-          display_name: A human-readable name for the endpoint
+          update_mask: Fields to update. If not set, the fields populated are updated.
 
-          inactive_timeout: The number of minutes of inactivity after which the endpoint stops
-              automatically. Set to 0 to disable automatic timeout.
+          etag: Current endpoint version. The update is rejected if this value no longer
+              matches.
 
-          state: The desired state of the endpoint
+          name: Updated endpoint string.
+
+          traffic_split: Replacement live traffic split. Use an empty list to stop routing live traffic.
+
+          visibility: Who can discover the endpoint. `VISIBILITY_PRIVATE` restricts it to the project;
+              `VISIBILITY_INTERNAL` shares it with the organization.
 
           extra_headers: Send extra headers
 
@@ -216,49 +286,65 @@ class EndpointsResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        if not endpoint_id:
-            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._patch(
-            path_template("/endpoints/{endpoint_id}", endpoint_id=endpoint_id),
+            path_template("/v2/projects/{project_id}/endpoints/{id}", project_id=project_id, id=id),
             body=maybe_transform(
                 {
-                    "autoscaling": autoscaling,
-                    "display_name": display_name,
-                    "inactive_timeout": inactive_timeout,
-                    "state": state,
+                    "etag": etag,
+                    "name": name,
+                    "traffic_split": traffic_split,
+                    "visibility": visibility,
                 },
                 endpoint_update_params.EndpointUpdateParams,
             ),
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform({"update_mask": update_mask}, endpoint_update_params.EndpointUpdateParams),
             ),
-            cast_to=DedicatedEndpoint,
+            cast_to=Endpoint,
         )
 
     def list(
         self,
         *,
-        mine: bool | Omit = omit,
-        type: Literal["dedicated", "serverless"] | Omit = omit,
-        usage_type: Literal["on-demand", "reserved"] | Omit = omit,
+        project_id: str | None = None,
+        after: str | Omit = omit,
+        filter: str | Omit = omit,
+        limit: int | Omit = omit,
+        order_by: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointListResponse:
-        """Returns a list of all endpoints associated with your account.
-
-        You can filter the
-        results by type (dedicated or serverless).
+    ) -> SyncCursorPagination[Endpoint]:
+        """
+        Lists the dedicated inference endpoints owned by the specified project.
 
         Args:
-          mine: If true, return only endpoints owned by the caller
+          project_id: Project identifier.
 
-          type: Filter endpoints by type
+          after: Cursor from a previous response.
 
-          usage_type: Filter endpoints by usage type
+          filter: Filter expression using `name`, `created_at`, or `updated_at` with comparison
+              operators and AND/OR/NOT; timestamps must be RFC 3339 strings. `name` supports
+              substring matching with `:` and prefix/suffix wildcards with `*`, and accepts a
+              bare endpoint name or `<project_slug>/<endpoint_name>`.
+
+          limit: Maximum number of endpoints to return.
+
+          order_by: Sort field for the results. Supports `created_at` or `updated_at`, optionally
+              followed by `asc` or `desc`.
 
           extra_headers: Send extra headers
 
@@ -268,8 +354,13 @@ class EndpointsResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        return self._get(
-            "/endpoints",
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        return self._get_api_list(
+            path_template("/v2/projects/{project_id}/endpoints", project_id=project_id),
+            page=SyncCursorPagination[Endpoint],
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -277,33 +368,42 @@ class EndpointsResource(SyncAPIResource):
                 timeout=timeout,
                 query=maybe_transform(
                     {
-                        "mine": mine,
-                        "type": type,
-                        "usage_type": usage_type,
+                        "after": after,
+                        "filter": filter,
+                        "limit": limit,
+                        "order_by": order_by,
                     },
                     endpoint_list_params.EndpointListParams,
                 ),
             ),
-            cast_to=EndpointListResponse,
+            model=Endpoint,
         )
 
     def delete(
         self,
-        endpoint_id: str,
+        id: str,
         *,
+        project_id: str | None = None,
+        etag: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> None:
+    ) -> EndpointDeleteResponse:
         """Permanently deletes an endpoint.
 
-        This action cannot be undone.
+        Delete its deployments first; use `etag` to
+        reject the request if the endpoint changed after it was read.
 
         Args:
-          endpoint_id: The ID of the endpoint to delete
+          project_id: Project identifier.
+
+          id: Endpoint identifier.
+
+          etag: Etag for optimistic concurrency. If set, the delete is rejected if the current
+              etag does not match.
 
           extra_headers: Send extra headers
 
@@ -313,83 +413,285 @@ class EndpointsResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        if not endpoint_id:
-            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
-        extra_headers = {"Accept": "*/*", **(extra_headers or {})}
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._delete(
-            path_template("/endpoints/{endpoint_id}", endpoint_id=endpoint_id),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=NoneType,
-        )
-
-    def list_avzones(
-        self,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointListAvzonesResponse:
-        """List all available availability zones."""
-        return self._get(
-            "/clusters/availability-zones",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointListAvzonesResponse,
-        )
-
-    def list_hardware(
-        self,
-        *,
-        model: str | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointListHardwareResponse:
-        """Returns a list of available hardware configurations for deploying models.
-
-        When a
-        model parameter is provided, it returns only hardware configurations compatible
-        with that model, including their current availability status.
-
-        Args:
-          model: Filter hardware configurations by model compatibility. When provided, the
-              response includes availability status for each compatible configuration.
-              [See all of Together AI's dedicated models](https://docs.together.ai/docs/dedicated-models)
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return self._get(
-            "/hardware",
+            path_template("/v2/projects/{project_id}/endpoints/{id}", project_id=project_id, id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
                 extra_body=extra_body,
                 timeout=timeout,
-                query=maybe_transform({"model": model}, endpoint_list_hardware_params.EndpointListHardwareParams),
+                query=maybe_transform({"etag": etag}, endpoint_delete_params.EndpointDeleteParams),
             ),
-            cast_to=EndpointListHardwareResponse,
+            cast_to=EndpointDeleteResponse,
+        )
+
+    def analytics(
+        self,
+        id: str,
+        *,
+        project_id: str | None = None,
+        deployment_id: str | Omit = omit,
+        end_time: Union[str, datetime] | Omit = omit,
+        granularity: str | Omit = omit,
+        include_time_series: bool | Omit = omit,
+        start_time: Union[str, datetime] | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EndpointAnalyticsResponse:
+        """
+        Returns aggregated request, token, latency, throughput, error, and
+        resource-utilization metrics for an endpoint over a time range. Optionally
+        includes time-series buckets and a per-deployment breakdown.
+
+        Args:
+          project_id: Project identifier.
+
+          id: Endpoint identifier.
+
+          deployment_id: Restrict to a single deployment under this endpoint.
+
+          end_time: Exclusive end of the time range. Defaults to now if unset.
+
+          granularity: Time-series bucket duration, such as `1m`, `1h`, or `1d`. Defaults to `1d`.
+
+          include_time_series: When true, include per-bucket time series in the response.
+
+          start_time: Inclusive start of the time range. Defaults to 24 hours ago if unset.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            path_template("/v2/projects/{project_id}/endpoints/{id}/analytics", project_id=project_id, id=id),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "deployment_id": deployment_id,
+                        "end_time": end_time,
+                        "granularity": granularity,
+                        "include_time_series": include_time_series,
+                        "start_time": start_time,
+                    },
+                    endpoint_analytics_params.EndpointAnalyticsParams,
+                ),
+            ),
+            cast_to=EndpointAnalyticsResponse,
+        )
+
+    def list_events(
+        self,
+        id: str,
+        *,
+        project_id: str | None = None,
+        after: str | Omit = omit,
+        deployment_ids: SequenceNotStr[str] | Omit = omit,
+        limit: int | Omit = omit,
+        min_level: Literal["LEVEL_DEBUG", "LEVEL_INFO", "LEVEL_WARN", "LEVEL_ERROR"] | Omit = omit,
+        since: Union[str, datetime] | Omit = omit,
+        source_kinds: List[Literal["SOURCE_KIND_ENDPOINT", "SOURCE_KIND_DEPLOYMENT"]] | Omit = omit,
+        subject_id: str | Omit = omit,
+        types: SequenceNotStr[str] | Omit = omit,
+        until: Union[str, datetime] | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> SyncCursorPagination[EndpointListEventsResponse]:
+        """Lists an endpoint's audit and lifecycle events newest first.
+
+        The feed combines
+        endpoint changes with provisioning, scaling, readiness, rollout, and other
+        events from deployments under the endpoint.
+
+        Args:
+          project_id: Project identifier.
+
+          id: Endpoint identifier.
+
+          after: Cursor from a previous endpoint event list response.
+
+          deployment_ids: Deployment IDs whose events should be included. Every ID must belong to the
+              endpoint. Supplying this filter excludes endpoint-scoped events unless
+              `SOURCE_KIND_ENDPOINT` is also included in `sourceKinds`.
+
+          limit: Maximum number of events to return. Max 10000, defaults to 50.
+
+          min_level: Minimum severity. Omit to disable severity filtering.
+
+          since: Return only events at or after this time.
+
+          source_kinds: Resource kinds whose events should be included. Omit to include both endpoint-
+              and deployment-scoped events.
+
+          subject_id: ID of a subject associated with the event, such as a rollout. Combined with
+              other filters using AND.
+
+          types: Event types to include, such as `deployment.scaled` or `condition.set`. Combined
+              with other filters using AND.
+
+          until: Return only events strictly before this time.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get_api_list(
+            path_template("/v2/projects/{project_id}/endpoints/{id}/events", project_id=project_id, id=id),
+            page=SyncCursorPagination[EndpointListEventsResponse],
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "after": after,
+                        "deployment_ids": deployment_ids,
+                        "limit": limit,
+                        "min_level": min_level,
+                        "since": since,
+                        "source_kinds": source_kinds,
+                        "subject_id": subject_id,
+                        "types": types,
+                        "until": until,
+                    },
+                    endpoint_list_events_params.EndpointListEventsParams,
+                ),
+            ),
+            model=EndpointListEventsResponse,
+        )
+
+    def list_org_scoped(
+        self,
+        organization_id: str,
+        *,
+        after: str | Omit = omit,
+        filter: str | Omit = omit,
+        limit: int | Omit = omit,
+        order_by: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> SyncCursorPagination[Endpoint]:
+        """
+        Lists endpoints shared with every project in the specified organization.
+        Project-private and public endpoints are not included.
+
+        Args:
+          organization_id: Organization identifier.
+
+          after: Cursor from a previous list response.
+
+          filter: Filter expression using `name`, `created_at`, or `updated_at` with comparison
+              operators and AND/OR/NOT; timestamps must be RFC 3339 strings. `name` supports
+              substring matching with `:` and prefix/suffix wildcards with `*`, and must be a
+              bare endpoint name.
+
+          limit: Maximum number of results to return.
+
+          order_by: Sort field for the results. Supports `created_at` or `updated_at`, optionally
+              followed by `asc` or `desc`.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not organization_id:
+            raise ValueError(f"Expected a non-empty value for `organization_id` but received {organization_id!r}")
+        return self._get_api_list(
+            path_template("/v2/organizations/{organization_id}/endpoints", organization_id=organization_id),
+            page=SyncCursorPagination[Endpoint],
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "after": after,
+                        "filter": filter,
+                        "limit": limit,
+                        "order_by": order_by,
+                    },
+                    endpoint_list_org_scoped_params.EndpointListOrgScopedParams,
+                ),
+            ),
+            model=Endpoint,
         )
 
 
 class AsyncEndpointsResource(AsyncAPIResource):
     @cached_property
+    def placement_profiles(self) -> AsyncPlacementProfilesResource:
+        return AsyncPlacementProfilesResource(self._client)
+
+    @cached_property
+    def ab_experiments(self) -> AsyncAbExperimentsResource:
+        return AsyncAbExperimentsResource(self._client)
+
+    @cached_property
+    def shadow_experiments(self) -> AsyncShadowExperimentsResource:
+        return AsyncShadowExperimentsResource(self._client)
+
+    @cached_property
+    def rollouts(self) -> AsyncRolloutsResource:
+        return AsyncRolloutsResource(self._client)
+
+    @cached_property
+    def hardware(self) -> AsyncHardwareResource:
+        return AsyncHardwareResource(self._client)
+
+    @cached_property
     def adapters(self) -> AsyncAdaptersResource:
         return AsyncAdaptersResource(self._client)
+
+    @cached_property
+    def deployments(self) -> AsyncDeploymentsResource:
+        return AsyncDeploymentsResource(self._client)
 
     @cached_property
     def with_raw_response(self) -> AsyncEndpointsResourceWithRawResponse:
@@ -413,47 +715,29 @@ class AsyncEndpointsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        autoscaling: AutoscalingParam,
-        hardware: str,
-        model: str,
-        availability_zone: str | Omit = omit,
-        disable_prompt_cache: bool | Omit = omit,
-        disable_speculative_decoding: bool | Omit = omit,
-        display_name: str | Omit = omit,
-        inactive_timeout: Optional[int] | Omit = omit,
-        state: Literal["STARTED", "STOPPED"] | Omit = omit,
+        project_id: str | None = None,
+        name: str,
+        visibility: Literal["VISIBILITY_PRIVATE", "VISIBILITY_INTERNAL"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> DedicatedEndpoint:
-        """Creates a new dedicated endpoint for serving models.
+    ) -> Endpoint:
+        """Creates a stable, inference-addressable endpoint.
 
-        The endpoint starts
-        automatically after creation. You can deploy any supported model on hardware
-        configurations that meet the model's requirements.
+        Add one or more deployments
+        and configure its traffic split before sending inference requests to the
+        endpoint name.
 
         Args:
-          autoscaling: Configuration for automatic scaling of the endpoint
+          project_id: Project identifier.
 
-          hardware: The hardware configuration to use for this endpoint
+          name: Inference-addressable endpoint name to create.
 
-          model: The model to deploy on this endpoint
-
-          availability_zone: Create the endpoint in a specified availability zone (e.g., us-central-4b)
-
-          disable_prompt_cache: This parameter is deprecated and no longer has any effect.
-
-          disable_speculative_decoding: Whether to disable speculative decoding for this endpoint
-
-          display_name: A human-readable name for the endpoint
-
-          inactive_timeout: The number of minutes of inactivity after which the endpoint stops
-              automatically. Set to null, omit, or set to 0 to disable automatic timeout.
-
-          state: The desired state of the endpoint
+          visibility: Who can discover the endpoint. `VISIBILITY_PRIVATE` restricts it to the project;
+              `VISIBILITY_INTERNAL` shares it with the organization.
 
           extra_headers: Send extra headers
 
@@ -463,45 +747,45 @@ class AsyncEndpointsResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
         return await self._post(
-            "/endpoints",
+            path_template("/v2/projects/{project_id}/endpoints", project_id=project_id),
             body=await async_maybe_transform(
                 {
-                    "autoscaling": autoscaling,
-                    "hardware": hardware,
-                    "model": model,
-                    "availability_zone": availability_zone,
-                    "disable_prompt_cache": disable_prompt_cache,
-                    "disable_speculative_decoding": disable_speculative_decoding,
-                    "display_name": display_name,
-                    "inactive_timeout": inactive_timeout,
-                    "state": state,
+                    "name": name,
+                    "visibility": visibility,
                 },
                 endpoint_create_params.EndpointCreateParams,
             ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=DedicatedEndpoint,
+            cast_to=Endpoint,
         )
 
     async def retrieve(
         self,
-        endpoint_id: str,
+        id: str,
         *,
+        project_id: str | None = None,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> DedicatedEndpoint:
+    ) -> Endpoint:
         """
-        Retrieves details about a specific endpoint, including its current state,
-        configuration, and scaling settings.
+        Retrieves an endpoint and lightweight summaries of the deployments attached to
+        it.
 
         Args:
-          endpoint_id: The ID of the endpoint to retrieve
+          project_id: Project identifier.
+
+          id: Endpoint identifier.
 
           extra_headers: Send extra headers
 
@@ -511,47 +795,58 @@ class AsyncEndpointsResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        if not endpoint_id:
-            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/endpoints/{endpoint_id}", endpoint_id=endpoint_id),
+            path_template("/v2/projects/{project_id}/endpoints/{id}", project_id=project_id, id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=DedicatedEndpoint,
+            cast_to=Endpoint,
         )
 
     async def update(
         self,
-        endpoint_id: str,
+        id: str,
         *,
-        autoscaling: AutoscalingParam | Omit = omit,
-        display_name: str | Omit = omit,
-        inactive_timeout: Optional[int] | Omit = omit,
-        state: Literal["STARTED", "STOPPED"] | Omit = omit,
+        project_id: str | None = None,
+        update_mask: str | Omit = omit,
+        etag: str | Omit = omit,
+        name: str | Omit = omit,
+        traffic_split: Iterable[EndpointTrafficSplitEntryParam] | Omit = omit,
+        visibility: Literal["VISIBILITY_PRIVATE", "VISIBILITY_INTERNAL"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> DedicatedEndpoint:
-        """Updates an existing endpoint's configuration.
-
-        You can modify the display name,
-        autoscaling settings, or change the endpoint's state (start/stop).
+    ) -> Endpoint:
+        """
+        Updates mutable endpoint fields such as its endpoint string, visibility, or
+        deployment traffic split. Use `updateMask` to select fields explicitly and
+        `etag` in the request body for optimistic concurrency.
 
         Args:
-          endpoint_id: The ID of the endpoint to update
+          project_id: Project identifier.
 
-          autoscaling: New autoscaling configuration for the endpoint
+          id: Endpoint identifier.
 
-          display_name: A human-readable name for the endpoint
+          update_mask: Fields to update. If not set, the fields populated are updated.
 
-          inactive_timeout: The number of minutes of inactivity after which the endpoint stops
-              automatically. Set to 0 to disable automatic timeout.
+          etag: Current endpoint version. The update is rejected if this value no longer
+              matches.
 
-          state: The desired state of the endpoint
+          name: Updated endpoint string.
+
+          traffic_split: Replacement live traffic split. Use an empty list to stop routing live traffic.
+
+          visibility: Who can discover the endpoint. `VISIBILITY_PRIVATE` restricts it to the project;
+              `VISIBILITY_INTERNAL` shares it with the organization.
 
           extra_headers: Send extra headers
 
@@ -561,49 +856,67 @@ class AsyncEndpointsResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        if not endpoint_id:
-            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._patch(
-            path_template("/endpoints/{endpoint_id}", endpoint_id=endpoint_id),
+            path_template("/v2/projects/{project_id}/endpoints/{id}", project_id=project_id, id=id),
             body=await async_maybe_transform(
                 {
-                    "autoscaling": autoscaling,
-                    "display_name": display_name,
-                    "inactive_timeout": inactive_timeout,
-                    "state": state,
+                    "etag": etag,
+                    "name": name,
+                    "traffic_split": traffic_split,
+                    "visibility": visibility,
                 },
                 endpoint_update_params.EndpointUpdateParams,
             ),
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {"update_mask": update_mask}, endpoint_update_params.EndpointUpdateParams
+                ),
             ),
-            cast_to=DedicatedEndpoint,
+            cast_to=Endpoint,
         )
 
-    async def list(
+    def list(
         self,
         *,
-        mine: bool | Omit = omit,
-        type: Literal["dedicated", "serverless"] | Omit = omit,
-        usage_type: Literal["on-demand", "reserved"] | Omit = omit,
+        project_id: str | None = None,
+        after: str | Omit = omit,
+        filter: str | Omit = omit,
+        limit: int | Omit = omit,
+        order_by: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointListResponse:
-        """Returns a list of all endpoints associated with your account.
-
-        You can filter the
-        results by type (dedicated or serverless).
+    ) -> AsyncPaginator[Endpoint, AsyncCursorPagination[Endpoint]]:
+        """
+        Lists the dedicated inference endpoints owned by the specified project.
 
         Args:
-          mine: If true, return only endpoints owned by the caller
+          project_id: Project identifier.
 
-          type: Filter endpoints by type
+          after: Cursor from a previous response.
 
-          usage_type: Filter endpoints by usage type
+          filter: Filter expression using `name`, `created_at`, or `updated_at` with comparison
+              operators and AND/OR/NOT; timestamps must be RFC 3339 strings. `name` supports
+              substring matching with `:` and prefix/suffix wildcards with `*`, and accepts a
+              bare endpoint name or `<project_slug>/<endpoint_name>`.
+
+          limit: Maximum number of endpoints to return.
+
+          order_by: Sort field for the results. Supports `created_at` or `updated_at`, optionally
+              followed by `asc` or `desc`.
 
           extra_headers: Send extra headers
 
@@ -613,8 +926,136 @@ class AsyncEndpointsResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        return self._get_api_list(
+            path_template("/v2/projects/{project_id}/endpoints", project_id=project_id),
+            page=AsyncCursorPagination[Endpoint],
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "after": after,
+                        "filter": filter,
+                        "limit": limit,
+                        "order_by": order_by,
+                    },
+                    endpoint_list_params.EndpointListParams,
+                ),
+            ),
+            model=Endpoint,
+        )
+
+    async def delete(
+        self,
+        id: str,
+        *,
+        project_id: str | None = None,
+        etag: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EndpointDeleteResponse:
+        """Permanently deletes an endpoint.
+
+        Delete its deployments first; use `etag` to
+        reject the request if the endpoint changed after it was read.
+
+        Args:
+          project_id: Project identifier.
+
+          id: Endpoint identifier.
+
+          etag: Etag for optimistic concurrency. If set, the delete is rejected if the current
+              etag does not match.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._delete(
+            path_template("/v2/projects/{project_id}/endpoints/{id}", project_id=project_id, id=id),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform({"etag": etag}, endpoint_delete_params.EndpointDeleteParams),
+            ),
+            cast_to=EndpointDeleteResponse,
+        )
+
+    async def analytics(
+        self,
+        id: str,
+        *,
+        project_id: str | None = None,
+        deployment_id: str | Omit = omit,
+        end_time: Union[str, datetime] | Omit = omit,
+        granularity: str | Omit = omit,
+        include_time_series: bool | Omit = omit,
+        start_time: Union[str, datetime] | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EndpointAnalyticsResponse:
+        """
+        Returns aggregated request, token, latency, throughput, error, and
+        resource-utilization metrics for an endpoint over a time range. Optionally
+        includes time-series buckets and a per-deployment breakdown.
+
+        Args:
+          project_id: Project identifier.
+
+          id: Endpoint identifier.
+
+          deployment_id: Restrict to a single deployment under this endpoint.
+
+          end_time: Exclusive end of the time range. Defaults to now if unset.
+
+          granularity: Time-series bucket duration, such as `1m`, `1h`, or `1d`. Defaults to `1d`.
+
+          include_time_series: When true, include per-bucket time series in the response.
+
+          start_time: Inclusive start of the time range. Defaults to 24 hours ago if unset.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            "/endpoints",
+            path_template("/v2/projects/{project_id}/endpoints/{id}/analytics", project_id=project_id, id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -622,33 +1063,72 @@ class AsyncEndpointsResource(AsyncAPIResource):
                 timeout=timeout,
                 query=await async_maybe_transform(
                     {
-                        "mine": mine,
-                        "type": type,
-                        "usage_type": usage_type,
+                        "deployment_id": deployment_id,
+                        "end_time": end_time,
+                        "granularity": granularity,
+                        "include_time_series": include_time_series,
+                        "start_time": start_time,
                     },
-                    endpoint_list_params.EndpointListParams,
+                    endpoint_analytics_params.EndpointAnalyticsParams,
                 ),
             ),
-            cast_to=EndpointListResponse,
+            cast_to=EndpointAnalyticsResponse,
         )
 
-    async def delete(
+    def list_events(
         self,
-        endpoint_id: str,
+        id: str,
         *,
+        project_id: str | None = None,
+        after: str | Omit = omit,
+        deployment_ids: SequenceNotStr[str] | Omit = omit,
+        limit: int | Omit = omit,
+        min_level: Literal["LEVEL_DEBUG", "LEVEL_INFO", "LEVEL_WARN", "LEVEL_ERROR"] | Omit = omit,
+        since: Union[str, datetime] | Omit = omit,
+        source_kinds: List[Literal["SOURCE_KIND_ENDPOINT", "SOURCE_KIND_DEPLOYMENT"]] | Omit = omit,
+        subject_id: str | Omit = omit,
+        types: SequenceNotStr[str] | Omit = omit,
+        until: Union[str, datetime] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> None:
-        """Permanently deletes an endpoint.
+    ) -> AsyncPaginator[EndpointListEventsResponse, AsyncCursorPagination[EndpointListEventsResponse]]:
+        """Lists an endpoint's audit and lifecycle events newest first.
 
-        This action cannot be undone.
+        The feed combines
+        endpoint changes with provisioning, scaling, readiness, rollout, and other
+        events from deployments under the endpoint.
 
         Args:
-          endpoint_id: The ID of the endpoint to delete
+          project_id: Project identifier.
+
+          id: Endpoint identifier.
+
+          after: Cursor from a previous endpoint event list response.
+
+          deployment_ids: Deployment IDs whose events should be included. Every ID must belong to the
+              endpoint. Supplying this filter excludes endpoint-scoped events unless
+              `SOURCE_KIND_ENDPOINT` is also included in `sourceKinds`.
+
+          limit: Maximum number of events to return. Max 10000, defaults to 50.
+
+          min_level: Minimum severity. Omit to disable severity filtering.
+
+          since: Return only events at or after this time.
+
+          source_kinds: Resource kinds whose events should be included. Omit to include both endpoint-
+              and deployment-scoped events.
+
+          subject_id: ID of a subject associated with the event, such as a rollout. Combined with
+              other filters using AND.
+
+          types: Event types to include, such as `deployment.scaled` or `condition.set`. Combined
+              with other filters using AND.
+
+          until: Return only events strictly before this time.
 
           extra_headers: Send extra headers
 
@@ -658,78 +1138,101 @@ class AsyncEndpointsResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        if not endpoint_id:
-            raise ValueError(f"Expected a non-empty value for `endpoint_id` but received {endpoint_id!r}")
-        extra_headers = {"Accept": "*/*", **(extra_headers or {})}
-        return await self._delete(
-            path_template("/endpoints/{endpoint_id}", endpoint_id=endpoint_id),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=NoneType,
-        )
-
-    async def list_avzones(
-        self,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointListAvzonesResponse:
-        """List all available availability zones."""
-        return await self._get(
-            "/clusters/availability-zones",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointListAvzonesResponse,
-        )
-
-    async def list_hardware(
-        self,
-        *,
-        model: str | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointListHardwareResponse:
-        """Returns a list of available hardware configurations for deploying models.
-
-        When a
-        model parameter is provided, it returns only hardware configurations compatible
-        with that model, including their current availability status.
-
-        Args:
-          model: Filter hardware configurations by model compatibility. When provided, the
-              response includes availability status for each compatible configuration.
-              [See all of Together AI's dedicated models](https://docs.together.ai/docs/dedicated-models)
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return await self._get(
-            "/hardware",
+        if project_id is None:
+            project_id = self._client._get_project_id_path_param()
+        if not project_id:
+            raise ValueError(f"Expected a non-empty value for `project_id` but received {project_id!r}")
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get_api_list(
+            path_template("/v2/projects/{project_id}/endpoints/{id}/events", project_id=project_id, id=id),
+            page=AsyncCursorPagination[EndpointListEventsResponse],
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
                 extra_body=extra_body,
                 timeout=timeout,
-                query=await async_maybe_transform(
-                    {"model": model}, endpoint_list_hardware_params.EndpointListHardwareParams
+                query=maybe_transform(
+                    {
+                        "after": after,
+                        "deployment_ids": deployment_ids,
+                        "limit": limit,
+                        "min_level": min_level,
+                        "since": since,
+                        "source_kinds": source_kinds,
+                        "subject_id": subject_id,
+                        "types": types,
+                        "until": until,
+                    },
+                    endpoint_list_events_params.EndpointListEventsParams,
                 ),
             ),
-            cast_to=EndpointListHardwareResponse,
+            model=EndpointListEventsResponse,
+        )
+
+    def list_org_scoped(
+        self,
+        organization_id: str,
+        *,
+        after: str | Omit = omit,
+        filter: str | Omit = omit,
+        limit: int | Omit = omit,
+        order_by: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> AsyncPaginator[Endpoint, AsyncCursorPagination[Endpoint]]:
+        """
+        Lists endpoints shared with every project in the specified organization.
+        Project-private and public endpoints are not included.
+
+        Args:
+          organization_id: Organization identifier.
+
+          after: Cursor from a previous list response.
+
+          filter: Filter expression using `name`, `created_at`, or `updated_at` with comparison
+              operators and AND/OR/NOT; timestamps must be RFC 3339 strings. `name` supports
+              substring matching with `:` and prefix/suffix wildcards with `*`, and must be a
+              bare endpoint name.
+
+          limit: Maximum number of results to return.
+
+          order_by: Sort field for the results. Supports `created_at` or `updated_at`, optionally
+              followed by `asc` or `desc`.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not organization_id:
+            raise ValueError(f"Expected a non-empty value for `organization_id` but received {organization_id!r}")
+        return self._get_api_list(
+            path_template("/v2/organizations/{organization_id}/endpoints", organization_id=organization_id),
+            page=AsyncCursorPagination[Endpoint],
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "after": after,
+                        "filter": filter,
+                        "limit": limit,
+                        "order_by": order_by,
+                    },
+                    endpoint_list_org_scoped_params.EndpointListOrgScopedParams,
+                ),
+            ),
+            model=Endpoint,
         )
 
 
@@ -752,16 +1255,43 @@ class EndpointsResourceWithRawResponse:
         self.delete = to_raw_response_wrapper(
             endpoints.delete,
         )
-        self.list_avzones = to_raw_response_wrapper(
-            endpoints.list_avzones,
+        self.analytics = to_raw_response_wrapper(
+            endpoints.analytics,
         )
-        self.list_hardware = to_raw_response_wrapper(
-            endpoints.list_hardware,
+        self.list_events = to_raw_response_wrapper(
+            endpoints.list_events,
         )
+        self.list_org_scoped = to_raw_response_wrapper(
+            endpoints.list_org_scoped,
+        )
+
+    @cached_property
+    def placement_profiles(self) -> PlacementProfilesResourceWithRawResponse:
+        return PlacementProfilesResourceWithRawResponse(self._endpoints.placement_profiles)
+
+    @cached_property
+    def ab_experiments(self) -> AbExperimentsResourceWithRawResponse:
+        return AbExperimentsResourceWithRawResponse(self._endpoints.ab_experiments)
+
+    @cached_property
+    def shadow_experiments(self) -> ShadowExperimentsResourceWithRawResponse:
+        return ShadowExperimentsResourceWithRawResponse(self._endpoints.shadow_experiments)
+
+    @cached_property
+    def rollouts(self) -> RolloutsResourceWithRawResponse:
+        return RolloutsResourceWithRawResponse(self._endpoints.rollouts)
+
+    @cached_property
+    def hardware(self) -> HardwareResourceWithRawResponse:
+        return HardwareResourceWithRawResponse(self._endpoints.hardware)
 
     @cached_property
     def adapters(self) -> AdaptersResourceWithRawResponse:
         return AdaptersResourceWithRawResponse(self._endpoints.adapters)
+
+    @cached_property
+    def deployments(self) -> DeploymentsResourceWithRawResponse:
+        return DeploymentsResourceWithRawResponse(self._endpoints.deployments)
 
 
 class AsyncEndpointsResourceWithRawResponse:
@@ -783,16 +1313,43 @@ class AsyncEndpointsResourceWithRawResponse:
         self.delete = async_to_raw_response_wrapper(
             endpoints.delete,
         )
-        self.list_avzones = async_to_raw_response_wrapper(
-            endpoints.list_avzones,
+        self.analytics = async_to_raw_response_wrapper(
+            endpoints.analytics,
         )
-        self.list_hardware = async_to_raw_response_wrapper(
-            endpoints.list_hardware,
+        self.list_events = async_to_raw_response_wrapper(
+            endpoints.list_events,
         )
+        self.list_org_scoped = async_to_raw_response_wrapper(
+            endpoints.list_org_scoped,
+        )
+
+    @cached_property
+    def placement_profiles(self) -> AsyncPlacementProfilesResourceWithRawResponse:
+        return AsyncPlacementProfilesResourceWithRawResponse(self._endpoints.placement_profiles)
+
+    @cached_property
+    def ab_experiments(self) -> AsyncAbExperimentsResourceWithRawResponse:
+        return AsyncAbExperimentsResourceWithRawResponse(self._endpoints.ab_experiments)
+
+    @cached_property
+    def shadow_experiments(self) -> AsyncShadowExperimentsResourceWithRawResponse:
+        return AsyncShadowExperimentsResourceWithRawResponse(self._endpoints.shadow_experiments)
+
+    @cached_property
+    def rollouts(self) -> AsyncRolloutsResourceWithRawResponse:
+        return AsyncRolloutsResourceWithRawResponse(self._endpoints.rollouts)
+
+    @cached_property
+    def hardware(self) -> AsyncHardwareResourceWithRawResponse:
+        return AsyncHardwareResourceWithRawResponse(self._endpoints.hardware)
 
     @cached_property
     def adapters(self) -> AsyncAdaptersResourceWithRawResponse:
         return AsyncAdaptersResourceWithRawResponse(self._endpoints.adapters)
+
+    @cached_property
+    def deployments(self) -> AsyncDeploymentsResourceWithRawResponse:
+        return AsyncDeploymentsResourceWithRawResponse(self._endpoints.deployments)
 
 
 class EndpointsResourceWithStreamingResponse:
@@ -814,16 +1371,43 @@ class EndpointsResourceWithStreamingResponse:
         self.delete = to_streamed_response_wrapper(
             endpoints.delete,
         )
-        self.list_avzones = to_streamed_response_wrapper(
-            endpoints.list_avzones,
+        self.analytics = to_streamed_response_wrapper(
+            endpoints.analytics,
         )
-        self.list_hardware = to_streamed_response_wrapper(
-            endpoints.list_hardware,
+        self.list_events = to_streamed_response_wrapper(
+            endpoints.list_events,
         )
+        self.list_org_scoped = to_streamed_response_wrapper(
+            endpoints.list_org_scoped,
+        )
+
+    @cached_property
+    def placement_profiles(self) -> PlacementProfilesResourceWithStreamingResponse:
+        return PlacementProfilesResourceWithStreamingResponse(self._endpoints.placement_profiles)
+
+    @cached_property
+    def ab_experiments(self) -> AbExperimentsResourceWithStreamingResponse:
+        return AbExperimentsResourceWithStreamingResponse(self._endpoints.ab_experiments)
+
+    @cached_property
+    def shadow_experiments(self) -> ShadowExperimentsResourceWithStreamingResponse:
+        return ShadowExperimentsResourceWithStreamingResponse(self._endpoints.shadow_experiments)
+
+    @cached_property
+    def rollouts(self) -> RolloutsResourceWithStreamingResponse:
+        return RolloutsResourceWithStreamingResponse(self._endpoints.rollouts)
+
+    @cached_property
+    def hardware(self) -> HardwareResourceWithStreamingResponse:
+        return HardwareResourceWithStreamingResponse(self._endpoints.hardware)
 
     @cached_property
     def adapters(self) -> AdaptersResourceWithStreamingResponse:
         return AdaptersResourceWithStreamingResponse(self._endpoints.adapters)
+
+    @cached_property
+    def deployments(self) -> DeploymentsResourceWithStreamingResponse:
+        return DeploymentsResourceWithStreamingResponse(self._endpoints.deployments)
 
 
 class AsyncEndpointsResourceWithStreamingResponse:
@@ -845,13 +1429,40 @@ class AsyncEndpointsResourceWithStreamingResponse:
         self.delete = async_to_streamed_response_wrapper(
             endpoints.delete,
         )
-        self.list_avzones = async_to_streamed_response_wrapper(
-            endpoints.list_avzones,
+        self.analytics = async_to_streamed_response_wrapper(
+            endpoints.analytics,
         )
-        self.list_hardware = async_to_streamed_response_wrapper(
-            endpoints.list_hardware,
+        self.list_events = async_to_streamed_response_wrapper(
+            endpoints.list_events,
         )
+        self.list_org_scoped = async_to_streamed_response_wrapper(
+            endpoints.list_org_scoped,
+        )
+
+    @cached_property
+    def placement_profiles(self) -> AsyncPlacementProfilesResourceWithStreamingResponse:
+        return AsyncPlacementProfilesResourceWithStreamingResponse(self._endpoints.placement_profiles)
+
+    @cached_property
+    def ab_experiments(self) -> AsyncAbExperimentsResourceWithStreamingResponse:
+        return AsyncAbExperimentsResourceWithStreamingResponse(self._endpoints.ab_experiments)
+
+    @cached_property
+    def shadow_experiments(self) -> AsyncShadowExperimentsResourceWithStreamingResponse:
+        return AsyncShadowExperimentsResourceWithStreamingResponse(self._endpoints.shadow_experiments)
+
+    @cached_property
+    def rollouts(self) -> AsyncRolloutsResourceWithStreamingResponse:
+        return AsyncRolloutsResourceWithStreamingResponse(self._endpoints.rollouts)
+
+    @cached_property
+    def hardware(self) -> AsyncHardwareResourceWithStreamingResponse:
+        return AsyncHardwareResourceWithStreamingResponse(self._endpoints.hardware)
 
     @cached_property
     def adapters(self) -> AsyncAdaptersResourceWithStreamingResponse:
         return AsyncAdaptersResourceWithStreamingResponse(self._endpoints.adapters)
+
+    @cached_property
+    def deployments(self) -> AsyncDeploymentsResourceWithStreamingResponse:
+        return AsyncDeploymentsResourceWithStreamingResponse(self._endpoints.deployments)

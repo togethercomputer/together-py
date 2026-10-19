@@ -2,42 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Optional
-from typing_extensions import Literal, Required, TypedDict
+from typing_extensions import Literal, Required, Annotated, TypedDict
 
-from .autoscaling_param import AutoscalingParam
+from .._utils import PropertyInfo
 
 __all__ = ["EndpointCreateParams"]
 
 
 class EndpointCreateParams(TypedDict, total=False):
-    autoscaling: Required[AutoscalingParam]
-    """Configuration for automatic scaling of the endpoint"""
+    project_id: Annotated[str, PropertyInfo(alias="projectId")]
+    """Project identifier."""
 
-    hardware: Required[str]
-    """The hardware configuration to use for this endpoint"""
+    name: Required[str]
+    """Inference-addressable endpoint name to create."""
 
-    model: Required[str]
-    """The model to deploy on this endpoint"""
+    visibility: Literal["VISIBILITY_PRIVATE", "VISIBILITY_INTERNAL"]
+    """Who can discover the endpoint.
 
-    availability_zone: str
-    """Create the endpoint in a specified availability zone (e.g., us-central-4b)"""
-
-    disable_prompt_cache: bool
-    """This parameter is deprecated and no longer has any effect."""
-
-    disable_speculative_decoding: bool
-    """Whether to disable speculative decoding for this endpoint"""
-
-    display_name: str
-    """A human-readable name for the endpoint"""
-
-    inactive_timeout: Optional[int]
-    """The number of minutes of inactivity after which the endpoint stops
-    automatically.
-
-    Set to null, omit, or set to 0 to disable automatic timeout.
+    `VISIBILITY_PRIVATE` restricts it to the project; `VISIBILITY_INTERNAL` shares
+    it with the organization.
     """
-
-    state: Literal["STARTED", "STOPPED"]
-    """The desired state of the endpoint"""

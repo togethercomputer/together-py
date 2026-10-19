@@ -84,7 +84,7 @@ class QueueResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get(
-            "/queue/status",
+            "/v1/queue/status",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -133,7 +133,7 @@ class QueueResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/queue/cancel",
+            "/v1/queue/cancel",
             body=maybe_transform(
                 {
                     "model": model,
@@ -175,7 +175,7 @@ class QueueResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/queue/clear",
+            "/v1/queue/clear",
             body=maybe_transform({"model": model}, queue_clear_params.QueueClearParams),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -210,7 +210,7 @@ class QueueResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get(
-            "/queue/metrics",
+            "/v1/queue/metrics",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -262,7 +262,7 @@ class QueueResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/queue/submit",
+            "/v1/queue/submit",
             body=maybe_transform(
                 {
                     "model": model,
@@ -330,7 +330,7 @@ class AsyncQueueResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._get(
-            "/queue/status",
+            "/v1/queue/status",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -379,7 +379,7 @@ class AsyncQueueResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/queue/cancel",
+            "/v1/queue/cancel",
             body=await async_maybe_transform(
                 {
                     "model": model,
@@ -421,7 +421,7 @@ class AsyncQueueResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/queue/clear",
+            "/v1/queue/clear",
             body=await async_maybe_transform({"model": model}, queue_clear_params.QueueClearParams),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -456,7 +456,7 @@ class AsyncQueueResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._get(
-            "/queue/metrics",
+            "/v1/queue/metrics",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -508,7 +508,7 @@ class AsyncQueueResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/queue/submit",
+            "/v1/queue/submit",
             body=await async_maybe_transform(
                 {
                     "model": model,

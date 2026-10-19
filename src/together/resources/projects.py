@@ -71,7 +71,7 @@ class ProjectsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get_api_list(
-            "/projects",
+            "/v1/projects",
             page=SyncCursorPagination[Project],
             options=make_request_options(
                 extra_headers=extra_headers,
@@ -139,7 +139,7 @@ class AsyncProjectsResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get_api_list(
-            "/projects",
+            "/v1/projects",
             page=AsyncCursorPagination[Project],
             options=make_request_options(
                 extra_headers=extra_headers,

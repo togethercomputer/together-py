@@ -33,8 +33,6 @@ class TestPrepareForFp4Inference:
     def test_method_create_with_all_params(self, client: Together) -> None:
         prepare_for_fp4_inference = client.post_training.prepare_for_fp4_inference.create(
             inputs={
-                "adapter_object_id": "ml_J!Q0Ok0bzJb7",
-                "adapter_revision_id": "rv_J!Q0Ok0bzJb7",
                 "calibration_file_id": "file-5f1b0c7a-2d19-4a3e-9c60-8ab41c2f7d35",
                 "model_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
                 "model_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
@@ -178,8 +176,6 @@ class TestPrepareForFp4Inference:
     def test_method_estimate_cost_with_all_params(self, client: Together) -> None:
         prepare_for_fp4_inference = client.post_training.prepare_for_fp4_inference.estimate_cost(
             inputs={
-                "adapter_object_id": "ml_J!Q0Ok0bzJb7",
-                "adapter_revision_id": "rv_J!Q0Ok0bzJb7",
                 "calibration_file_id": "file-5f1b0c7a-2d19-4a3e-9c60-8ab41c2f7d35",
                 "model_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
                 "model_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
@@ -266,8 +262,6 @@ class TestAsyncPrepareForFp4Inference:
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         prepare_for_fp4_inference = await async_client.post_training.prepare_for_fp4_inference.create(
             inputs={
-                "adapter_object_id": "ml_J!Q0Ok0bzJb7",
-                "adapter_revision_id": "rv_J!Q0Ok0bzJb7",
                 "calibration_file_id": "file-5f1b0c7a-2d19-4a3e-9c60-8ab41c2f7d35",
                 "model_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
                 "model_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",
@@ -411,8 +405,6 @@ class TestAsyncPrepareForFp4Inference:
     async def test_method_estimate_cost_with_all_params(self, async_client: AsyncTogether) -> None:
         prepare_for_fp4_inference = await async_client.post_training.prepare_for_fp4_inference.estimate_cost(
             inputs={
-                "adapter_object_id": "ml_J!Q0Ok0bzJb7",
-                "adapter_revision_id": "rv_J!Q0Ok0bzJb7",
                 "calibration_file_id": "file-5f1b0c7a-2d19-4a3e-9c60-8ab41c2f7d35",
                 "model_object_id": "ml_CeG3fF6pyEViU8dE8pk7R",
                 "model_revision_id": "rv_CeG3faPBj2ABwbAaHPTmx",

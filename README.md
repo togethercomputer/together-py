@@ -270,14 +270,12 @@ from together import Together
 
 client = Together()
 
-all_endpoints = []
+all_costs = []
 # Automatically fetches more pages as needed.
-for endpoint in client.beta.endpoints.list(
-    project_id="projectId",
-):
-    # Do something with endpoint here
-    all_endpoints.append(endpoint)
-print(all_endpoints)
+for cost in client.organization.usage.costs.list():
+    # Do something with cost here
+    all_costs.append(cost)
+print(all_costs)
 ```
 
 Or, asynchronously:
@@ -290,13 +288,11 @@ client = AsyncTogether()
 
 
 async def main() -> None:
-    all_endpoints = []
+    all_costs = []
     # Iterate through items across all pages, issuing requests as needed.
-    async for endpoint in client.beta.endpoints.list(
-        project_id="projectId",
-    ):
-        all_endpoints.append(endpoint)
-    print(all_endpoints)
+    async for cost in client.organization.usage.costs.list():
+        all_costs.append(cost)
+    print(all_costs)
 
 
 asyncio.run(main())
@@ -305,9 +301,7 @@ asyncio.run(main())
 Alternatively, you can use the `.has_next_page()`, `.next_page_info()`, or `.get_next_page()` methods for more granular control working with pages:
 
 ```python
-first_page = await client.beta.endpoints.list(
-    project_id="projectId",
-)
+first_page = await client.organization.usage.costs.list()
 if first_page.has_next_page():
     print(f"will fetch next page using these details: {first_page.next_page_info()}")
     next_page = await first_page.get_next_page()
@@ -319,13 +313,11 @@ if first_page.has_next_page():
 Or just work directly with the returned data:
 
 ```python
-first_page = await client.beta.endpoints.list(
-    project_id="projectId",
-)
+first_page = await client.organization.usage.costs.list()
 
 print(f"next page cursor: {first_page.next_cursor}")  # => "next page cursor: ..."
-for endpoint in first_page.data:
-    print(endpoint.id)
+for cost in first_page.data:
+    print(cost.date)
 
 # Remove `await` for non-async usage.
 ```

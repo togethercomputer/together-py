@@ -23,9 +23,7 @@ __all__ = [
     "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudio",
     "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudioInputAudio",
     "MessageChatCompletionAssistantMessageParam",
-    "MessageChatCompletionAssistantMessageParamFunctionCall",
     "MessageChatCompletionToolMessageParam",
-    "MessageChatCompletionFunctionMessageParam",
     "FunctionCall",
     "FunctionCallName",
     "Reasoning",
@@ -259,18 +257,10 @@ class MessageChatCompletionUserMessageParam(TypedDict, total=False):
     name: str
 
 
-class MessageChatCompletionAssistantMessageParamFunctionCall(TypedDict, total=False):
-    arguments: Required[str]
-
-    name: Required[str]
-
-
 class MessageChatCompletionAssistantMessageParam(TypedDict, total=False):
     role: Required[Literal["assistant"]]
 
     content: Optional[str]
-
-    function_call: MessageChatCompletionAssistantMessageParamFunctionCall
 
     name: str
 
@@ -291,20 +281,11 @@ class MessageChatCompletionToolMessageParam(TypedDict, total=False):
     name: str
 
 
-class MessageChatCompletionFunctionMessageParam(TypedDict, total=False):
-    content: Required[str]
-
-    name: Required[str]
-
-    role: Required[Literal["function"]]
-
-
 Message: TypeAlias = Union[
     MessageChatCompletionSystemMessageParam,
     MessageChatCompletionUserMessageParam,
     MessageChatCompletionAssistantMessageParam,
     MessageChatCompletionToolMessageParam,
-    MessageChatCompletionFunctionMessageParam,
 ]
 
 

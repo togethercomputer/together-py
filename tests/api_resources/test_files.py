@@ -129,7 +129,7 @@ class TestFiles:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_content(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.get("/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         file = client.files.content(
             "id",
         )
@@ -141,7 +141,7 @@ class TestFiles:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_raw_response_content(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.get("/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
         file = client.files.with_raw_response.content(
             "id",
@@ -155,7 +155,7 @@ class TestFiles:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_streaming_response_content(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.get("/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         with client.files.with_streaming_response.content(
             "id",
         ) as file:
@@ -286,7 +286,7 @@ class TestAsyncFiles:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_method_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.get("/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         file = await async_client.files.content(
             "id",
         )
@@ -298,7 +298,7 @@ class TestAsyncFiles:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_raw_response_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.get("/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
         file = await async_client.files.with_raw_response.content(
             "id",
@@ -312,7 +312,7 @@ class TestAsyncFiles:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_streaming_response_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.get("/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/files/id/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         async with async_client.files.with_streaming_response.content(
             "id",
         ) as file:

@@ -76,7 +76,7 @@ class VolumesResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/deployments/storage/volumes",
+            "/v1/deployments/storage/volumes",
             body=maybe_transform(
                 {
                     "content": content,
@@ -122,7 +122,7 @@ class VolumesResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/deployments/storage/volumes/{id}", id=id),
+            path_template("/v1/deployments/storage/volumes/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -170,7 +170,7 @@ class VolumesResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._patch(
-            path_template("/deployments/storage/volumes/{id}", id=id),
+            path_template("/v1/deployments/storage/volumes/{id}", id=id),
             body=maybe_transform(
                 {
                     "content": content,
@@ -197,7 +197,7 @@ class VolumesResource(SyncAPIResource):
     ) -> VolumeListResponse:
         """Retrieve all volumes in your project"""
         return self._get(
-            "/deployments/storage/volumes",
+            "/v1/deployments/storage/volumes",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -232,7 +232,7 @@ class VolumesResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._delete(
-            path_template("/deployments/storage/volumes/{id}", id=id),
+            path_template("/v1/deployments/storage/volumes/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -292,7 +292,7 @@ class AsyncVolumesResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/deployments/storage/volumes",
+            "/v1/deployments/storage/volumes",
             body=await async_maybe_transform(
                 {
                     "content": content,
@@ -338,7 +338,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/deployments/storage/volumes/{id}", id=id),
+            path_template("/v1/deployments/storage/volumes/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -386,7 +386,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._patch(
-            path_template("/deployments/storage/volumes/{id}", id=id),
+            path_template("/v1/deployments/storage/volumes/{id}", id=id),
             body=await async_maybe_transform(
                 {
                     "content": content,
@@ -413,7 +413,7 @@ class AsyncVolumesResource(AsyncAPIResource):
     ) -> VolumeListResponse:
         """Retrieve all volumes in your project"""
         return await self._get(
-            "/deployments/storage/volumes",
+            "/v1/deployments/storage/volumes",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -448,7 +448,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._delete(
-            path_template("/deployments/storage/volumes/{id}", id=id),
+            path_template("/v1/deployments/storage/volumes/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

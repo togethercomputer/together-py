@@ -82,7 +82,7 @@ class SecretsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/deployments/secrets",
+            "/v1/deployments/secrets",
             body=maybe_transform(
                 {
                     "name": name,
@@ -126,7 +126,7 @@ class SecretsResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/deployments/secrets/{id}", id=id),
+            path_template("/v1/deployments/secrets/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -178,7 +178,7 @@ class SecretsResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._patch(
-            path_template("/deployments/secrets/{id}", id=id),
+            path_template("/v1/deployments/secrets/{id}", id=id),
             body=maybe_transform(
                 {
                     "description": description,
@@ -206,7 +206,7 @@ class SecretsResource(SyncAPIResource):
     ) -> SecretListResponse:
         """Retrieve all secrets in your project"""
         return self._get(
-            "/deployments/secrets",
+            "/v1/deployments/secrets",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -241,7 +241,7 @@ class SecretsResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._delete(
-            path_template("/deployments/secrets/{id}", id=id),
+            path_template("/v1/deployments/secrets/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -309,7 +309,7 @@ class AsyncSecretsResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/deployments/secrets",
+            "/v1/deployments/secrets",
             body=await async_maybe_transform(
                 {
                     "name": name,
@@ -353,7 +353,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/deployments/secrets/{id}", id=id),
+            path_template("/v1/deployments/secrets/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -405,7 +405,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._patch(
-            path_template("/deployments/secrets/{id}", id=id),
+            path_template("/v1/deployments/secrets/{id}", id=id),
             body=await async_maybe_transform(
                 {
                     "description": description,
@@ -433,7 +433,7 @@ class AsyncSecretsResource(AsyncAPIResource):
     ) -> SecretListResponse:
         """Retrieve all secrets in your project"""
         return await self._get(
-            "/deployments/secrets",
+            "/v1/deployments/secrets",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -468,7 +468,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._delete(
-            path_template("/deployments/secrets/{id}", id=id),
+            path_template("/v1/deployments/secrets/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

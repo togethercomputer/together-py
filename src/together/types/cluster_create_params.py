@@ -97,16 +97,7 @@ class GPUClusterCreateRequestNvidiaVersion(TypedDict, total=False):
     """
 
     auto_scale_max_gpus: int
-    """Maximum number of GPUs to which the cluster can be auto-scaled up.
-
-    This field is required if auto_scaled is true.
-    """
-
-    auto_scaled: bool
-    """Whether GPU cluster should be auto-scaled based on the workload.
-
-    By default, it is not auto-scaled.
-    """
+    """Maximum number of GPUs to which the cluster can be auto-scaled up."""
 
     capacity_pool_id: str
     """ID of the capacity pool to use for the cluster.
@@ -487,16 +478,7 @@ class GPUClusterCreateRequestLegacyNvidia(TypedDict, total=False):
     """
 
     auto_scale_max_gpus: int
-    """Maximum number of GPUs to which the cluster can be auto-scaled up.
-
-    This field is required if auto_scaled is true.
-    """
-
-    auto_scaled: bool
-    """Whether GPU cluster should be auto-scaled based on the workload.
-
-    By default, it is not auto-scaled.
-    """
+    """Maximum number of GPUs to which the cluster can be auto-scaled up."""
 
     capacity_pool_id: str
     """ID of the capacity pool to use for the cluster.

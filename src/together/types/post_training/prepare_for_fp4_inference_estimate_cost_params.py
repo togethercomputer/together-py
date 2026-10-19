@@ -15,12 +15,6 @@ class PrepareForFp4InferenceEstimateCostParams(TypedDict, total=False):
 class Inputs(TypedDict, total=False):
     """Inputs naming the fine-tuned model to prepare."""
 
-    adapter_object_id: str
-    """The former name of `model_object_id`."""
-
-    adapter_revision_id: str
-    """The former name of `model_revision_id`. Only valid with `adapter_object_id`."""
-
     calibration_file_id: str
     """Conversation dataset file ID to use for calibration.
 

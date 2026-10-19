@@ -96,7 +96,7 @@ class SessionsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/rl/training-sessions",
+            "/v1/rl/training-sessions",
             body=maybe_transform(
                 {
                     "model_resources_id": model_resources_id,
@@ -142,7 +142,7 @@ class SessionsResource(SyncAPIResource):
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         return self._get(
-            path_template("/rl/training-sessions/{session_id}", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}", session_id=session_id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -186,7 +186,7 @@ class SessionsResource(SyncAPIResource):
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         return self._patch(
-            path_template("/rl/training-sessions/{session_id}", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}", session_id=session_id),
             body=maybe_transform(
                 {
                     "display_name": display_name,
@@ -249,7 +249,7 @@ class SessionsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get(
-            "/rl/training-sessions",
+            "/v1/rl/training-sessions",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -297,7 +297,7 @@ class SessionsResource(SyncAPIResource):
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         return self._post(
-            path_template("/rl/training-sessions/{session_id}/stop", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}/stop", session_id=session_id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -370,7 +370,7 @@ class AsyncSessionsResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/rl/training-sessions",
+            "/v1/rl/training-sessions",
             body=await async_maybe_transform(
                 {
                     "model_resources_id": model_resources_id,
@@ -416,7 +416,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         return await self._get(
-            path_template("/rl/training-sessions/{session_id}", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}", session_id=session_id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -460,7 +460,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         return await self._patch(
-            path_template("/rl/training-sessions/{session_id}", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}", session_id=session_id),
             body=await async_maybe_transform(
                 {
                     "display_name": display_name,
@@ -523,7 +523,7 @@ class AsyncSessionsResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._get(
-            "/rl/training-sessions",
+            "/v1/rl/training-sessions",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -571,7 +571,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         return await self._post(
-            path_template("/rl/training-sessions/{session_id}/stop", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}/stop", session_id=session_id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

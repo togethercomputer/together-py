@@ -140,7 +140,7 @@ class TranscriptionsResource(SyncAPIResource):
         return cast(
             TranscriptionCreateResponse,
             self._post(
-                "/audio/transcriptions",
+                "/v1/audio/transcriptions",
                 body=maybe_transform(body, transcription_create_params.TranscriptionCreateParams),
                 files=files,
                 options=make_request_options(
@@ -268,7 +268,7 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
         return cast(
             TranscriptionCreateResponse,
             await self._post(
-                "/audio/transcriptions",
+                "/v1/audio/transcriptions",
                 body=await async_maybe_transform(body, transcription_create_params.TranscriptionCreateParams),
                 files=files,
                 options=make_request_options(

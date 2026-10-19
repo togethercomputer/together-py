@@ -26,7 +26,7 @@ class TestSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         speech = client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -40,7 +40,7 @@ class TestSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_with_all_params_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         speech = client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -61,7 +61,7 @@ class TestSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_raw_response_create_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
         speech = client.audio.speech.with_raw_response.create(
             input="input",
@@ -77,7 +77,7 @@ class TestSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_streaming_response_create_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         with client.audio.speech.with_streaming_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -95,7 +95,7 @@ class TestSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         speech_stream = client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -107,7 +107,7 @@ class TestSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_with_all_params_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         speech_stream = client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -125,7 +125,7 @@ class TestSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_raw_response_create_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
         speech_stream = client.audio.speech.with_raw_response.create(
             input="input",
@@ -141,7 +141,7 @@ class TestSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_streaming_response_create_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         with client.audio.speech.with_streaming_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -166,7 +166,7 @@ class TestAsyncSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_method_create_overload_1(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         speech = await async_client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -182,7 +182,7 @@ class TestAsyncSpeech:
     async def test_method_create_with_all_params_overload_1(
         self, async_client: AsyncTogether, respx_mock: MockRouter
     ) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         speech = await async_client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -203,7 +203,7 @@ class TestAsyncSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_raw_response_create_overload_1(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
         speech = await async_client.audio.speech.with_raw_response.create(
             input="input",
@@ -221,7 +221,7 @@ class TestAsyncSpeech:
     async def test_streaming_response_create_overload_1(
         self, async_client: AsyncTogether, respx_mock: MockRouter
     ) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         async with async_client.audio.speech.with_streaming_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -239,7 +239,7 @@ class TestAsyncSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_method_create_overload_2(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         speech_stream = await async_client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -253,7 +253,7 @@ class TestAsyncSpeech:
     async def test_method_create_with_all_params_overload_2(
         self, async_client: AsyncTogether, respx_mock: MockRouter
     ) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         speech_stream = await async_client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
@@ -271,7 +271,7 @@ class TestAsyncSpeech:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_raw_response_create_overload_2(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
         speech_stream = await async_client.audio.speech.with_raw_response.create(
             input="input",
@@ -289,7 +289,7 @@ class TestAsyncSpeech:
     async def test_streaming_response_create_overload_2(
         self, async_client: AsyncTogether, respx_mock: MockRouter
     ) -> None:
-        respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.post("/v1/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         async with async_client.audio.speech.with_streaming_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",

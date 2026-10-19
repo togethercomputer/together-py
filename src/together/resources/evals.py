@@ -75,7 +75,7 @@ class EvalsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/evaluation",
+            "/v1/evaluation",
             body=maybe_transform(
                 {
                     "parameters": parameters,
@@ -117,7 +117,7 @@ class EvalsResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/evaluation/{id}", id=id),
+            path_template("/v1/evaluation/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -153,7 +153,7 @@ class EvalsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get(
-            "/evaluation",
+            "/v1/evaluation",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -198,7 +198,7 @@ class EvalsResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/evaluation/{id}/status", id=id),
+            path_template("/v1/evaluation/{id}/status", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -255,7 +255,7 @@ class AsyncEvalsResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/evaluation",
+            "/v1/evaluation",
             body=await async_maybe_transform(
                 {
                     "parameters": parameters,
@@ -297,7 +297,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/evaluation/{id}", id=id),
+            path_template("/v1/evaluation/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -333,7 +333,7 @@ class AsyncEvalsResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._get(
-            "/evaluation",
+            "/v1/evaluation",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -378,7 +378,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/evaluation/{id}/status", id=id),
+            path_template("/v1/evaluation/{id}/status", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

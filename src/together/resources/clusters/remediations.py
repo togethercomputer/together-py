@@ -112,7 +112,7 @@ class RemediationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `instance_id` but received {instance_id!r}")
         return self._post(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
             ),
@@ -169,7 +169,7 @@ class RemediationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `remediation_id` but received {remediation_id!r}")
         return self._get(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
                 remediation_id=remediation_id,
@@ -267,7 +267,7 @@ class RemediationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `instance_id` but received {instance_id!r}")
         return self._get(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
             ),
@@ -355,7 +355,7 @@ class RemediationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `remediation_id` but received {remediation_id!r}")
         return self._post(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/approve",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/approve",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
                 remediation_id=remediation_id,
@@ -414,7 +414,7 @@ class RemediationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `remediation_id` but received {remediation_id!r}")
         return self._post(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/cancel",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/cancel",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
                 remediation_id=remediation_id,
@@ -466,7 +466,7 @@ class RemediationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `remediation_id` but received {remediation_id!r}")
         return self._post(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/reject",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/reject",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
                 remediation_id=remediation_id,
@@ -561,7 +561,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `instance_id` but received {instance_id!r}")
         return await self._post(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
             ),
@@ -618,7 +618,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `remediation_id` but received {remediation_id!r}")
         return await self._get(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
                 remediation_id=remediation_id,
@@ -716,7 +716,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `instance_id` but received {instance_id!r}")
         return await self._get(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
             ),
@@ -804,7 +804,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `remediation_id` but received {remediation_id!r}")
         return await self._post(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/approve",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/approve",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
                 remediation_id=remediation_id,
@@ -863,7 +863,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `remediation_id` but received {remediation_id!r}")
         return await self._post(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/cancel",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/cancel",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
                 remediation_id=remediation_id,
@@ -915,7 +915,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `remediation_id` but received {remediation_id!r}")
         return await self._post(
             path_template(
-                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/reject",
+                "/v1/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/reject",
                 cluster_id=cluster_id,
                 instance_id=instance_id,
                 remediation_id=remediation_id,

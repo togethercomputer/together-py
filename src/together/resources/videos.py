@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Iterable
 from typing_extensions import Literal
 
 import httpx
 
 from ..types import video_create_params
-from .._types import Body, Omit, Query, Headers, NotGiven, SequenceNotStr, omit, not_given
+from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import path_template, maybe_transform, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -49,7 +48,6 @@ class VideosResource(SyncAPIResource):
         *,
         model: str,
         fps: int | Omit = omit,
-        frame_images: Iterable[video_create_params.FrameImage] | Omit = omit,
         generate_audio: bool | Omit = omit,
         guidance_scale: int | Omit = omit,
         height: int | Omit = omit,
@@ -59,7 +57,6 @@ class VideosResource(SyncAPIResource):
         output_quality: int | Omit = omit,
         prompt: str | Omit = omit,
         ratio: str | Omit = omit,
-        reference_images: SequenceNotStr[str] | Omit = omit,
         resolution: str | Omit = omit,
         seconds: str | Omit = omit,
         seed: int | Omit = omit,
@@ -79,9 +76,6 @@ class VideosResource(SyncAPIResource):
           model: The model to be used for the video creation request.
 
           fps: Frames per second. Defaults to 24.
-
-          frame_images: Deprecated: use media.frame_images instead. Array of images to guide video
-              generation, similar to keyframes.
 
           generate_audio: Whether to generate audio for the video.
 
@@ -104,10 +98,6 @@ class VideosResource(SyncAPIResource):
 
           ratio: Aspect ratio of the video.
 
-          reference_images: Deprecated: use media.reference_images instead. Unlike frame_images which
-              constrain specific timeline positions, reference images guide the general
-              appearance that should appear consistently across the video.
-
           resolution: Video resolution.
 
           seconds: Clip duration in seconds.
@@ -129,12 +119,11 @@ class VideosResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/videos" if self._client._base_url_overridden else "https://api.together.ai/v2/videos",
+            "/v2/videos",
             body=maybe_transform(
                 {
                     "model": model,
                     "fps": fps,
-                    "frame_images": frame_images,
                     "generate_audio": generate_audio,
                     "guidance_scale": guidance_scale,
                     "height": height,
@@ -144,7 +133,6 @@ class VideosResource(SyncAPIResource):
                     "output_quality": output_quality,
                     "prompt": prompt,
                     "ratio": ratio,
-                    "reference_images": reference_images,
                     "resolution": resolution,
                     "seconds": seconds,
                     "seed": seed,
@@ -187,8 +175,7 @@ class VideosResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            ("https://api.together.ai/v2" if not self._client._base_url_overridden else "")
-            + path_template("/videos/{id}", id=id),
+            path_template("/v2/videos/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -221,7 +208,6 @@ class AsyncVideosResource(AsyncAPIResource):
         *,
         model: str,
         fps: int | Omit = omit,
-        frame_images: Iterable[video_create_params.FrameImage] | Omit = omit,
         generate_audio: bool | Omit = omit,
         guidance_scale: int | Omit = omit,
         height: int | Omit = omit,
@@ -231,7 +217,6 @@ class AsyncVideosResource(AsyncAPIResource):
         output_quality: int | Omit = omit,
         prompt: str | Omit = omit,
         ratio: str | Omit = omit,
-        reference_images: SequenceNotStr[str] | Omit = omit,
         resolution: str | Omit = omit,
         seconds: str | Omit = omit,
         seed: int | Omit = omit,
@@ -251,9 +236,6 @@ class AsyncVideosResource(AsyncAPIResource):
           model: The model to be used for the video creation request.
 
           fps: Frames per second. Defaults to 24.
-
-          frame_images: Deprecated: use media.frame_images instead. Array of images to guide video
-              generation, similar to keyframes.
 
           generate_audio: Whether to generate audio for the video.
 
@@ -276,10 +258,6 @@ class AsyncVideosResource(AsyncAPIResource):
 
           ratio: Aspect ratio of the video.
 
-          reference_images: Deprecated: use media.reference_images instead. Unlike frame_images which
-              constrain specific timeline positions, reference images guide the general
-              appearance that should appear consistently across the video.
-
           resolution: Video resolution.
 
           seconds: Clip duration in seconds.
@@ -301,12 +279,11 @@ class AsyncVideosResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/videos" if self._client._base_url_overridden else "https://api.together.ai/v2/videos",
+            "/v2/videos",
             body=await async_maybe_transform(
                 {
                     "model": model,
                     "fps": fps,
-                    "frame_images": frame_images,
                     "generate_audio": generate_audio,
                     "guidance_scale": guidance_scale,
                     "height": height,
@@ -316,7 +293,6 @@ class AsyncVideosResource(AsyncAPIResource):
                     "output_quality": output_quality,
                     "prompt": prompt,
                     "ratio": ratio,
-                    "reference_images": reference_images,
                     "resolution": resolution,
                     "seconds": seconds,
                     "seed": seed,
@@ -359,8 +335,7 @@ class AsyncVideosResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            ("https://api.together.ai/v2" if not self._client._base_url_overridden else "")
-            + path_template("/videos/{id}", id=id),
+            path_template("/v2/videos/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

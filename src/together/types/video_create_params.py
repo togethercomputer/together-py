@@ -9,7 +9,6 @@ from .._types import SequenceNotStr
 
 __all__ = [
     "VideoCreateParams",
-    "FrameImage",
     "Media",
     "MediaAudioInput",
     "MediaAudioInputAudioRef",
@@ -27,12 +26,6 @@ class VideoCreateParams(TypedDict, total=False):
 
     fps: int
     """Frames per second. Defaults to 24."""
-
-    frame_images: Iterable[FrameImage]
-    """Deprecated: use media.frame_images instead.
-
-    Array of images to guide video generation, similar to keyframes.
-    """
 
     generate_audio: bool
     """Whether to generate audio for the video."""
@@ -70,14 +63,6 @@ class VideoCreateParams(TypedDict, total=False):
     ratio: str
     """Aspect ratio of the video."""
 
-    reference_images: SequenceNotStr[str]
-    """Deprecated: use media.reference_images instead.
-
-    Unlike frame_images which constrain specific timeline positions, reference
-    images guide the general appearance that should appear consistently across the
-    video.
-    """
-
     resolution: str
     """Video resolution."""
 
@@ -99,21 +84,6 @@ class VideoCreateParams(TypedDict, total=False):
     """
 
     width: int
-
-
-class FrameImage(TypedDict, total=False):
-    input_image: Required[str]
-    """URL path to hosted image that is used for a frame"""
-
-    frame: Union[float, Literal["first", "last"]]
-    """Optional param to specify where to insert the frame.
-
-    If this is omitted, the following heuristics are applied:
-
-    - frame_images size is one, frame is first.
-    - If size is two, frames are first and last.
-    - If size is larger, frames are first, last and evenly spaced between.
-    """
 
 
 class MediaAudioInputAudioRef(TypedDict, total=False):

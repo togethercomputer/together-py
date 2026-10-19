@@ -90,7 +90,7 @@ class RerankResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/rerank",
+            "/v1/rerank",
             body=maybe_transform(
                 {
                     "documents": documents,
@@ -175,7 +175,7 @@ class AsyncRerankResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/rerank",
+            "/v1/rerank",
             body=await async_maybe_transform(
                 {
                     "documents": documents,

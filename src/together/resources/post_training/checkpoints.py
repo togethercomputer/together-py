@@ -75,7 +75,7 @@ class CheckpointsResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/rl/checkpoints/{id}", id=id),
+            path_template("/v1/rl/checkpoints/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -127,7 +127,7 @@ class CheckpointsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get(
-            "/rl/checkpoints",
+            "/v1/rl/checkpoints",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -182,7 +182,7 @@ class CheckpointsResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/rl/checkpoints/{id}/download", id=id),
+            path_template("/v1/rl/checkpoints/{id}/download", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -243,7 +243,7 @@ class AsyncCheckpointsResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/rl/checkpoints/{id}", id=id),
+            path_template("/v1/rl/checkpoints/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -295,7 +295,7 @@ class AsyncCheckpointsResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._get(
-            "/rl/checkpoints",
+            "/v1/rl/checkpoints",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -350,7 +350,7 @@ class AsyncCheckpointsResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/rl/checkpoints/{id}/download", id=id),
+            path_template("/v1/rl/checkpoints/{id}/download", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,

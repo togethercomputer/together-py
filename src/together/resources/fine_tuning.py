@@ -10,7 +10,6 @@ import httpx
 from rich import print as rprint
 
 from ..types import (
-    fine_tuning_delete_params,
     fine_tuning_content_params,
     fine_tuning_preview_params,
     fine_tuning_list_metrics_params,
@@ -337,7 +336,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/fine-tunes/{id}", id=id),
+            path_template("/v1/fine-tunes/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -360,7 +359,7 @@ class FineTuningResource(SyncAPIResource):
         FinetuneResponseTruncated objects.
         """
         return self._get(
-            "/fine-tunes",
+            "/v1/fine-tunes",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -371,7 +370,6 @@ class FineTuningResource(SyncAPIResource):
         self,
         id: str,
         *,
-        force: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -385,8 +383,6 @@ class FineTuningResource(SyncAPIResource):
         Args:
           id: The ID of the fine-tune job to delete
 
-          force: Deprecated and unused parameter.
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -398,13 +394,9 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._delete(
-            path_template("/fine-tunes/{id}", id=id),
+            path_template("/v1/fine-tunes/{id}", id=id),
             options=make_request_options(
-                extra_headers=extra_headers,
-                extra_query=extra_query,
-                extra_body=extra_body,
-                timeout=timeout,
-                query=maybe_transform({"force": force}, fine_tuning_delete_params.FineTuningDeleteParams),
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=FineTuningDeleteResponse,
         )
@@ -439,7 +431,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._post(
-            path_template("/fine-tunes/{id}/cancel", id=id),
+            path_template("/v1/fine-tunes/{id}/cancel", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -482,7 +474,7 @@ class FineTuningResource(SyncAPIResource):
         """
         extra_headers = {"Accept": "application/octet-stream", **(extra_headers or {})}
         return self._get(
-            "/finetune/download",
+            "/v1/finetune/download",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -554,7 +546,7 @@ class FineTuningResource(SyncAPIResource):
         return cast(
             FineTuningEstimatePriceResponse,
             self._post(
-                "/fine-tunes/estimate-price",
+                "/v1/fine-tunes/estimate-price",
                 body=maybe_transform(
                     {
                         "training_file": training_file,
@@ -605,7 +597,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/fine-tunes/{id}/checkpoints", id=id),
+            path_template("/v1/fine-tunes/{id}/checkpoints", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -640,7 +632,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/fine-tunes/{id}/events", id=id),
+            path_template("/v1/fine-tunes/{id}/events", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -692,7 +684,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/fine-tunes/{id}/metrics", id=id),
+            path_template("/v1/fine-tunes/{id}/metrics", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -738,7 +730,7 @@ class FineTuningResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get(
-            "/fine-tunes/models/limits",
+            "/v1/fine-tunes/models/limits",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -792,7 +784,7 @@ class FineTuningResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/fine-tunes/preview",
+            "/v1/fine-tunes/preview",
             body=maybe_transform(
                 {
                     "model": model,
@@ -838,7 +830,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/fine-tunes/{id}/download-tokenized-dataset", id=id),
+            path_template("/v1/fine-tunes/{id}/download-tokenized-dataset", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1122,7 +1114,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/fine-tunes/{id}", id=id),
+            path_template("/v1/fine-tunes/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1145,7 +1137,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         FinetuneResponseTruncated objects.
         """
         return await self._get(
-            "/fine-tunes",
+            "/v1/fine-tunes",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1156,7 +1148,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
         self,
         id: str,
         *,
-        force: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1170,8 +1161,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
         Args:
           id: The ID of the fine-tune job to delete
 
-          force: Deprecated and unused parameter.
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -1183,13 +1172,9 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._delete(
-            path_template("/fine-tunes/{id}", id=id),
+            path_template("/v1/fine-tunes/{id}", id=id),
             options=make_request_options(
-                extra_headers=extra_headers,
-                extra_query=extra_query,
-                extra_body=extra_body,
-                timeout=timeout,
-                query=await async_maybe_transform({"force": force}, fine_tuning_delete_params.FineTuningDeleteParams),
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=FineTuningDeleteResponse,
         )
@@ -1224,7 +1209,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._post(
-            path_template("/fine-tunes/{id}/cancel", id=id),
+            path_template("/v1/fine-tunes/{id}/cancel", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1267,7 +1252,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         """
         extra_headers = {"Accept": "application/octet-stream", **(extra_headers or {})}
         return await self._get(
-            "/finetune/download",
+            "/v1/finetune/download",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -1339,7 +1324,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         return cast(
             FineTuningEstimatePriceResponse,
             await self._post(
-                "/fine-tunes/estimate-price",
+                "/v1/fine-tunes/estimate-price",
                 body=await async_maybe_transform(
                     {
                         "training_file": training_file,
@@ -1390,7 +1375,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/fine-tunes/{id}/checkpoints", id=id),
+            path_template("/v1/fine-tunes/{id}/checkpoints", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1425,7 +1410,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/fine-tunes/{id}/events", id=id),
+            path_template("/v1/fine-tunes/{id}/events", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1477,7 +1462,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/fine-tunes/{id}/metrics", id=id),
+            path_template("/v1/fine-tunes/{id}/metrics", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -1523,7 +1508,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._get(
-            "/fine-tunes/models/limits",
+            "/v1/fine-tunes/models/limits",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -1577,7 +1562,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/fine-tunes/preview",
+            "/v1/fine-tunes/preview",
             body=await async_maybe_transform(
                 {
                     "model": model,
@@ -1623,7 +1608,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/fine-tunes/{id}/download-tokenized-dataset", id=id),
+            path_template("/v1/fine-tunes/{id}/download-tokenized-dataset", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

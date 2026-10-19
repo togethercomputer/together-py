@@ -54,7 +54,7 @@ class SupportedModelsResource(SyncAPIResource):
         training/sampling operations.
         """
         return self._get(
-            "/rl/supported-models",
+            "/v1/rl/supported-models",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -97,7 +97,7 @@ class AsyncSupportedModelsResource(AsyncAPIResource):
         training/sampling operations.
         """
         return await self._get(
-            "/rl/supported-models",
+            "/v1/rl/supported-models",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

@@ -16,36 +16,8 @@ from .beta import (
     BetaResourceWithStreamingResponse,
     AsyncBetaResourceWithStreamingResponse,
 )
-from .models import (
-    ModelsResource,
-    AsyncModelsResource,
-    ModelsResourceWithRawResponse,
-    AsyncModelsResourceWithRawResponse,
-    ModelsResourceWithStreamingResponse,
-    AsyncModelsResourceWithStreamingResponse,
-)
-from .endpoints import (
-    EndpointsResource,
-    AsyncEndpointsResource,
-    EndpointsResourceWithRawResponse,
-    AsyncEndpointsResourceWithRawResponse,
-    EndpointsResourceWithStreamingResponse,
-    AsyncEndpointsResourceWithStreamingResponse,
-)
 
 __all__ = [
-    "EndpointsResource",
-    "AsyncEndpointsResource",
-    "EndpointsResourceWithRawResponse",
-    "AsyncEndpointsResourceWithRawResponse",
-    "EndpointsResourceWithStreamingResponse",
-    "AsyncEndpointsResourceWithStreamingResponse",
-    "ModelsResource",
-    "AsyncModelsResource",
-    "ModelsResourceWithRawResponse",
-    "AsyncModelsResourceWithRawResponse",
-    "ModelsResourceWithStreamingResponse",
-    "AsyncModelsResourceWithStreamingResponse",
     "JigResource",
     "AsyncJigResource",
     "JigResourceWithRawResponse",

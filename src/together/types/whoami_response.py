@@ -1,34 +1,18 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Optional
+from typing import Union
+from typing_extensions import Annotated, TypeAlias
 
-from .._models import BaseModel
+from .._utils import PropertyInfo
+from .whoami_user_jwt import WhoamiUserJwt
+from .whoami_org_api_key import WhoamiOrgAPIKey
+from .whoami_user_org_jwt import WhoamiUserOrgJwt
+from .whoami_project_api_key import WhoamiProjectAPIKey
+from .whoami_user_org_project_jwt import WhoamiUserOrgProjectJwt
 
 __all__ = ["WhoamiResponse"]
 
-
-class WhoamiResponse(BaseModel):
-    api_key_id: str
-    """The ID of the API key that authenticated the request."""
-
-    organization_id: str
-    """The ID of the organization that owns the project."""
-
-    organization_name: str
-    """Human-readable name of the organization."""
-
-    project_id: str
-    """The ID of the project the API key is scoped to."""
-
-    project_name: str
-    """Human-readable name of the project."""
-
-    project_slug: str
-    """DNS-friendly project identifier.
-
-    Used with an endpoint slug as `<project_slug>/<endpoint_slug>` to form the
-    `model` value in dedicated endpoint inference calls.
-    """
-
-    user_id: Optional[str] = None
-    """The ID of the authenticated user, if available."""
+WhoamiResponse: TypeAlias = Annotated[
+    Union[WhoamiProjectAPIKey, WhoamiOrgAPIKey, WhoamiUserJwt, WhoamiUserOrgJwt, WhoamiUserOrgProjectJwt],
+    PropertyInfo(discriminator="type"),
+]

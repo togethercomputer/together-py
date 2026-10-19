@@ -29,12 +29,6 @@ class TestVideos:
         video = client.videos.create(
             model="model",
             fps=0,
-            frame_images=[
-                {
-                    "input_image": "input_image",
-                    "frame": "first",
-                }
-            ],
             generate_audio=True,
             guidance_scale=0,
             height=0,
@@ -56,7 +50,6 @@ class TestVideos:
             output_quality=0,
             prompt="x",
             ratio="ratio",
-            reference_images=["string"],
             resolution="resolution",
             seconds="seconds",
             seed=0,
@@ -145,12 +138,6 @@ class TestAsyncVideos:
         video = await async_client.videos.create(
             model="model",
             fps=0,
-            frame_images=[
-                {
-                    "input_image": "input_image",
-                    "frame": "first",
-                }
-            ],
             generate_audio=True,
             guidance_scale=0,
             height=0,
@@ -172,7 +159,6 @@ class TestAsyncVideos:
             output_quality=0,
             prompt="x",
             ratio="ratio",
-            reference_images=["string"],
             resolution="resolution",
             seconds="seconds",
             seed=0,

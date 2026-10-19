@@ -51,7 +51,7 @@ class VoicesResource(SyncAPIResource):
     ) -> VoiceListResponse:
         """Fetch available voices for each model"""
         return self._get(
-            "/voices",
+            "/v1/voices",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -91,7 +91,7 @@ class AsyncVoicesResource(AsyncAPIResource):
     ) -> VoiceListResponse:
         """Fetch available voices for each model"""
         return await self._get(
-            "/voices",
+            "/v1/voices",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

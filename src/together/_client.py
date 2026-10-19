@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping, cast
 from typing_extensions import Self, override
 
 import httpx
@@ -66,8 +66,8 @@ if TYPE_CHECKING:
         embeddings,
         completions,
         fine_tuning,
+        organization,
         post_training,
-        code_interpreter,
     )
     from .resources.evals import EvalsResource, AsyncEvalsResource
     from .resources.files import FilesResource, AsyncFilesResource
@@ -85,8 +85,8 @@ if TYPE_CHECKING:
     from .resources.models.models import ModelsResource, AsyncModelsResource
     from .resources.clusters.clusters import ClustersResource, AsyncClustersResource
     from .resources.endpoints.endpoints import EndpointsResource, AsyncEndpointsResource
+    from .resources.organization.organization import OrganizationResource, AsyncOrganizationResource
     from .resources.post_training.post_training import PostTrainingResource, AsyncPostTrainingResource
-    from .resources.code_interpreter.code_interpreter import CodeInterpreterResource, AsyncCodeInterpreterResource
 
 __all__ = [
     "Timeout",
@@ -153,7 +153,7 @@ class Together(SyncAPIClient):
             base_url = os.environ.get("TOGETHER_BASE_URL")
         self._base_url_overridden = base_url is not None
         if base_url is None:
-            base_url = f"https://api.together.ai/v1"
+            base_url = f"https://api.together.ai"
 
         custom_headers_env = os.environ.get("TOGETHER_CUSTOM_HEADERS")
         if custom_headers_env is not None:
@@ -182,6 +182,12 @@ class Together(SyncAPIClient):
         from .resources.beta import BetaResource
 
         return BetaResource(self)
+
+    @cached_property
+    def organization(self) -> OrganizationResource:
+        from .resources.organization import OrganizationResource
+
+        return OrganizationResource(self)
 
     @cached_property
     def post_training(self) -> PostTrainingResource:
@@ -224,12 +230,6 @@ class Together(SyncAPIClient):
         from .resources.fine_tuning import FineTuningResource
 
         return FineTuningResource(self)
-
-    @cached_property
-    def code_interpreter(self) -> CodeInterpreterResource:
-        from .resources.code_interpreter import CodeInterpreterResource
-
-        return CodeInterpreterResource(self)
 
     @cached_property
     def images(self) -> ImagesResource:
@@ -378,21 +378,23 @@ class Together(SyncAPIClient):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> WhoamiResponse:
-        """Returns identity information about the authenticated API key.
+        """Returns identity information for the authenticated caller.
 
-        Useful for
-        confirming which project and organization a key is scoped to, and for obtaining
-        the project slug used to compose the `model` value
-        (`<project_slug>/<endpoint_slug>`) in dedicated endpoint inference calls.
-        Requires a Bearer API key in the `Authorization` header. Cookie, session, and
-        SLS JWT credentials are not accepted.
+        Accepts project API
+        keys and user session JWTs. The response `type` indicates which fields are
+        present. For project-scoped credentials, `project.slug` can be used with an
+        endpoint slug as `<project_slug>/<endpoint_slug>` to form the `model` value in
+        dedicated endpoint inference calls.
         """
-        return self.get(
-            "/whoami",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+        return cast(
+            WhoamiResponse,
+            self.get(
+                "/v3/whoami",
+                options=make_request_options(
+                    extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                ),
+                cast_to=cast(Any, WhoamiResponse),  # Union types cannot be passed in as arguments in the type system
             ),
-            cast_to=WhoamiResponse,
         )
 
     def _get_project_id_path_param(self) -> str:
@@ -491,7 +493,7 @@ class AsyncTogether(AsyncAPIClient):
             base_url = os.environ.get("TOGETHER_BASE_URL")
         self._base_url_overridden = base_url is not None
         if base_url is None:
-            base_url = f"https://api.together.ai/v1"
+            base_url = f"https://api.together.ai"
 
         custom_headers_env = os.environ.get("TOGETHER_CUSTOM_HEADERS")
         if custom_headers_env is not None:
@@ -520,6 +522,12 @@ class AsyncTogether(AsyncAPIClient):
         from .resources.beta import AsyncBetaResource
 
         return AsyncBetaResource(self)
+
+    @cached_property
+    def organization(self) -> AsyncOrganizationResource:
+        from .resources.organization import AsyncOrganizationResource
+
+        return AsyncOrganizationResource(self)
 
     @cached_property
     def post_training(self) -> AsyncPostTrainingResource:
@@ -562,12 +570,6 @@ class AsyncTogether(AsyncAPIClient):
         from .resources.fine_tuning import AsyncFineTuningResource
 
         return AsyncFineTuningResource(self)
-
-    @cached_property
-    def code_interpreter(self) -> AsyncCodeInterpreterResource:
-        from .resources.code_interpreter import AsyncCodeInterpreterResource
-
-        return AsyncCodeInterpreterResource(self)
 
     @cached_property
     def images(self) -> AsyncImagesResource:
@@ -716,21 +718,23 @@ class AsyncTogether(AsyncAPIClient):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> WhoamiResponse:
-        """Returns identity information about the authenticated API key.
+        """Returns identity information for the authenticated caller.
 
-        Useful for
-        confirming which project and organization a key is scoped to, and for obtaining
-        the project slug used to compose the `model` value
-        (`<project_slug>/<endpoint_slug>`) in dedicated endpoint inference calls.
-        Requires a Bearer API key in the `Authorization` header. Cookie, session, and
-        SLS JWT credentials are not accepted.
+        Accepts project API
+        keys and user session JWTs. The response `type` indicates which fields are
+        present. For project-scoped credentials, `project.slug` can be used with an
+        endpoint slug as `<project_slug>/<endpoint_slug>` to form the `model` value in
+        dedicated endpoint inference calls.
         """
-        return await self.get(
-            "/whoami",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+        return cast(
+            WhoamiResponse,
+            await self.get(
+                "/v3/whoami",
+                options=make_request_options(
+                    extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                ),
+                cast_to=cast(Any, WhoamiResponse),  # Union types cannot be passed in as arguments in the type system
             ),
-            cast_to=WhoamiResponse,
         )
 
     def _get_project_id_path_param(self) -> str:
@@ -793,6 +797,12 @@ class TogetherWithRawResponse:
         return BetaResourceWithRawResponse(self._client.beta)
 
     @cached_property
+    def organization(self) -> organization.OrganizationResourceWithRawResponse:
+        from .resources.organization import OrganizationResourceWithRawResponse
+
+        return OrganizationResourceWithRawResponse(self._client.organization)
+
+    @cached_property
     def post_training(self) -> post_training.PostTrainingResourceWithRawResponse:
         from .resources.post_training import PostTrainingResourceWithRawResponse
 
@@ -833,12 +843,6 @@ class TogetherWithRawResponse:
         from .resources.fine_tuning import FineTuningResourceWithRawResponse
 
         return FineTuningResourceWithRawResponse(self._client.fine_tuning)
-
-    @cached_property
-    def code_interpreter(self) -> code_interpreter.CodeInterpreterResourceWithRawResponse:
-        from .resources.code_interpreter import CodeInterpreterResourceWithRawResponse
-
-        return CodeInterpreterResourceWithRawResponse(self._client.code_interpreter)
 
     @cached_property
     def images(self) -> images.ImagesResourceWithRawResponse:
@@ -912,6 +916,12 @@ class AsyncTogetherWithRawResponse:
         return AsyncBetaResourceWithRawResponse(self._client.beta)
 
     @cached_property
+    def organization(self) -> organization.AsyncOrganizationResourceWithRawResponse:
+        from .resources.organization import AsyncOrganizationResourceWithRawResponse
+
+        return AsyncOrganizationResourceWithRawResponse(self._client.organization)
+
+    @cached_property
     def post_training(self) -> post_training.AsyncPostTrainingResourceWithRawResponse:
         from .resources.post_training import AsyncPostTrainingResourceWithRawResponse
 
@@ -952,12 +962,6 @@ class AsyncTogetherWithRawResponse:
         from .resources.fine_tuning import AsyncFineTuningResourceWithRawResponse
 
         return AsyncFineTuningResourceWithRawResponse(self._client.fine_tuning)
-
-    @cached_property
-    def code_interpreter(self) -> code_interpreter.AsyncCodeInterpreterResourceWithRawResponse:
-        from .resources.code_interpreter import AsyncCodeInterpreterResourceWithRawResponse
-
-        return AsyncCodeInterpreterResourceWithRawResponse(self._client.code_interpreter)
 
     @cached_property
     def images(self) -> images.AsyncImagesResourceWithRawResponse:
@@ -1031,6 +1035,12 @@ class TogetherWithStreamedResponse:
         return BetaResourceWithStreamingResponse(self._client.beta)
 
     @cached_property
+    def organization(self) -> organization.OrganizationResourceWithStreamingResponse:
+        from .resources.organization import OrganizationResourceWithStreamingResponse
+
+        return OrganizationResourceWithStreamingResponse(self._client.organization)
+
+    @cached_property
     def post_training(self) -> post_training.PostTrainingResourceWithStreamingResponse:
         from .resources.post_training import PostTrainingResourceWithStreamingResponse
 
@@ -1071,12 +1081,6 @@ class TogetherWithStreamedResponse:
         from .resources.fine_tuning import FineTuningResourceWithStreamingResponse
 
         return FineTuningResourceWithStreamingResponse(self._client.fine_tuning)
-
-    @cached_property
-    def code_interpreter(self) -> code_interpreter.CodeInterpreterResourceWithStreamingResponse:
-        from .resources.code_interpreter import CodeInterpreterResourceWithStreamingResponse
-
-        return CodeInterpreterResourceWithStreamingResponse(self._client.code_interpreter)
 
     @cached_property
     def images(self) -> images.ImagesResourceWithStreamingResponse:
@@ -1150,6 +1154,12 @@ class AsyncTogetherWithStreamedResponse:
         return AsyncBetaResourceWithStreamingResponse(self._client.beta)
 
     @cached_property
+    def organization(self) -> organization.AsyncOrganizationResourceWithStreamingResponse:
+        from .resources.organization import AsyncOrganizationResourceWithStreamingResponse
+
+        return AsyncOrganizationResourceWithStreamingResponse(self._client.organization)
+
+    @cached_property
     def post_training(self) -> post_training.AsyncPostTrainingResourceWithStreamingResponse:
         from .resources.post_training import AsyncPostTrainingResourceWithStreamingResponse
 
@@ -1190,12 +1200,6 @@ class AsyncTogetherWithStreamedResponse:
         from .resources.fine_tuning import AsyncFineTuningResourceWithStreamingResponse
 
         return AsyncFineTuningResourceWithStreamingResponse(self._client.fine_tuning)
-
-    @cached_property
-    def code_interpreter(self) -> code_interpreter.AsyncCodeInterpreterResourceWithStreamingResponse:
-        from .resources.code_interpreter import AsyncCodeInterpreterResourceWithStreamingResponse
-
-        return AsyncCodeInterpreterResourceWithStreamingResponse(self._client.code_interpreter)
 
     @cached_property
     def images(self) -> images.AsyncImagesResourceWithStreamingResponse:

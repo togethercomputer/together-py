@@ -457,13 +457,13 @@ class TestTogether:
     def test_project_id_client_params(self, client: Together) -> None:
         # Test with base client (no custom params)
         with pytest.raises(ValueError, match="Missing project_id argument;"):
-            client.beta.endpoints.create(name="name")
+            client.models.create(base_model_id="baseModelId", name="name", type="type")
 
         client = Together(
             base_url=base_url, api_key=api_key, _strict_response_validation=True, project_id="My Project ID"
         )
         with client as c2:
-            c2.beta.endpoints.create(name="name")
+            c2.models.create(base_model_id="baseModelId", name="name", type="type")
 
     def test_request_extra_json(self, client: Together) -> None:
         request = client._build_request(
@@ -898,7 +898,7 @@ class TestTogether:
     @mock.patch("together._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
     def test_retrying_timeout_errors_doesnt_leak(self, respx_mock: MockRouter, client: Together) -> None:
-        respx_mock.post("/chat/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
+        respx_mock.post("/v1/chat/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
 
         with pytest.raises(APITimeoutError):
             client.chat.completions.with_streaming_response.create(
@@ -916,7 +916,7 @@ class TestTogether:
     @mock.patch("together._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
     def test_retrying_status_errors_doesnt_leak(self, respx_mock: MockRouter, client: Together) -> None:
-        respx_mock.post("/chat/completions").mock(return_value=httpx.Response(500))
+        respx_mock.post("/v1/chat/completions").mock(return_value=httpx.Response(500))
 
         with pytest.raises(APIStatusError):
             client.chat.completions.with_streaming_response.create(
@@ -954,7 +954,7 @@ class TestTogether:
                 return httpx.Response(500)
             return httpx.Response(200)
 
-        respx_mock.post("/chat/completions").mock(side_effect=retry_handler)
+        respx_mock.post("/v1/chat/completions").mock(side_effect=retry_handler)
 
         response = client.chat.completions.with_raw_response.create(
             messages=[
@@ -986,7 +986,7 @@ class TestTogether:
                 return httpx.Response(500)
             return httpx.Response(200)
 
-        respx_mock.post("/chat/completions").mock(side_effect=retry_handler)
+        respx_mock.post("/v1/chat/completions").mock(side_effect=retry_handler)
 
         response = client.chat.completions.with_raw_response.create(
             messages=[
@@ -1018,7 +1018,7 @@ class TestTogether:
                 return httpx.Response(500)
             return httpx.Response(200)
 
-        respx_mock.post("/chat/completions").mock(side_effect=retry_handler)
+        respx_mock.post("/v1/chat/completions").mock(side_effect=retry_handler)
 
         response = client.chat.completions.with_raw_response.create(
             messages=[
@@ -1436,13 +1436,13 @@ class TestAsyncTogether:
     async def test_project_id_client_params(self, async_client: AsyncTogether) -> None:
         # Test with base client (no custom params)
         with pytest.raises(ValueError, match="Missing project_id argument;"):
-            await async_client.beta.endpoints.create(name="name")
+            await async_client.models.create(base_model_id="baseModelId", name="name", type="type")
 
         client = AsyncTogether(
             base_url=base_url, api_key=api_key, _strict_response_validation=True, project_id="My Project ID"
         )
         async with client as c2:
-            await c2.beta.endpoints.create(name="name")
+            await c2.models.create(base_model_id="baseModelId", name="name", type="type")
 
     def test_request_extra_json(self, client: Together) -> None:
         request = client._build_request(
@@ -1894,7 +1894,7 @@ class TestAsyncTogether:
     async def test_retrying_timeout_errors_doesnt_leak(
         self, respx_mock: MockRouter, async_client: AsyncTogether
     ) -> None:
-        respx_mock.post("/chat/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
+        respx_mock.post("/v1/chat/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
 
         with pytest.raises(APITimeoutError):
             await async_client.chat.completions.with_streaming_response.create(
@@ -1914,7 +1914,7 @@ class TestAsyncTogether:
     async def test_retrying_status_errors_doesnt_leak(
         self, respx_mock: MockRouter, async_client: AsyncTogether
     ) -> None:
-        respx_mock.post("/chat/completions").mock(return_value=httpx.Response(500))
+        respx_mock.post("/v1/chat/completions").mock(return_value=httpx.Response(500))
 
         with pytest.raises(APIStatusError):
             await async_client.chat.completions.with_streaming_response.create(
@@ -1952,7 +1952,7 @@ class TestAsyncTogether:
                 return httpx.Response(500)
             return httpx.Response(200)
 
-        respx_mock.post("/chat/completions").mock(side_effect=retry_handler)
+        respx_mock.post("/v1/chat/completions").mock(side_effect=retry_handler)
 
         response = await client.chat.completions.with_raw_response.create(
             messages=[
@@ -1984,7 +1984,7 @@ class TestAsyncTogether:
                 return httpx.Response(500)
             return httpx.Response(200)
 
-        respx_mock.post("/chat/completions").mock(side_effect=retry_handler)
+        respx_mock.post("/v1/chat/completions").mock(side_effect=retry_handler)
 
         response = await client.chat.completions.with_raw_response.create(
             messages=[
@@ -2016,7 +2016,7 @@ class TestAsyncTogether:
                 return httpx.Response(500)
             return httpx.Response(200)
 
-        respx_mock.post("/chat/completions").mock(side_effect=retry_handler)
+        respx_mock.post("/v1/chat/completions").mock(side_effect=retry_handler)
 
         response = await client.chat.completions.with_raw_response.create(
             messages=[

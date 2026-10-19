@@ -420,7 +420,7 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Completion | Stream[CompletionChunk]:
         return self._post(
-            "/completions",
+            "/v1/completions",
             body=maybe_transform(
                 {
                     "model": model,
@@ -849,7 +849,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Completion | AsyncStream[CompletionChunk]:
         return await self._post(
-            "/completions",
+            "/v1/completions",
             body=await async_maybe_transform(
                 {
                     "model": model,

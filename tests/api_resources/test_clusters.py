@@ -69,7 +69,6 @@ class TestClusters:
             ],
             auto_scale=True,
             auto_scale_max_gpus=0,
-            auto_scaled=True,
             capacity_pool_id="capacity_pool_id",
             cluster_config={
                 "load_balancer": "NONE",
@@ -206,7 +205,6 @@ class TestClusters:
             ],
             auto_scale=True,
             auto_scale_max_gpus=0,
-            auto_scaled=True,
             capacity_pool_id="capacity_pool_id",
             cluster_config={
                 "load_balancer": "NONE",
@@ -563,7 +561,6 @@ class TestAsyncClusters:
             ],
             auto_scale=True,
             auto_scale_max_gpus=0,
-            auto_scaled=True,
             capacity_pool_id="capacity_pool_id",
             cluster_config={
                 "load_balancer": "NONE",
@@ -700,7 +697,6 @@ class TestAsyncClusters:
             ],
             auto_scale=True,
             auto_scale_max_gpus=0,
-            auto_scaled=True,
             capacity_pool_id="capacity_pool_id",
             cluster_config={
                 "load_balancer": "NONE",

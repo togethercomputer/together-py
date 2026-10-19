@@ -91,7 +91,7 @@ class ModelResourcesResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/rl/model-resources",
+            "/v1/rl/model-resources",
             body=maybe_transform(
                 {
                     "base_model": base_model,
@@ -136,7 +136,7 @@ class ModelResourcesResource(SyncAPIResource):
         if not model_resources_id:
             raise ValueError(f"Expected a non-empty value for `model_resources_id` but received {model_resources_id!r}")
         return self._get(
-            path_template("/rl/model-resources/{model_resources_id}", model_resources_id=model_resources_id),
+            path_template("/v1/rl/model-resources/{model_resources_id}", model_resources_id=model_resources_id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -189,7 +189,7 @@ class ModelResourcesResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get(
-            "/rl/model-resources",
+            "/v1/rl/model-resources",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -247,7 +247,7 @@ class ModelResourcesResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/rl/model-resources/estimate-cost",
+            "/v1/rl/model-resources/estimate-cost",
             body=maybe_transform(
                 {
                     "base_model": base_model,
@@ -299,7 +299,7 @@ class ModelResourcesResource(SyncAPIResource):
         if not model_resources_id:
             raise ValueError(f"Expected a non-empty value for `model_resources_id` but received {model_resources_id!r}")
         return self._post(
-            path_template("/rl/model-resources/{model_resources_id}/stop", model_resources_id=model_resources_id),
+            path_template("/v1/rl/model-resources/{model_resources_id}/stop", model_resources_id=model_resources_id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -370,7 +370,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/rl/model-resources",
+            "/v1/rl/model-resources",
             body=await async_maybe_transform(
                 {
                     "base_model": base_model,
@@ -415,7 +415,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         if not model_resources_id:
             raise ValueError(f"Expected a non-empty value for `model_resources_id` but received {model_resources_id!r}")
         return await self._get(
-            path_template("/rl/model-resources/{model_resources_id}", model_resources_id=model_resources_id),
+            path_template("/v1/rl/model-resources/{model_resources_id}", model_resources_id=model_resources_id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -468,7 +468,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._get(
-            "/rl/model-resources",
+            "/v1/rl/model-resources",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -526,7 +526,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/rl/model-resources/estimate-cost",
+            "/v1/rl/model-resources/estimate-cost",
             body=await async_maybe_transform(
                 {
                     "base_model": base_model,
@@ -578,7 +578,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         if not model_resources_id:
             raise ValueError(f"Expected a non-empty value for `model_resources_id` but received {model_resources_id!r}")
         return await self._post(
-            path_template("/rl/model-resources/{model_resources_id}/stop", model_resources_id=model_resources_id),
+            path_template("/v1/rl/model-resources/{model_resources_id}/stop", model_resources_id=model_resources_id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,

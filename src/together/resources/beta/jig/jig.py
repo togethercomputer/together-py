@@ -118,7 +118,7 @@ class JigResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/deployments/{id}", id=id),
+            path_template("/v1/deployments/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -227,7 +227,7 @@ class JigResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._patch(
-            path_template("/deployments/{id}", id=id),
+            path_template("/v1/deployments/{id}", id=id),
             body=maybe_transform(
                 {
                     "args": args,
@@ -271,7 +271,7 @@ class JigResource(SyncAPIResource):
     ) -> JigListResponse:
         """Get a list of all deployments in your project"""
         return self._get(
-            "/deployments",
+            "/v1/deployments",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -381,7 +381,7 @@ class JigResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/deployments",
+            "/v1/deployments",
             body=maybe_transform(
                 {
                     "gpu_type": gpu_type,
@@ -441,7 +441,7 @@ class JigResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._delete(
-            path_template("/deployments/{id}", id=id),
+            path_template("/v1/deployments/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -486,7 +486,7 @@ class JigResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/deployments/{id}/revisions", id=id),
+            path_template("/v1/deployments/{id}/revisions", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -541,7 +541,7 @@ class JigResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/deployments/{id}/logs", id=id),
+            path_template("/v1/deployments/{id}/logs", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -599,7 +599,7 @@ class JigResource(SyncAPIResource):
             )
         return self._get(
             path_template(
-                "/deployments/{id}/revisions/{revision_identifier}", id=id, revision_identifier=revision_identifier
+                "/v1/deployments/{id}/revisions/{revision_identifier}", id=id, revision_identifier=revision_identifier
             ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -642,7 +642,7 @@ class JigResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._post(
-            path_template("/deployments/{id}/rollback", id=id),
+            path_template("/v1/deployments/{id}/rollback", id=id),
             body=maybe_transform({"revision_identifier": revision_identifier}, jig_rollback_params.JigRollbackParams),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -711,7 +711,7 @@ class AsyncJigResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/deployments/{id}", id=id),
+            path_template("/v1/deployments/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -820,7 +820,7 @@ class AsyncJigResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._patch(
-            path_template("/deployments/{id}", id=id),
+            path_template("/v1/deployments/{id}", id=id),
             body=await async_maybe_transform(
                 {
                     "args": args,
@@ -864,7 +864,7 @@ class AsyncJigResource(AsyncAPIResource):
     ) -> JigListResponse:
         """Get a list of all deployments in your project"""
         return await self._get(
-            "/deployments",
+            "/v1/deployments",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -974,7 +974,7 @@ class AsyncJigResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/deployments",
+            "/v1/deployments",
             body=await async_maybe_transform(
                 {
                     "gpu_type": gpu_type,
@@ -1034,7 +1034,7 @@ class AsyncJigResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._delete(
-            path_template("/deployments/{id}", id=id),
+            path_template("/v1/deployments/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1079,7 +1079,7 @@ class AsyncJigResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/deployments/{id}/revisions", id=id),
+            path_template("/v1/deployments/{id}/revisions", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -1134,7 +1134,7 @@ class AsyncJigResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/deployments/{id}/logs", id=id),
+            path_template("/v1/deployments/{id}/logs", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -1192,7 +1192,7 @@ class AsyncJigResource(AsyncAPIResource):
             )
         return await self._get(
             path_template(
-                "/deployments/{id}/revisions/{revision_identifier}", id=id, revision_identifier=revision_identifier
+                "/v1/deployments/{id}/revisions/{revision_identifier}", id=id, revision_identifier=revision_identifier
             ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -1235,7 +1235,7 @@ class AsyncJigResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._post(
-            path_template("/deployments/{id}/rollback", id=id),
+            path_template("/v1/deployments/{id}/rollback", id=id),
             body=await async_maybe_transform(
                 {"revision_identifier": revision_identifier}, jig_rollback_params.JigRollbackParams
             ),

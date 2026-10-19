@@ -104,22 +104,14 @@ class TestFineTuning:
     @parametrize
     def test_method_delete(self, client: Together) -> None:
         fine_tuning = client.fine_tuning.delete(
-            id="id",
-        )
-        assert_matches_type(FineTuningDeleteResponse, fine_tuning, path=["response"])
-
-    @parametrize
-    def test_method_delete_with_all_params(self, client: Together) -> None:
-        fine_tuning = client.fine_tuning.delete(
-            id="id",
-            force=True,
+            "id",
         )
         assert_matches_type(FineTuningDeleteResponse, fine_tuning, path=["response"])
 
     @parametrize
     def test_raw_response_delete(self, client: Together) -> None:
         response = client.fine_tuning.with_raw_response.delete(
-            id="id",
+            "id",
         )
 
         assert response.is_closed is True
@@ -130,7 +122,7 @@ class TestFineTuning:
     @parametrize
     def test_streaming_response_delete(self, client: Together) -> None:
         with client.fine_tuning.with_streaming_response.delete(
-            id="id",
+            "id",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -144,7 +136,7 @@ class TestFineTuning:
     def test_path_params_delete(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             client.fine_tuning.with_raw_response.delete(
-                id="",
+                "",
             )
 
     @parametrize
@@ -188,7 +180,7 @@ class TestFineTuning:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_content(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         fine_tuning = client.fine_tuning.content(
             ft_id="ft_id",
         )
@@ -200,7 +192,7 @@ class TestFineTuning:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_content_with_all_params(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         fine_tuning = client.fine_tuning.content(
             ft_id="ft_id",
             checkpoint="merged",
@@ -214,7 +206,7 @@ class TestFineTuning:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_raw_response_content(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
         fine_tuning = client.fine_tuning.with_raw_response.content(
             ft_id="ft_id",
@@ -228,7 +220,7 @@ class TestFineTuning:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_streaming_response_content(self, client: Together, respx_mock: MockRouter) -> None:
-        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         with client.fine_tuning.with_streaming_response.content(
             ft_id="ft_id",
         ) as fine_tuning:
@@ -601,22 +593,14 @@ class TestAsyncFineTuning:
     @parametrize
     async def test_method_delete(self, async_client: AsyncTogether) -> None:
         fine_tuning = await async_client.fine_tuning.delete(
-            id="id",
-        )
-        assert_matches_type(FineTuningDeleteResponse, fine_tuning, path=["response"])
-
-    @parametrize
-    async def test_method_delete_with_all_params(self, async_client: AsyncTogether) -> None:
-        fine_tuning = await async_client.fine_tuning.delete(
-            id="id",
-            force=True,
+            "id",
         )
         assert_matches_type(FineTuningDeleteResponse, fine_tuning, path=["response"])
 
     @parametrize
     async def test_raw_response_delete(self, async_client: AsyncTogether) -> None:
         response = await async_client.fine_tuning.with_raw_response.delete(
-            id="id",
+            "id",
         )
 
         assert response.is_closed is True
@@ -627,7 +611,7 @@ class TestAsyncFineTuning:
     @parametrize
     async def test_streaming_response_delete(self, async_client: AsyncTogether) -> None:
         async with async_client.fine_tuning.with_streaming_response.delete(
-            id="id",
+            "id",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -641,7 +625,7 @@ class TestAsyncFineTuning:
     async def test_path_params_delete(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.fine_tuning.with_raw_response.delete(
-                id="",
+                "",
             )
 
     @parametrize
@@ -685,7 +669,7 @@ class TestAsyncFineTuning:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_method_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         fine_tuning = await async_client.fine_tuning.content(
             ft_id="ft_id",
         )
@@ -697,7 +681,7 @@ class TestAsyncFineTuning:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_method_content_with_all_params(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         fine_tuning = await async_client.fine_tuning.content(
             ft_id="ft_id",
             checkpoint="merged",
@@ -711,7 +695,7 @@ class TestAsyncFineTuning:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_raw_response_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
         fine_tuning = await async_client.fine_tuning.with_raw_response.content(
             ft_id="ft_id",
@@ -725,7 +709,7 @@ class TestAsyncFineTuning:
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_streaming_response_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
-        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+        respx_mock.get("/v1/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         async with async_client.fine_tuning.with_streaming_response.content(
             ft_id="ft_id",
         ) as fine_tuning:

@@ -100,7 +100,9 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/inference-checkpoint", session_id=session_id),
+            path_template(
+                "/v1/rl/training-sessions/{session_id}/operations/inference-checkpoint", session_id=session_id
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -141,7 +143,9 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/training-checkpoint", session_id=session_id),
+            path_template(
+                "/v1/rl/training-sessions/{session_id}/operations/training-checkpoint", session_id=session_id
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -189,7 +193,7 @@ class OperationsResource(SyncAPIResource):
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/custom-forward-backward", session_id=session_id
+                "/v1/rl/training-sessions/{session_id}/operations/custom-forward-backward", session_id=session_id
             ),
             body=maybe_transform(
                 {
@@ -256,7 +260,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/forward-backward", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}/operations/forward-backward", session_id=session_id),
             body=maybe_transform(
                 {
                     "loss": loss,
@@ -314,7 +318,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/optim-step", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}/operations/optim-step", session_id=session_id),
             body=maybe_transform(
                 {
                     "adam_params": adam_params,
@@ -362,7 +366,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/custom-forward-backward/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/custom-forward-backward/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -406,7 +410,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/forward-backward/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/forward-backward/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -450,7 +454,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/inference-checkpoint/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/inference-checkpoint/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -494,7 +498,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/optim-step/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/optim-step/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -538,7 +542,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/sample/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/sample/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -582,7 +586,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/training-checkpoint/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/training-checkpoint/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -626,7 +630,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/weights-sync/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/weights-sync/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -693,7 +697,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/sample", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}/operations/sample", session_id=session_id),
             body=maybe_transform(
                 {
                     "model_inputs": model_inputs,
@@ -750,7 +754,7 @@ class OperationsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/weights-sync", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}/operations/weights-sync", session_id=session_id),
             body=maybe_transform(
                 {"weight_sync_type": weight_sync_type}, operation_weights_sync_params.OperationWeightsSyncParams
             ),
@@ -815,7 +819,9 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/inference-checkpoint", session_id=session_id),
+            path_template(
+                "/v1/rl/training-sessions/{session_id}/operations/inference-checkpoint", session_id=session_id
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -856,7 +862,9 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/training-checkpoint", session_id=session_id),
+            path_template(
+                "/v1/rl/training-sessions/{session_id}/operations/training-checkpoint", session_id=session_id
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -904,7 +912,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/custom-forward-backward", session_id=session_id
+                "/v1/rl/training-sessions/{session_id}/operations/custom-forward-backward", session_id=session_id
             ),
             body=await async_maybe_transform(
                 {
@@ -971,7 +979,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/forward-backward", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}/operations/forward-backward", session_id=session_id),
             body=await async_maybe_transform(
                 {
                     "loss": loss,
@@ -1029,7 +1037,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/optim-step", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}/operations/optim-step", session_id=session_id),
             body=await async_maybe_transform(
                 {
                     "adam_params": adam_params,
@@ -1077,7 +1085,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return await self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/custom-forward-backward/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/custom-forward-backward/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -1121,7 +1129,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return await self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/forward-backward/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/forward-backward/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -1165,7 +1173,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return await self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/inference-checkpoint/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/inference-checkpoint/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -1209,7 +1217,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return await self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/optim-step/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/optim-step/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -1253,7 +1261,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return await self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/sample/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/sample/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -1297,7 +1305,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return await self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/training-checkpoint/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/training-checkpoint/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -1341,7 +1349,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
         return await self._get(
             path_template(
-                "/rl/training-sessions/{session_id}/operations/weights-sync/{operation_id}",
+                "/v1/rl/training-sessions/{session_id}/operations/weights-sync/{operation_id}",
                 session_id=session_id,
                 operation_id=operation_id,
             ),
@@ -1408,7 +1416,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/sample", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}/operations/sample", session_id=session_id),
             body=await async_maybe_transform(
                 {
                     "model_inputs": model_inputs,
@@ -1465,7 +1473,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/weights-sync", session_id=session_id),
+            path_template("/v1/rl/training-sessions/{session_id}/operations/weights-sync", session_id=session_id),
             body=await async_maybe_transform(
                 {"weight_sync_type": weight_sync_type}, operation_weights_sync_params.OperationWeightsSyncParams
             ),

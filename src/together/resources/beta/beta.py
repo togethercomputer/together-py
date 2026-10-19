@@ -14,22 +14,6 @@ from .jig.jig import (
 )
 from ..._compat import cached_property
 from ..._resource import SyncAPIResource, AsyncAPIResource
-from .models.models import (
-    ModelsResource,
-    AsyncModelsResource,
-    ModelsResourceWithRawResponse,
-    AsyncModelsResourceWithRawResponse,
-    ModelsResourceWithStreamingResponse,
-    AsyncModelsResourceWithStreamingResponse,
-)
-from .endpoints.endpoints import (
-    EndpointsResource,
-    AsyncEndpointsResource,
-    EndpointsResourceWithRawResponse,
-    AsyncEndpointsResourceWithRawResponse,
-    EndpointsResourceWithStreamingResponse,
-    AsyncEndpointsResourceWithStreamingResponse,
-)
 
 if TYPE_CHECKING:
     from ..clusters import ClustersResource, AsyncClustersResource
@@ -39,14 +23,6 @@ __all__ = ["BetaResource", "AsyncBetaResource"]
 
 
 class BetaResource(SyncAPIResource):
-    @cached_property
-    def endpoints(self) -> EndpointsResource:
-        return EndpointsResource(self._client)
-
-    @cached_property
-    def models(self) -> ModelsResource:
-        return ModelsResource(self._client)
-
     @cached_property
     def jig(self) -> JigResource:
         return JigResource(self._client)
@@ -88,14 +64,6 @@ class BetaResource(SyncAPIResource):
 
 
 class AsyncBetaResource(AsyncAPIResource):
-    @cached_property
-    def endpoints(self) -> AsyncEndpointsResource:
-        return AsyncEndpointsResource(self._client)
-
-    @cached_property
-    def models(self) -> AsyncModelsResource:
-        return AsyncModelsResource(self._client)
-
     @cached_property
     def jig(self) -> AsyncJigResource:
         return AsyncJigResource(self._client)
@@ -141,14 +109,6 @@ class BetaResourceWithRawResponse:
         self._beta = beta
 
     @cached_property
-    def endpoints(self) -> EndpointsResourceWithRawResponse:
-        return EndpointsResourceWithRawResponse(self._beta.endpoints)
-
-    @cached_property
-    def models(self) -> ModelsResourceWithRawResponse:
-        return ModelsResourceWithRawResponse(self._beta.models)
-
-    @cached_property
     def jig(self) -> JigResourceWithRawResponse:
         return JigResourceWithRawResponse(self._beta.jig)
 
@@ -156,14 +116,6 @@ class BetaResourceWithRawResponse:
 class AsyncBetaResourceWithRawResponse:
     def __init__(self, beta: AsyncBetaResource) -> None:
         self._beta = beta
-
-    @cached_property
-    def endpoints(self) -> AsyncEndpointsResourceWithRawResponse:
-        return AsyncEndpointsResourceWithRawResponse(self._beta.endpoints)
-
-    @cached_property
-    def models(self) -> AsyncModelsResourceWithRawResponse:
-        return AsyncModelsResourceWithRawResponse(self._beta.models)
 
     @cached_property
     def jig(self) -> AsyncJigResourceWithRawResponse:
@@ -175,14 +127,6 @@ class BetaResourceWithStreamingResponse:
         self._beta = beta
 
     @cached_property
-    def endpoints(self) -> EndpointsResourceWithStreamingResponse:
-        return EndpointsResourceWithStreamingResponse(self._beta.endpoints)
-
-    @cached_property
-    def models(self) -> ModelsResourceWithStreamingResponse:
-        return ModelsResourceWithStreamingResponse(self._beta.models)
-
-    @cached_property
     def jig(self) -> JigResourceWithStreamingResponse:
         return JigResourceWithStreamingResponse(self._beta.jig)
 
@@ -190,14 +134,6 @@ class BetaResourceWithStreamingResponse:
 class AsyncBetaResourceWithStreamingResponse:
     def __init__(self, beta: AsyncBetaResource) -> None:
         self._beta = beta
-
-    @cached_property
-    def endpoints(self) -> AsyncEndpointsResourceWithStreamingResponse:
-        return AsyncEndpointsResourceWithStreamingResponse(self._beta.endpoints)
-
-    @cached_property
-    def models(self) -> AsyncModelsResourceWithStreamingResponse:
-        return AsyncModelsResourceWithStreamingResponse(self._beta.models)
 
     @cached_property
     def jig(self) -> AsyncJigResourceWithStreamingResponse:

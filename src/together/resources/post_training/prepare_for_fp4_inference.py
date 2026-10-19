@@ -82,7 +82,7 @@ class PrepareForFp4InferenceResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/shaping/prepare-for-fp4-inference",
+            "/v1/shaping/prepare-for-fp4-inference",
             body=maybe_transform(
                 {"inputs": inputs}, prepare_for_fp4_inference_create_params.PrepareForFp4InferenceCreateParams
             ),
@@ -120,7 +120,7 @@ class PrepareForFp4InferenceResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/shaping/{id}", id=id),
+            path_template("/v1/shaping/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -139,7 +139,7 @@ class PrepareForFp4InferenceResource(SyncAPIResource):
     ) -> PrepareForFp4InferenceListResponse:
         """List shaping jobs owned by the caller's project."""
         return self._get(
-            "/shaping",
+            "/v1/shaping",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -174,7 +174,7 @@ class PrepareForFp4InferenceResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._post(
-            path_template("/shaping/{id}/cancel", id=id),
+            path_template("/v1/shaping/{id}/cancel", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -210,7 +210,7 @@ class PrepareForFp4InferenceResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/shaping/prepare-for-fp4-inference/estimate",
+            "/v1/shaping/prepare-for-fp4-inference/estimate",
             body=maybe_transform(
                 {"inputs": inputs},
                 prepare_for_fp4_inference_estimate_cost_params.PrepareForFp4InferenceEstimateCostParams,
@@ -249,7 +249,7 @@ class PrepareForFp4InferenceResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            path_template("/shaping/{id}/events", id=id),
+            path_template("/v1/shaping/{id}/events", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -310,7 +310,7 @@ class AsyncPrepareForFp4InferenceResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/shaping/prepare-for-fp4-inference",
+            "/v1/shaping/prepare-for-fp4-inference",
             body=await async_maybe_transform(
                 {"inputs": inputs}, prepare_for_fp4_inference_create_params.PrepareForFp4InferenceCreateParams
             ),
@@ -348,7 +348,7 @@ class AsyncPrepareForFp4InferenceResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/shaping/{id}", id=id),
+            path_template("/v1/shaping/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -367,7 +367,7 @@ class AsyncPrepareForFp4InferenceResource(AsyncAPIResource):
     ) -> PrepareForFp4InferenceListResponse:
         """List shaping jobs owned by the caller's project."""
         return await self._get(
-            "/shaping",
+            "/v1/shaping",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -402,7 +402,7 @@ class AsyncPrepareForFp4InferenceResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._post(
-            path_template("/shaping/{id}/cancel", id=id),
+            path_template("/v1/shaping/{id}/cancel", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -438,7 +438,7 @@ class AsyncPrepareForFp4InferenceResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/shaping/prepare-for-fp4-inference/estimate",
+            "/v1/shaping/prepare-for-fp4-inference/estimate",
             body=await async_maybe_transform(
                 {"inputs": inputs},
                 prepare_for_fp4_inference_estimate_cost_params.PrepareForFp4InferenceEstimateCostParams,
@@ -477,7 +477,7 @@ class AsyncPrepareForFp4InferenceResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            path_template("/shaping/{id}/events", id=id),
+            path_template("/v1/shaping/{id}/events", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

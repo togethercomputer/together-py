@@ -84,9 +84,6 @@ class FileResponse(BaseModel):
     object: Literal["file"]
     """The object type, which is always `file`."""
 
-    processed: bool = FieldInfo(alias="Processed")
-    """Deprecated. Whether file has been fully uploaded."""
-
     purpose: FilePurpose
     """The purpose of the file as it was uploaded."""
 
