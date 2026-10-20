@@ -38,10 +38,6 @@ def _noop_track(_response: object) -> None:
     return None
 
 
-def _fail_deployed(*_args: object, **_kwargs: object) -> None:
-    pytest.fail("deployed")
-
-
 def _fail_secret(*_args: object, **_kwargs: object) -> None:
     pytest.fail("stored a secret")
 
