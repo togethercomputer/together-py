@@ -368,12 +368,19 @@ Types:
 ```python
 from together.types.chat import (
     ChatCompletion,
+    ChatCompletionAssistantMessageParam,
     ChatCompletionChunk,
+    ChatCompletionMessage,
+    ChatCompletionMessageParam,
     ChatCompletionPrompt,
     ChatCompletionStructuredMessageImageURL,
     ChatCompletionStructuredMessageText,
     ChatCompletionStructuredMessageVideoURL,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionTool,
+    ChatCompletionToolMessageParam,
     ChatCompletionUsage,
+    ChatCompletionUserMessageParam,
     ChatCompletionWarning,
 )
 ```

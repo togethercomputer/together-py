@@ -23,6 +23,7 @@ from ..._base_client import make_request_options
 from ...types.tools_param import ToolsParam
 from ...types.chat.chat_completion import ChatCompletion
 from ...types.chat.chat_completion_chunk import ChatCompletionChunk
+from ...types.chat.chat_completion_message_param import ChatCompletionMessageParam
 
 __all__ = ["CompletionsResource", "AsyncCompletionsResource"]
 
@@ -51,7 +52,7 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
-        messages: Iterable[completion_create_params.Message],
+        messages: Iterable[ChatCompletionMessageParam],
         model: str,
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
@@ -196,7 +197,7 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
-        messages: Iterable[completion_create_params.Message],
+        messages: Iterable[ChatCompletionMessageParam],
         model: str,
         stream: Literal[True],
         chat_template_kwargs: object | Omit = omit,
@@ -341,7 +342,7 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
-        messages: Iterable[completion_create_params.Message],
+        messages: Iterable[ChatCompletionMessageParam],
         model: str,
         stream: bool,
         chat_template_kwargs: object | Omit = omit,
@@ -486,7 +487,7 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
-        messages: Iterable[completion_create_params.Message],
+        messages: Iterable[ChatCompletionMessageParam],
         model: str,
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
@@ -591,7 +592,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        messages: Iterable[completion_create_params.Message],
+        messages: Iterable[ChatCompletionMessageParam],
         model: str,
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
@@ -736,7 +737,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        messages: Iterable[completion_create_params.Message],
+        messages: Iterable[ChatCompletionMessageParam],
         model: str,
         stream: Literal[True],
         chat_template_kwargs: object | Omit = omit,
@@ -881,7 +882,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        messages: Iterable[completion_create_params.Message],
+        messages: Iterable[ChatCompletionMessageParam],
         model: str,
         stream: bool,
         chat_template_kwargs: object | Omit = omit,
@@ -1026,7 +1027,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        messages: Iterable[completion_create_params.Message],
+        messages: Iterable[ChatCompletionMessageParam],
         model: str,
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,

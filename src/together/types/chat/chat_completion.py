@@ -5,24 +5,12 @@ from typing_extensions import Literal
 
 from ..._models import BaseModel
 from ..log_probs import LogProbs
-from ..tool_choice import ToolChoice
 from .chat_completion_usage import ChatCompletionUsage
 from .chat_completion_prompt import ChatCompletionPrompt
+from .chat_completion_message import ChatCompletionMessage
 from .chat_completion_warning import ChatCompletionWarning
 
-__all__ = ["ChatCompletion", "Choice", "ChoiceMessage"]
-
-
-class ChoiceMessage(BaseModel):
-    content: Optional[str] = None
-
-    role: Literal["assistant"]
-
-    reasoning: Optional[str] = None
-
-    reasoning_content: Optional[str] = None
-
-    tool_calls: Optional[List[ToolChoice]] = None
+__all__ = ["ChatCompletion", "Choice"]
 
 
 class Choice(BaseModel):
@@ -32,7 +20,7 @@ class Choice(BaseModel):
 
     logprobs: Optional[LogProbs] = None
 
-    message: Optional[ChoiceMessage] = None
+    message: Optional[ChatCompletionMessage] = None
 
     seed: Optional[int] = None
 
