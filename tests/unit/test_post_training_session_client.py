@@ -34,15 +34,17 @@ from together.post_training import (
     ForwardBackwardResult,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
+    _losses as rl_losses,
+    _payloads as rl_payloads_module,
+    _operations as rl_ops,
 )
-from together.lib.post_training import _losses as rl_losses, _payloads as rl_payloads_module, _operations as rl_ops
 from tests.unit.post_training_wait import patch_wait
-from tests.unit._post_training_fakes import FakeClient
-from together.lib.post_training.clients import (
+from together.post_training.clients import (
     session as session_client_module,
     trainer as trainer_module,
     generator as generator_module,
 )
+from tests.unit._post_training_fakes import FakeClient
 from together.types.post_training.tensor_data import TensorData as TensorDataModel
 from together.types.post_training.loss_fn_output import LossFnOutput
 from together.types.post_training.sample_operation import SampleOperation

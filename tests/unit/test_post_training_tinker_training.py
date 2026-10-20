@@ -12,9 +12,9 @@ pytest.importorskip("tinker")
 
 from tinker import types
 
-from together.post_training import WeightSyncType, tinker as tinker_compat
-from together.lib.post_training import _operations as rl_ops
+from together.post_training import WeightSyncType, tinker as tinker_compat, _operations as rl_ops
 from tests.unit.post_training_wait import patch_wait
+from together.post_training.tinker import _training
 from tests.unit._post_training_tinker import (
     _OPERATION,
     _WEIGHTS_SYNC_OUTPUT,
@@ -25,7 +25,6 @@ from tests.unit._post_training_tinker import (
     _training_client,
     _session_with_operations,
 )
-from together.lib.post_training.tinker import _training
 
 
 def _scored_output(*logprobs: list[float]) -> dict[str, Any]:

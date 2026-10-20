@@ -32,8 +32,8 @@ from together.post_training import (
     ForwardBackwardResult,
 )
 from tests.unit.post_training_wait import patch_wait
+from together.post_training._arrays import coerce_sample, coerce_gradient, coerce_model_input
 from tests.unit._post_training_fakes import FakeClient
-from together.lib.post_training._arrays import coerce_sample, coerce_gradient, coerce_model_input
 
 
 @pytest.fixture

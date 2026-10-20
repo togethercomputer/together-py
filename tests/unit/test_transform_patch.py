@@ -15,10 +15,10 @@ from typing_extensions import Required, Annotated, TypedDict
 
 import pytest
 
-from together.lib import _transform_patch
 from together._types import SequenceNotStr
 from together._utils import PropertyInfo, transform, _transform, async_transform
 from together._models import BaseModel
+from together.post_training import _transform_patch
 
 parametrize = pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
 
