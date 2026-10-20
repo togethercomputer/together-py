@@ -77,7 +77,7 @@ async def download(
             "Job has no model output name yet. Ensure the job is completed or specify an output path with --output_dir."
         )
 
-    url = f"/finetune/download?ft_id={fine_tune_id}&checkpoint={loosely_typed_checkpoint_type}"
+    url = f"/v1/finetune/download?ft_id={fine_tune_id}&checkpoint={loosely_typed_checkpoint_type}"
     if checkpoint_step is not None:
         url = f"{url}&checkpoint_step={checkpoint_step}"
     output: Path | None = output_dir
