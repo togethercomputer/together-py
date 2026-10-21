@@ -16,7 +16,6 @@ from respx.models import Call
 
 import together.lib.cli.api.beta.jig.jig as _jig_mod
 from tests.cli.utils import CliRunner
-from together.lib.cli.auth import StoredCredentials, save_stored_credentials
 from together.types.beta.deployment import ModelMount as DeploymentModelMount
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -651,17 +650,6 @@ class TestBetaJigModelMounts:
         assert "Secret SOON used by this deployment will expire" in out
         assert "LATER" not in out
 
-    def test_deployment_api_key_uses_an_explicit_key_without_the_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
-        save_stored_credentials(StoredCredentials(access_token="opaque-login-token"))
-        assert _jig_mod.deployment_api_key("tgp_real") == "tgp_real"
-
-    def test_deployment_api_key_rejects_a_stored_login_token(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("TOGETHER_API_KEY", "other-org-key")
-        save_stored_credentials(StoredCredentials(access_token="opaque-login-token"))
-        with pytest.raises(_jig_mod.JigError, match="login token"):
-            _jig_mod.deployment_api_key("opaque-login-token")
-
     def test_deploy_does_not_create_an_api_key_secret(self) -> None:
         # Pods authenticate with their service account token, so a deploy never copies the user's key.
         calls: list[dict[str, Any]] = []
@@ -705,18 +693,20 @@ class TestBetaJigModelMounts:
 
         assert passwords == ["tgp_real"]
 
-    def test_registry_login_refuses_a_login_token(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("TOGETHER_API_KEY", "other-org-key")
+    def test_registry_login_uses_a_login_token(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        passwords: list[str] = []
 
-        def run(*_args: Any, **_kwargs: Any) -> SimpleNamespace:
-            pytest.fail("docker login ran")
+        def run(cmd: list[str], input: str | None = None, text: bool = False) -> SimpleNamespace:
+            del cmd, text
+            passwords.append(input or "")
+            return SimpleNamespace(returncode=0)
 
         monkeypatch.setattr(_jig_mod.subprocess, "run", run)
-        save_stored_credentials(StoredCredentials(access_token="opaque-login-token"))
         jig = SimpleNamespace(together=SimpleNamespace(api_key="opaque-login-token"))
 
-        with pytest.raises(_jig_mod.JigError, match="login token"):
-            _jig_mod.Jig._docker_login(cast(Any, jig), "registry.example")
+        _jig_mod.Jig._docker_login(cast(Any, jig), "registry.example")
+
+        assert passwords == ["opaque-login-token"]
 
     def test_status_formats_generated_model_mounts(self) -> None:
         deployment = _jig_mod.Deployment(
