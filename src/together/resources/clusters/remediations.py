@@ -62,7 +62,6 @@ class RemediationsResource(SyncAPIResource):
             "REMEDIATION_MODE_REBOOT_VM",
             "REMEDIATION_MODE_HOST_POWER_CYCLE",
         ],
-        remediation_id: str | Omit = omit,
         reason: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -94,8 +93,6 @@ class RemediationsResource(SyncAPIResource):
               - `REMEDIATION_MODE_HOST_POWER_CYCLE`: Cordons and power-cycles the bare-metal
                 host while preserving host and node identity.
 
-          remediation_id: Client-specified ID for idempotency.
-
           reason: User-provided reason for the remediation.
 
           extra_headers: Send extra headers
@@ -124,13 +121,7 @@ class RemediationsResource(SyncAPIResource):
                 remediation_create_params.RemediationCreateParams,
             ),
             options=make_request_options(
-                extra_headers=extra_headers,
-                extra_query=extra_query,
-                extra_body=extra_body,
-                timeout=timeout,
-                query=maybe_transform(
-                    {"remediation_id": remediation_id}, remediation_create_params.RemediationCreateParams
-                ),
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=Remediation,
         )
@@ -511,7 +502,6 @@ class AsyncRemediationsResource(AsyncAPIResource):
             "REMEDIATION_MODE_REBOOT_VM",
             "REMEDIATION_MODE_HOST_POWER_CYCLE",
         ],
-        remediation_id: str | Omit = omit,
         reason: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -543,8 +533,6 @@ class AsyncRemediationsResource(AsyncAPIResource):
               - `REMEDIATION_MODE_HOST_POWER_CYCLE`: Cordons and power-cycles the bare-metal
                 host while preserving host and node identity.
 
-          remediation_id: Client-specified ID for idempotency.
-
           reason: User-provided reason for the remediation.
 
           extra_headers: Send extra headers
@@ -573,13 +561,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
                 remediation_create_params.RemediationCreateParams,
             ),
             options=make_request_options(
-                extra_headers=extra_headers,
-                extra_query=extra_query,
-                extra_body=extra_body,
-                timeout=timeout,
-                query=await async_maybe_transform(
-                    {"remediation_id": remediation_id}, remediation_create_params.RemediationCreateParams
-                ),
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=Remediation,
         )

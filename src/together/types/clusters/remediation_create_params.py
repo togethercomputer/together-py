@@ -32,8 +32,5 @@ class RemediationCreateParams(TypedDict, total=False):
       host while preserving host and node identity.
     """
 
-    remediation_id: str
-    """Client-specified ID for idempotency."""
-
     reason: str
     """User-provided reason for the remediation."""
