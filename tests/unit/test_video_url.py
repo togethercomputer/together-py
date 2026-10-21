@@ -1,5 +1,5 @@
-from together.types.chat.completion_create_params import (
-    MessageChatCompletionUserMessageParam,
+from together.types.chat import (
+    ChatCompletionUserMessageParam,
     ChatCompletionStructuredMessageTextParam,
     ChatCompletionStructuredMessageVideoURLParam,
 )
@@ -8,7 +8,7 @@ from together.types.chat.chat_completion_structured_message_video_url_param impo
 
 def test_video_url_message():
     # Test creating a message with video_url content
-    message = MessageChatCompletionUserMessageParam(
+    message = ChatCompletionUserMessageParam(
         role="user",
         content=[
             ChatCompletionStructuredMessageTextParam(type="text", text="What's in this video?"),

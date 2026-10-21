@@ -1465,15 +1465,13 @@ class TestClustersRemediations:
                 "HOST_POWER_CYCLE",
                 "--reason",
                 "node unhealthy",
-                "--remediation-id",
-                "rem-created",
                 "--json",
             ],
         )
 
         assert json.loads(result.output)["id"] == "rem-created"
         request = cast(Call, route.calls[0]).request
-        assert request.url.params["remediation_id"] == "rem-created"
+        assert "remediation_id" not in request.url.params
         assert json.loads(request.content.decode()) == {
             "mode": "REMEDIATION_MODE_HOST_POWER_CYCLE",
             "reason": "node unhealthy",

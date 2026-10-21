@@ -27,7 +27,6 @@ async def create(
     instance_id: Annotated[str, Parameter(help="The ID of the node within the cluster to remediate")],
     *,
     mode: RemediationModeParameter,
-    remediation_id: Annotated[Optional[str], Parameter(help="Client-specified ID for idempotency")] = None,
     reason: Annotated[Optional[str], Parameter(help="Reason for the remediation")] = None,
     config: CLIConfigParameter,
 ) -> None:
@@ -49,7 +48,6 @@ async def create(
             instance_id,
             cluster_id=cluster_id,
             mode=safe_mode,
-            remediation_id=remediation_id or omit,
             reason=reason or omit,
         ),
     )
