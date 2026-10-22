@@ -1,10 +1,17 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Dict
+from typing import Dict, Optional
+from typing_extensions import Literal
 
 from ..._models import BaseModel
 
-__all__ = ["BillingUsageLineItem"]
+__all__ = ["BillingUsageLineItem", "AppliedCredit"]
+
+
+class AppliedCredit(BaseModel):
+    """Credit covering this usage. Omitted for uncovered usage."""
+
+    type: Literal["PREPAID", "POSTPAID", "CREDIT"]
 
 
 class BillingUsageLineItem(BaseModel):
@@ -31,3 +38,6 @@ class BillingUsageLineItem(BaseModel):
 
     unit_price: str
     """Per-unit price in USD as a decimal string."""
+
+    applied_credit: Optional[AppliedCredit] = None
+    """Credit covering this usage. Omitted for uncovered usage."""
