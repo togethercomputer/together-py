@@ -1,5 +1,11 @@
-ARG VARIANT="3.9"
-FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
+ARG VARIANT="3.10"
+FROM mcr.microsoft.com/devcontainers/python:3-${VARIANT}-trixie
+
+USER root
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends --only-upgrade ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 USER vscode
 
