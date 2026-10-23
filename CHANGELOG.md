@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.0](https://github.com/togethercomputer/together-py/compare/v3.0.0...v3.1.0) (2026-10-23)
+
+
+### Features
+
+* **jig:** stop storing the user's api key as a deployment secret in jig ([#654](https://github.com/togethercomputer/together-py/issues/654)) ([588f882](https://github.com/togethercomputer/together-py/commit/588f88273398ddc42de663de02f65aca7edbed59))
+* **openapi:** add applied_credit to billing usage line items ([704cfc2](https://github.com/togethercomputer/together-py/commit/704cfc2a75ba61666803c9f6b33f9baaf7e003a7))
+
 ## [3.0.0](https://github.com/togethercomputer/together-py/compare/v2.42.0...v3.0.0) (2026-10-22)
 
 
