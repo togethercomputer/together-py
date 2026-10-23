@@ -1,10 +1,12 @@
 import csv
 import json
+import os
 from typing import Any, Dict, List, cast
 from pathlib import Path
 
 import pytest
 
+from together.lib.constants import MAX_FILE_SIZE_GB, NUM_BYTES_IN_GB
 from together.lib.utils.files import FileCheckProgress, check_file
 
 
@@ -589,6 +591,51 @@ def test_check_file_rejects_oversized_parquet_before_format_checks(
 
     assert not report["is_check_passed"]
     assert report["file_size"] == file.stat().st_size
+    assert "Maximum supported file size" in report["message"]
+
+
+def _report_for_reported_file_size(
+    file: Path, monkeypatch: pytest.MonkeyPatch, size: int
+) -> Dict[str, Any]:
+    real_stat = os.stat
+
+    def controlled_stat(path, *args, **kwargs):
+        result = real_stat(path, *args, **kwargs)
+        if os.fspath(path) == file.as_posix():
+            fields = list(result)
+            fields[6] = size
+            return os.stat_result(fields)
+        return result
+
+    monkeypatch.setattr("together.lib.utils.files.os.stat", controlled_stat)
+    return check_file(file, purpose="fine-tune")
+
+
+def test_check_file_accepts_60gb_under_documented_100gb_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    file = tmp_path / "tiny.jsonl"
+    file.write_text('{"text": "local validation fixture"}\n' * 100)
+    size = 60_000_000_000
+
+    report = _report_for_reported_file_size(file, monkeypatch, size)
+
+    assert report["file_size"] == size
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 100
+
+
+def test_check_file_rejects_files_above_max_size(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    file = tmp_path / "tiny.jsonl"
+    file.write_text('{"text": "local validation fixture"}\n')
+    size = int((MAX_FILE_SIZE_GB + 1) * NUM_BYTES_IN_GB)
+
+    report = _report_for_reported_file_size(file, monkeypatch, size)
+
+    assert not report["is_check_passed"]
+    assert report["file_size"] == size
     assert "Maximum supported file size" in report["message"]
 
 
