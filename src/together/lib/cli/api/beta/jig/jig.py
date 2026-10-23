@@ -34,7 +34,6 @@ from together import Together
 from together._types import Omit, omit
 from together._exceptions import APIError, NotFoundError, AuthenticationError
 from together._utils._json import openapi_dumps
-from together.lib.cli.auth import load_stored_credentials
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.deployment import Deployment
@@ -76,26 +75,6 @@ _TRACK_READY_TIMEOUT = 120
 
 class JigError(Exception):
     """Actionable runtime error"""
-
-
-def deployment_api_key(client_key: str | None) -> str:
-    """API key for a deployment secret or registry login.
-
-    `--api-key`, or `$TOGETHER_API_KEY` when that is the client credential, is the key this command
-    is already using. A `tg login` session token is not an API key, JWT or otherwise.
-    `$TOGETHER_API_KEY` is ignored while logged in, so copying it would store a key from a different
-    org than the deploy.
-    """
-    key = (client_key or "").strip()
-    stored = load_stored_credentials()
-    if stored is not None and key == stored.access_token:
-        raise JigError(
-            "A login token cannot be stored as an API key. Pass --api-key with an API key for this project. "
-            "TOGETHER_API_KEY is ignored while you are logged in."
-        )
-    if not key:
-        raise JigError("An API key is required. Pass --api-key or set TOGETHER_API_KEY.")
-    return key
 
 
 # == Configuration ==
@@ -860,7 +839,9 @@ class Jig:
 
     def _docker_login(self, host: str) -> None:
         login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
-        password = deployment_api_key(self.together.api_key)
+        password = (self.together.api_key or "").strip()
+        if not password:
+            raise JigError("Not authenticated. Run `tg login` or set TOGETHER_API_KEY.")
         if subprocess.run(login_cmd, input=password, text=True).returncode != 0:
             raise JigError("Registry login failed")
 
@@ -1019,8 +1000,6 @@ class Jig:
             extra_kwargs["extra_body"] = {"experimental": experimental}
 
         self.sync_secrets_from_deployment()
-        if "TOGETHER_API_KEY" not in self.state.secrets:
-            self.set_secret("TOGETHER_API_KEY", deployment_api_key(self.together.api_key), "Auth key for queue API")
 
         env_dict = dict(self.config.deploy.environment_variables)
         if self.together.base_url.host not in ("api.together.ai", "api.together.xyz"):
