@@ -86,18 +86,30 @@ def _compute_summary(resource: ModelResources) -> str:
     return f"{replicas}× {gpu}"
 
 
+def _queue_position(resource: ModelResources) -> int | None:
+    return resource.status_details.queue_position
+
+
+def _resource_status_markup(resource: ModelResources) -> str:
+    status = status_markup(resource.status, "MODEL_RESOURCES_STATUS_")
+    queue_position = _queue_position(resource)
+    if queue_position is None:
+        return status
+    return f"{status} [dim](#{queue_position})[/dim]"
+
+
 def print_resources_table(resources: list[ModelResources]) -> None:
     table = ListTable("Model resources", empty_message="No model resources found.")
     table.add_primary_column("ID", ratio=2, overflow="fold")
     table.add_column("Base model", ratio=3, overflow="fold")
-    table.add_column("Status", width=9, no_wrap=True, overflow="fold")
+    table.add_column("Status", width=12, no_wrap=True, overflow="fold")
     table.add_column("Compute", ratio=2, overflow="fold")
     table.add_column("LoRA", width=4, no_wrap=True)
     for resource in resources:
         table.add_row(
             cell(resource.id),
             cell(resource.base_model),
-            status_markup(resource.status, "MODEL_RESOURCES_STATUS_"),
+            _resource_status_markup(resource),
             cell(_compute_summary(resource)),
             "yes" if resource.lora_enabled else "no",
         )
@@ -118,6 +130,9 @@ def print_model_resource(resource: ModelResources) -> None:
     ]
     if resource.base_weights_ref:
         rows.insert(3, ("Base weights", cell(resource.base_weights_ref)))
+    queue_position = _queue_position(resource)
+    if queue_position is not None:
+        rows.insert(2, ("Queue position", cell(queue_position)))
     if resource.error is not None:
         rows.append(("Error", f"[red]{escape_rich_markup(resource.error.message)}[/red]"))
     print_detail("Model resource", rows)
