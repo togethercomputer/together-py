@@ -295,6 +295,30 @@ class TestTrainingCheckpoints:
         assert "tg training ls-checkpoints --type training --after ckpt-train-1" in result.output
 
     @pytest.mark.respx(base_url=base_url)
+    def test_ls_checkpoints_table_shows_registry_artifact_revision(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/rl/checkpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "data": [
+                        _checkpoint_body(
+                            "ckpt-inf-1",
+                            inference_registration={"model": {"id": "ml_model", "revision_id": "rev-1"}},
+                        )
+                    ],
+                    "meta": _meta(),
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["training", "ls-checkpoints", "--type", "inference"])
+
+        assert result.exit_code == 0, result.output
+        assert "ml_model@rev-1" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_ls_checkpoints_omitted_type_returns_both(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.get("/v1/rl/checkpoints").mock(
             return_value=httpx.Response(
@@ -412,7 +436,11 @@ class TestTrainingGet:
         respx_mock.get("/v1/rl/checkpoints/ckpt-train-1").mock(
             return_value=httpx.Response(
                 200,
-                json=_checkpoint_body("ckpt-train-1", checkpoint_type="CHECKPOINT_TYPE_TRAINING"),
+                json=_checkpoint_body(
+                    "ckpt-train-1",
+                    checkpoint_type="CHECKPOINT_TYPE_TRAINING",
+                    training_registration={"id": "ml_training_state", "revision_id": "rev-train"},
+                ),
             )
         )
         _mock_get_misses(respx_mock, "ckpt-train-1", hit="checkpoint")
@@ -422,6 +450,7 @@ class TestTrainingGet:
         assert result.exit_code == 0, result.output
         assert "Training checkpoint" in result.output
         assert "ckpt-train-1" in result.output
+        assert "ml_training_state@rev-train" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_get_prefers_a_hit_over_an_error_from_another_type(
