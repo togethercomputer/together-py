@@ -15,8 +15,10 @@ from rich import print as rich_print
 
 from together import Together
 from together.lib.utils import log_debug
+from together.lib.cli.utils._debug import is_enabled
 
-DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
+# DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
+DEBUG = is_enabled()
 
 UPLOAD_CONCURRENCY_LIMIT = int(os.getenv("TOGETHER_UPLOAD_CONCURRENCY", "15"))
 MULTIPART_CHUNK_SIZE_MB = int(os.getenv("TOGETHER_MULTIPART_CHUNK_SIZE_MB", "20"))

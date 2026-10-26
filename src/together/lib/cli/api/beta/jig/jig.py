@@ -35,6 +35,7 @@ from together._types import Omit, omit
 from together._exceptions import APIError, NotFoundError, AuthenticationError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
+from together.lib.cli.utils._debug import is_enabled
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.deployment import Deployment
 from together.types.beta.jig.volume import Volume
@@ -51,6 +52,7 @@ from together.lib.cli.utils._json_mode import (
 from together.lib.cli.api.beta.jig._uploader import Uploader
 from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
 
+
 if TYPE_CHECKING or sys.version_info < (3, 11):
     import tomli as tomllib
 else:
@@ -59,7 +61,8 @@ else:
 # managed dockerfile marker - if this is the first line, jig will regenerate the file
 DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
 
-DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
+# DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
+DEBUG = is_enabled()
 
 WARMUP_ENV_NAME = os.getenv("WARMUP_ENV_NAME", "TORCHINDUCTOR_CACHE_DIR")
 WARMUP_DEST = os.getenv("WARMUP_DEST", "torch_cache")
@@ -625,6 +628,7 @@ class Jig:
 
     def registry(self) -> str:
         """Get registry and namespace for current user"""
+
         if not self.state.registry_base_path:
             res = self.together.get("/v1/image-repositories/base-path", cast_to=httpx.Response)
             response = res.json()
@@ -1320,7 +1324,7 @@ def _jig_fail(msg: str) -> typing.NoReturn:
         if not json_was_emitted():
             emit_json({"ok": False, "error": msg})
     else:
-        console.print(f"[blue]Jig:[/blue] [red]Failed[/red] {msg}")
+        console.print(f"[blue]Jig[/blue] [red]failed[/red]: {msg}")
     raise CliDiagnosticExit(msg)
 
 
@@ -1372,7 +1376,7 @@ def _run_jig_cmd(config: CLIConfig, config_path: str | None, fn: Callable[[Jig],
     except Exception as e:
         if DEBUG:
             raise
-        _jig_fail(f"Unexpected error: {e}")
+        _jig_fail(f"{type(e).__name__}: {e}")
 
 
 def init(
