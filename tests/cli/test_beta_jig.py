@@ -92,7 +92,7 @@ def test_jig_failure_exit_preserves_diagnostic(capsys: pytest.CaptureFixture[str
 
     assert exc_info.value.code == 1
     assert str(exc_info.value) == message
-    assert f"Jig: Failed {message}" in capsys.readouterr().out
+    assert f"Jig failed {message}" in capsys.readouterr().out
 
 
 def test_volume_upload_failure_exit_preserves_diagnostic(tmp_path: Path) -> None:

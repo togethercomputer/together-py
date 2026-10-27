@@ -52,7 +52,6 @@ from together.lib.cli.utils._json_mode import (
 from together.lib.cli.api.beta.jig._uploader import Uploader
 from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
 
-
 if TYPE_CHECKING or sys.version_info < (3, 11):
     import tomli as tomllib
 else:
