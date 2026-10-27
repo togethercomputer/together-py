@@ -23,6 +23,7 @@ from ...types.post_training import (
     model_resource_stop_params,
     model_resource_create_params,
     model_resource_estimate_cost_params,
+    model_resource_extend_expiry_params,
 )
 from ...types.post_training.model_resources import ModelResources
 from ...types.post_training.optimizer_config_param import OptimizerConfigParam
@@ -58,6 +59,7 @@ class ModelResourcesResource(SyncAPIResource):
         base_model: str,
         base_weights_ref: str | Omit = omit,
         compute_config: model_resource_create_params.ComputeConfig | Omit = omit,
+        inactive_timeout: int | Omit = omit,
         lora_enabled: bool | Omit = omit,
         optimizer_config: OptimizerConfigParam | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -78,6 +80,11 @@ class ModelResourcesResource(SyncAPIResource):
 
           compute_config: Compute layout to provision.
 
+          inactive_timeout: Minutes without activity after which the resource stops and its sessions expire,
+              counted from when it becomes ready and from its last activity. Every operation
+              on any of its sessions restarts the count, and an extend expiry call can keep it
+              up longer.
+
           lora_enabled: Whether the resource hosts LoRA sessions or a single full-weight session
 
           optimizer_config: Optimizer configuration for this resource.
@@ -97,6 +104,7 @@ class ModelResourcesResource(SyncAPIResource):
                     "base_model": base_model,
                     "base_weights_ref": base_weights_ref,
                     "compute_config": compute_config,
+                    "inactive_timeout": inactive_timeout,
                     "lora_enabled": lora_enabled,
                     "optimizer_config": optimizer_config,
                 },
@@ -214,6 +222,7 @@ class ModelResourcesResource(SyncAPIResource):
         base_model: str,
         base_weights_ref: str | Omit = omit,
         compute_config: model_resource_estimate_cost_params.ComputeConfig | Omit = omit,
+        inactive_timeout: int | Omit = omit,
         lora_enabled: bool | Omit = omit,
         optimizer_config: OptimizerConfigParam | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -234,6 +243,11 @@ class ModelResourcesResource(SyncAPIResource):
 
           compute_config: Compute layout to provision.
 
+          inactive_timeout: Minutes without activity after which the resource stops and its sessions expire,
+              counted from when it becomes ready and from its last activity. Every operation
+              on any of its sessions restarts the count, and an extend expiry call can keep it
+              up longer.
+
           lora_enabled: Whether the resource hosts LoRA sessions or a single full-weight session
 
           optimizer_config: Optimizer configuration for this resource.
@@ -253,6 +267,7 @@ class ModelResourcesResource(SyncAPIResource):
                     "base_model": base_model,
                     "base_weights_ref": base_weights_ref,
                     "compute_config": compute_config,
+                    "inactive_timeout": inactive_timeout,
                     "lora_enabled": lora_enabled,
                     "optimizer_config": optimizer_config,
                 },
@@ -262,6 +277,54 @@ class ModelResourcesResource(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=ModelResourcesEstimateCostResponse,
+        )
+
+    def extend_expiry(
+        self,
+        model_resources_id: str,
+        *,
+        minutes: int,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> ModelResources:
+        """
+        Keeps a ready model resource from stopping for inactivity for at least the given
+        number of minutes from now. It moves the resource's `expires_at` to at least
+        that time, and never earlier. Every operation on the resource's sessions already
+        keeps it up for `inactive_timeout` minutes, so use this only to stay up longer
+        without operations, for example while you compute rewards. Fails if the resource
+        is not ready.
+
+        Args:
+          model_resources_id: ID of the model resource
+
+          minutes: Minutes from now the resource must not stop for inactivity.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not model_resources_id:
+            raise ValueError(f"Expected a non-empty value for `model_resources_id` but received {model_resources_id!r}")
+        return self._post(
+            path_template(
+                "/v1/rl/model-resources/{model_resources_id}/extend-expiry", model_resources_id=model_resources_id
+            ),
+            body=maybe_transform(
+                {"minutes": minutes}, model_resource_extend_expiry_params.ModelResourceExtendExpiryParams
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=ModelResources,
         )
 
     def stop(
@@ -337,6 +400,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         base_model: str,
         base_weights_ref: str | Omit = omit,
         compute_config: model_resource_create_params.ComputeConfig | Omit = omit,
+        inactive_timeout: int | Omit = omit,
         lora_enabled: bool | Omit = omit,
         optimizer_config: OptimizerConfigParam | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -357,6 +421,11 @@ class AsyncModelResourcesResource(AsyncAPIResource):
 
           compute_config: Compute layout to provision.
 
+          inactive_timeout: Minutes without activity after which the resource stops and its sessions expire,
+              counted from when it becomes ready and from its last activity. Every operation
+              on any of its sessions restarts the count, and an extend expiry call can keep it
+              up longer.
+
           lora_enabled: Whether the resource hosts LoRA sessions or a single full-weight session
 
           optimizer_config: Optimizer configuration for this resource.
@@ -376,6 +445,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
                     "base_model": base_model,
                     "base_weights_ref": base_weights_ref,
                     "compute_config": compute_config,
+                    "inactive_timeout": inactive_timeout,
                     "lora_enabled": lora_enabled,
                     "optimizer_config": optimizer_config,
                 },
@@ -493,6 +563,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         base_model: str,
         base_weights_ref: str | Omit = omit,
         compute_config: model_resource_estimate_cost_params.ComputeConfig | Omit = omit,
+        inactive_timeout: int | Omit = omit,
         lora_enabled: bool | Omit = omit,
         optimizer_config: OptimizerConfigParam | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -513,6 +584,11 @@ class AsyncModelResourcesResource(AsyncAPIResource):
 
           compute_config: Compute layout to provision.
 
+          inactive_timeout: Minutes without activity after which the resource stops and its sessions expire,
+              counted from when it becomes ready and from its last activity. Every operation
+              on any of its sessions restarts the count, and an extend expiry call can keep it
+              up longer.
+
           lora_enabled: Whether the resource hosts LoRA sessions or a single full-weight session
 
           optimizer_config: Optimizer configuration for this resource.
@@ -532,6 +608,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
                     "base_model": base_model,
                     "base_weights_ref": base_weights_ref,
                     "compute_config": compute_config,
+                    "inactive_timeout": inactive_timeout,
                     "lora_enabled": lora_enabled,
                     "optimizer_config": optimizer_config,
                 },
@@ -541,6 +618,54 @@ class AsyncModelResourcesResource(AsyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=ModelResourcesEstimateCostResponse,
+        )
+
+    async def extend_expiry(
+        self,
+        model_resources_id: str,
+        *,
+        minutes: int,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> ModelResources:
+        """
+        Keeps a ready model resource from stopping for inactivity for at least the given
+        number of minutes from now. It moves the resource's `expires_at` to at least
+        that time, and never earlier. Every operation on the resource's sessions already
+        keeps it up for `inactive_timeout` minutes, so use this only to stay up longer
+        without operations, for example while you compute rewards. Fails if the resource
+        is not ready.
+
+        Args:
+          model_resources_id: ID of the model resource
+
+          minutes: Minutes from now the resource must not stop for inactivity.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not model_resources_id:
+            raise ValueError(f"Expected a non-empty value for `model_resources_id` but received {model_resources_id!r}")
+        return await self._post(
+            path_template(
+                "/v1/rl/model-resources/{model_resources_id}/extend-expiry", model_resources_id=model_resources_id
+            ),
+            body=await async_maybe_transform(
+                {"minutes": minutes}, model_resource_extend_expiry_params.ModelResourceExtendExpiryParams
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=ModelResources,
         )
 
     async def stop(
@@ -606,6 +731,9 @@ class ModelResourcesResourceWithRawResponse:
         self.estimate_cost = to_raw_response_wrapper(
             model_resources.estimate_cost,
         )
+        self.extend_expiry = to_raw_response_wrapper(
+            model_resources.extend_expiry,
+        )
         self.stop = to_raw_response_wrapper(
             model_resources.stop,
         )
@@ -626,6 +754,9 @@ class AsyncModelResourcesResourceWithRawResponse:
         )
         self.estimate_cost = async_to_raw_response_wrapper(
             model_resources.estimate_cost,
+        )
+        self.extend_expiry = async_to_raw_response_wrapper(
+            model_resources.extend_expiry,
         )
         self.stop = async_to_raw_response_wrapper(
             model_resources.stop,
@@ -648,6 +779,9 @@ class ModelResourcesResourceWithStreamingResponse:
         self.estimate_cost = to_streamed_response_wrapper(
             model_resources.estimate_cost,
         )
+        self.extend_expiry = to_streamed_response_wrapper(
+            model_resources.extend_expiry,
+        )
         self.stop = to_streamed_response_wrapper(
             model_resources.stop,
         )
@@ -668,6 +802,9 @@ class AsyncModelResourcesResourceWithStreamingResponse:
         )
         self.estimate_cost = async_to_streamed_response_wrapper(
             model_resources.estimate_cost,
+        )
+        self.extend_expiry = async_to_streamed_response_wrapper(
+            model_resources.extend_expiry,
         )
         self.stop = async_to_streamed_response_wrapper(
             model_resources.stop,

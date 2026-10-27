@@ -54,6 +54,12 @@ class ModelResources(BaseModel):
     created_by: str
     """ID of the user who created the model resource"""
 
+    inactive_timeout: int
+    """Minutes without activity after which the resource stops and its sessions expire.
+
+    Every operation on any of its sessions restarts the count.
+    """
+
     lora_enabled: bool
     """Whether the resource hosts LoRA sessions or a full-weight session"""
 
@@ -80,4 +86,14 @@ class ModelResources(BaseModel):
     """Structured detail for the model resource's current error.
 
     Set when the resource is in an error state.
+    """
+
+    expires_at: Optional[datetime] = None
+    """
+    The earliest time the resource can stop for inactivity, which also expires its
+    sessions. It is the resource's last activity plus `inactive_timeout` minutes.
+    Becoming ready, a session start and every operation on any of its sessions count
+    as activity, and the resource does not stop while an operation is running. An
+    extend expiry call can move it later. It never moves earlier. Refreshed about
+    once a minute. Set while the resource is ready.
     """

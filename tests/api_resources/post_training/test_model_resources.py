@@ -37,6 +37,7 @@ class TestModelResources:
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
             },
+            inactive_timeout=60,
             lora_enabled=True,
             optimizer_config={
                 "adam": {},
@@ -158,6 +159,7 @@ class TestModelResources:
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
             },
+            inactive_timeout=60,
             lora_enabled=True,
             optimizer_config={
                 "adam": {},
@@ -189,6 +191,48 @@ class TestModelResources:
             assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
 
         assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_method_extend_expiry(self, client: Together) -> None:
+        model_resource = client.post_training.model_resources.extend_expiry(
+            model_resources_id="model_resources_id",
+            minutes=120,
+        )
+        assert_matches_type(ModelResources, model_resource, path=["response"])
+
+    @parametrize
+    def test_raw_response_extend_expiry(self, client: Together) -> None:
+        response = client.post_training.model_resources.with_raw_response.extend_expiry(
+            model_resources_id="model_resources_id",
+            minutes=120,
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        model_resource = response.parse()
+        assert_matches_type(ModelResources, model_resource, path=["response"])
+
+    @parametrize
+    def test_streaming_response_extend_expiry(self, client: Together) -> None:
+        with client.post_training.model_resources.with_streaming_response.extend_expiry(
+            model_resources_id="model_resources_id",
+            minutes=120,
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            model_resource = response.parse()
+            assert_matches_type(ModelResources, model_resource, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_extend_expiry(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `model_resources_id` but received ''"):
+            client.post_training.model_resources.with_raw_response.extend_expiry(
+                model_resources_id="",
+                minutes=120,
+            )
 
     @parametrize
     def test_method_stop(self, client: Together) -> None:
@@ -258,6 +302,7 @@ class TestAsyncModelResources:
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
             },
+            inactive_timeout=60,
             lora_enabled=True,
             optimizer_config={
                 "adam": {},
@@ -379,6 +424,7 @@ class TestAsyncModelResources:
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
             },
+            inactive_timeout=60,
             lora_enabled=True,
             optimizer_config={
                 "adam": {},
@@ -410,6 +456,48 @@ class TestAsyncModelResources:
             assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
 
         assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_method_extend_expiry(self, async_client: AsyncTogether) -> None:
+        model_resource = await async_client.post_training.model_resources.extend_expiry(
+            model_resources_id="model_resources_id",
+            minutes=120,
+        )
+        assert_matches_type(ModelResources, model_resource, path=["response"])
+
+    @parametrize
+    async def test_raw_response_extend_expiry(self, async_client: AsyncTogether) -> None:
+        response = await async_client.post_training.model_resources.with_raw_response.extend_expiry(
+            model_resources_id="model_resources_id",
+            minutes=120,
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        model_resource = await response.parse()
+        assert_matches_type(ModelResources, model_resource, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_extend_expiry(self, async_client: AsyncTogether) -> None:
+        async with async_client.post_training.model_resources.with_streaming_response.extend_expiry(
+            model_resources_id="model_resources_id",
+            minutes=120,
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            model_resource = await response.parse()
+            assert_matches_type(ModelResources, model_resource, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_extend_expiry(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `model_resources_id` but received ''"):
+            await async_client.post_training.model_resources.with_raw_response.extend_expiry(
+                model_resources_id="",
+                minutes=120,
+            )
 
     @parametrize
     async def test_method_stop(self, async_client: AsyncTogether) -> None:

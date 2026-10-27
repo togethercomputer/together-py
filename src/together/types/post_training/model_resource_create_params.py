@@ -22,6 +22,14 @@ class ModelResourceCreateParams(TypedDict, total=False):
     compute_config: ComputeConfig
     """Compute layout to provision."""
 
+    inactive_timeout: int
+    """
+    Minutes without activity after which the resource stops and its sessions expire,
+    counted from when it becomes ready and from its last activity. Every operation
+    on any of its sessions restarts the count, and an extend expiry call can keep it
+    up longer.
+    """
+
     lora_enabled: bool
     """Whether the resource hosts LoRA sessions or a single full-weight session"""
 

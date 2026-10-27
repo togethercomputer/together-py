@@ -97,6 +97,7 @@ from .inference_checkpoint_operation import InferenceCheckpointOperation as Infe
 from .custom_forward_backward_operation import CustomForwardBackwardOperation as CustomForwardBackwardOperation
 from .operation_forward_backward_params import OperationForwardBackwardParams as OperationForwardBackwardParams
 from .model_resource_estimate_cost_params import ModelResourceEstimateCostParams as ModelResourceEstimateCostParams
+from .model_resource_extend_expiry_params import ModelResourceExtendExpiryParams as ModelResourceExtendExpiryParams
 from .model_resources_estimate_cost_response import (
     ModelResourcesEstimateCostResponse as ModelResourcesEstimateCostResponse,
 )
