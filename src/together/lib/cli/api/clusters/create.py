@@ -27,6 +27,7 @@ KNOWN_GPU_TYPES = (
     "B200_SXM",
     "H100_SXM_INF",
     "B300_SXM",
+    "GB200_SXM",
 )
 
 NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
