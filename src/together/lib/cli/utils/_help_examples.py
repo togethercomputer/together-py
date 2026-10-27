@@ -706,6 +706,9 @@ TRAINING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Fetch a model resource, training session, or checkpoint by ID:
   [primary]tg training get <id>[/primary]
 
+[dim]-[/dim] Keep a ready model resource from stopping for inactivity for 30 minutes:
+  [primary]tg training extend-expiry <model-resources-id> --minutes 30[/primary]
+
 [dim]-[/dim] Prepare a fine-tuned model for FP4 inference:
   [primary]tg training fp4 create <model-object-id>[/primary]
 """
