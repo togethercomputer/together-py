@@ -49,6 +49,7 @@ class SecretsResource(SyncAPIResource):
         value: str,
         description: str | Omit = omit,
         project_id: str | Omit = omit,
+        ttl_seconds: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -73,6 +74,9 @@ class SecretsResource(SyncAPIResource):
           project_id: ProjectID is ignored - the project is automatically determined from your
               authentication
 
+          ttl_seconds: TTLSeconds is how long the secret lives before it is deleted, between 86400 (1
+              day) and 1209600 (14 days)
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -89,6 +93,7 @@ class SecretsResource(SyncAPIResource):
                     "value": value,
                     "description": description,
                     "project_id": project_id,
+                    "ttl_seconds": ttl_seconds,
                 },
                 secret_create_params.SecretCreateParams,
             ),
@@ -140,6 +145,7 @@ class SecretsResource(SyncAPIResource):
         description: str | Omit = omit,
         name: str | Omit = omit,
         project_id: str | Omit = omit,
+        ttl_seconds: int | Omit = omit,
         value: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -164,6 +170,9 @@ class SecretsResource(SyncAPIResource):
           project_id: ProjectID is ignored - the project is automatically determined from your
               authentication
 
+          ttl_seconds: TTLSeconds sets a new lifetime and restarts the expiry from now, between 86400
+              (1 day) and 1209600 (14 days)
+
           value: Value is the new sensitive data to store securely. Updating this replaces the
               existing secret value.
 
@@ -184,6 +193,7 @@ class SecretsResource(SyncAPIResource):
                     "description": description,
                     "name": name,
                     "project_id": project_id,
+                    "ttl_seconds": ttl_seconds,
                     "value": value,
                 },
                 secret_update_params.SecretUpdateParams,
@@ -276,6 +286,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         value: str,
         description: str | Omit = omit,
         project_id: str | Omit = omit,
+        ttl_seconds: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -300,6 +311,9 @@ class AsyncSecretsResource(AsyncAPIResource):
           project_id: ProjectID is ignored - the project is automatically determined from your
               authentication
 
+          ttl_seconds: TTLSeconds is how long the secret lives before it is deleted, between 86400 (1
+              day) and 1209600 (14 days)
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -316,6 +330,7 @@ class AsyncSecretsResource(AsyncAPIResource):
                     "value": value,
                     "description": description,
                     "project_id": project_id,
+                    "ttl_seconds": ttl_seconds,
                 },
                 secret_create_params.SecretCreateParams,
             ),
@@ -367,6 +382,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         description: str | Omit = omit,
         name: str | Omit = omit,
         project_id: str | Omit = omit,
+        ttl_seconds: int | Omit = omit,
         value: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -391,6 +407,9 @@ class AsyncSecretsResource(AsyncAPIResource):
           project_id: ProjectID is ignored - the project is automatically determined from your
               authentication
 
+          ttl_seconds: TTLSeconds sets a new lifetime and restarts the expiry from now, between 86400
+              (1 day) and 1209600 (14 days)
+
           value: Value is the new sensitive data to store securely. Updating this replaces the
               existing secret value.
 
@@ -411,6 +430,7 @@ class AsyncSecretsResource(AsyncAPIResource):
                     "description": description,
                     "name": name,
                     "project_id": project_id,
+                    "ttl_seconds": ttl_seconds,
                     "value": value,
                 },
                 secret_update_params.SecretUpdateParams,

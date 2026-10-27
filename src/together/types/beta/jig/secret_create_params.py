@@ -32,3 +32,9 @@ class SecretCreateParams(TypedDict, total=False):
     ProjectID is ignored - the project is automatically determined from your
     authentication
     """
+
+    ttl_seconds: int
+    """
+    TTLSeconds is how long the secret lives before it is deleted, between 86400 (1
+    day) and 1209600 (14 days)
+    """

@@ -27,6 +27,12 @@ class SecretUpdateParams(TypedDict, total=False):
     authentication
     """
 
+    ttl_seconds: int
+    """
+    TTLSeconds sets a new lifetime and restarts the expiry from now, between 86400
+    (1 day) and 1209600 (14 days)
+    """
+
     value: str
     """Value is the new sensitive data to store securely.
 

@@ -32,6 +32,7 @@ class TestSecrets:
             value="x",
             description="description",
             project_id="project_id",
+            ttl_seconds=86400,
         )
         assert_matches_type(Secret, secret, path=["response"])
 
@@ -113,6 +114,7 @@ class TestSecrets:
             description="description",
             name="x",
             project_id="project_id",
+            ttl_seconds=86400,
             value="x",
         )
         assert_matches_type(Secret, secret, path=["response"])
@@ -232,6 +234,7 @@ class TestAsyncSecrets:
             value="x",
             description="description",
             project_id="project_id",
+            ttl_seconds=86400,
         )
         assert_matches_type(Secret, secret, path=["response"])
 
@@ -313,6 +316,7 @@ class TestAsyncSecrets:
             description="description",
             name="x",
             project_id="project_id",
+            ttl_seconds=86400,
             value="x",
         )
         assert_matches_type(Secret, secret, path=["response"])

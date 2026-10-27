@@ -39,6 +39,12 @@ class EnvironmentVariable(BaseModel):
     ValueFromSecret must be set, but not both
     """
 
+    value_from_secret_expires_at: Optional[datetime] = None
+    """
+    ValueFromSecretExpiresAt is the ISO8601 timestamp when the referenced secret
+    expires and is deleted. Read-only, ignored in requests
+    """
+
 
 class Volume(BaseModel):
     mount_path: str
