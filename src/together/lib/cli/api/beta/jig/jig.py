@@ -60,7 +60,7 @@ else:
 # managed dockerfile marker - if this is the first line, jig will regenerate the file
 DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
 
-# DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
+#check for --debug flag
 DEBUG = is_enabled()
 
 WARMUP_ENV_NAME = os.getenv("WARMUP_ENV_NAME", "TORCHINDUCTOR_CACHE_DIR")

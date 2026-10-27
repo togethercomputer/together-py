@@ -17,7 +17,7 @@ from together import Together
 from together.lib.utils import log_debug
 from together.lib.cli.utils._debug import is_enabled
 
-# DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
+# check for --debug flag
 DEBUG = is_enabled()
 
 UPLOAD_CONCURRENCY_LIMIT = int(os.getenv("TOGETHER_UPLOAD_CONCURRENCY", "15"))
