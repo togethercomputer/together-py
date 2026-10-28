@@ -18,7 +18,7 @@ from .session import (
 )
 from ..._types import omit
 from ..._client import AsyncTogether
-from ..._exceptions import NotFoundError
+from ..._exceptions import NotFoundError, BadRequestError
 from ...types.post_training.model_resources import ModelResources
 from ...types.post_training.lora_config_param import LoraConfigParam as LoraConfig
 from ...types.post_training.optimizer_config_param import OptimizerConfigParam as OptimizerConfig
@@ -92,9 +92,36 @@ class ModelResourcesClient:
         lora_enabled: bool = True,
         compute_config: ComputeConfig | None = None,
         optimizer_config: OptimizerConfig | None = None,
+        inactive_timeout: int | None = None,
         timeout: float | None = None,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
     ) -> ModelResourcesClient:
+        """Create model resources and wait until they are READY.
+
+        If anything fails after the resource is created, including the wait, the resource is stopped.
+
+        Args:
+            api_key: Together API key. ``None`` reads ``TOGETHER_API_KEY``.
+            base_url: API base URL. ``None`` reads ``TOGETHER_BASE_URL``, then uses the public API.
+            base_model: Base model to train, one of the models listed by ``/rl/supported-models``.
+            base_weights_ref: Full-weight model in this project's model registry whose weights the
+                resource trains instead of the base model's own. ``None`` uses the base model's weights.
+            lora_enabled: ``True`` hosts LoRA sessions. ``False`` hosts a single full-weight session.
+            compute_config: GPU type and number of generator replicas. ``None`` lets the server choose.
+            optimizer_config: Optimizer for the resource. ``None`` uses the server default.
+            inactive_timeout: Minutes (5-1440) the server keeps the resource READY with no training
+                operations, after which it stops the resource. ``None`` uses the server default of 60.
+                Use :meth:`extend_expiry` to keep it longer.
+            timeout: Seconds this call waits for READY. ``None`` waits with no limit.
+            interval: Seconds between status checks while waiting.
+
+        Returns:
+            A client for the READY resource.
+
+        Raises:
+            RuntimeError: If the resource reaches STOPPING, STOPPED or ERROR before READY.
+            TimeoutError: If the resource is not READY within ``timeout`` seconds.
+        """
         return run_untracked(
             cls.create_async(
                 api_key=api_key,
@@ -104,6 +131,7 @@ class ModelResourcesClient:
                 lora_enabled=lora_enabled,
                 compute_config=compute_config,
                 optimizer_config=optimizer_config,
+                inactive_timeout=inactive_timeout,
                 timeout=timeout,
                 interval=interval,
             )
@@ -161,9 +189,12 @@ class ModelResourcesClient:
         lora_enabled: bool = True,
         compute_config: ComputeConfig | None = None,
         optimizer_config: OptimizerConfig | None = None,
+        inactive_timeout: int | None = None,
         timeout: float | None = None,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
     ) -> ModelResourcesClient:
+        """See :meth:`create`."""
+
         async def create_on_process_loop() -> ModelResourcesClient:
             client = AsyncTogether(api_key=api_key, base_url=base_url, timeout=_PROVISIONING_TIMEOUT)
             model_resources_id: str | None = None
@@ -174,6 +205,7 @@ class ModelResourcesClient:
                     lora_enabled=lora_enabled,
                     compute_config=compute_config if compute_config is not None else omit,
                     optimizer_config=optimizer_config if optimizer_config is not None else omit,
+                    inactive_timeout=inactive_timeout if inactive_timeout is not None else omit,
                 )
                 model_resources_id = model_resources.id
                 print(f"[model-resources:{model_resources_id}] created, waiting for READY status...")  # noqa: T201
@@ -222,6 +254,18 @@ class ModelResourcesClient:
     @on_client_loop
     async def retrieve_async(self) -> ModelResources:
         return await self._client.post_training.model_resources.retrieve(self._model_resources_id)
+
+    def extend_expiry(self, *, minutes: int) -> ModelResources:
+        """Keep the resource from stopping for inactivity for at least ``minutes`` (1-1440) from now.
+
+        It moves ``expires_at`` to at least that time. The API refuses it when the resource is not READY.
+        """
+        return self.run(self.extend_expiry_async(minutes=minutes))
+
+    @on_client_loop
+    async def extend_expiry_async(self, *, minutes: int) -> ModelResources:
+        """See :meth:`extend_expiry`."""
+        return await self._client.post_training.model_resources.extend_expiry(self._model_resources_id, minutes=minutes)
 
     def create_session(
         self,
@@ -284,9 +328,16 @@ class ModelResourcesClient:
         return await self._loop.run_teardown_async(self._stop_remote(force=force))
 
     async def _stop_remote(self, *, force: bool) -> ModelResources:
-        output = await self._client.post_training.model_resources.stop(
-            self._model_resources_id, force=force if force else omit
-        )
+        try:
+            output = await self._client.post_training.model_resources.stop(
+                self._model_resources_id, force=force if force else omit
+            )
+        except BadRequestError:
+            # The API refuses to stop a resource that already stopped or failed, for example
+            # one the server stopped after its expiry time. That resource needs no stop.
+            output = await self._client.post_training.model_resources.retrieve(self._model_resources_id)
+            if output.status not in _TERMINAL_STATUSES:
+                raise
         if output.status not in _TERMINAL_STATUSES:
             start = time.monotonic()
             while True:

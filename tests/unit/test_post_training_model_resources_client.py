@@ -5,9 +5,11 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
 
 from together._types import omit
+from together._exceptions import BadRequestError
 from together.post_training import MuonConfig, ComputeConfig, WandbMetadata, OptimizerConfig, SessionMetadata
 from together.post_training.clients import model_resources as model_resources_client_module
 from together.post_training.clients.session import SessionClient
@@ -108,6 +110,31 @@ async def test_create_async_omits_optimizer_config_by_default(monkeypatch: pytes
 
     create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["optimizer_config"] is model_resources_client_module.omit
+
+
+async def test_create_async_forwards_inactive_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _fake_client()
+    _patch_together(monkeypatch, client)
+
+    await ModelResourcesClient.create_async(
+        base_model="Qwen/Qwen3-0.6B",
+        inactive_timeout=120,
+        timeout=0.1,
+        interval=0.0,
+    )
+
+    create_kwargs = client.post_training.model_resources.create.await_args.kwargs
+    assert create_kwargs["inactive_timeout"] == 120
+
+
+async def test_create_async_omits_inactive_timeout_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _fake_client()
+    _patch_together(monkeypatch, client)
+
+    await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
+
+    create_kwargs = client.post_training.model_resources.create.await_args.kwargs
+    assert create_kwargs["inactive_timeout"] is omit
 
 
 def test_create_forwards_base_weights_ref(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -247,6 +274,35 @@ async def test_retrieve_async_returns_resource() -> None:
     client.post_training.model_resources.retrieve.assert_awaited_once_with("res-1")
 
 
+def test_extend_expiry_returns_resource() -> None:
+    client = MagicMock()
+    client.post_training.model_resources.extend_expiry = AsyncMock(
+        return_value=SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_READY")
+    )
+    client.post_training.model_resources.stop = AsyncMock(return_value=_STOPPING)
+    client.close = AsyncMock()
+    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
+
+    result = resources.extend_expiry(minutes=120)
+
+    assert result.id == "res-1"
+    client.post_training.model_resources.extend_expiry.assert_awaited_once_with("res-1", minutes=120)
+    resources.stop()
+
+
+async def test_extend_expiry_async_returns_resource() -> None:
+    client = MagicMock()
+    client.post_training.model_resources.extend_expiry = AsyncMock(
+        return_value=SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_READY")
+    )
+    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
+
+    result = await resources.extend_expiry_async(minutes=120)
+
+    assert result.id == "res-1"
+    client.post_training.model_resources.extend_expiry.assert_awaited_once_with("res-1", minutes=120)
+
+
 async def test_create_session_async_uses_model_resources_id(monkeypatch: pytest.MonkeyPatch) -> None:
     sentinel = object()
     captured: dict[str, Any] = {}
@@ -323,6 +379,40 @@ async def test_attach_async_raises_and_closes_when_missing(monkeypatch: pytest.M
         await ModelResourcesClient.attach_async(model_resources_id="missing")
 
     client.close.assert_awaited_once()
+
+
+def _bad_request() -> BadRequestError:
+    response = httpx.Response(400, request=httpx.Request("POST", "https://api.together.ai"))
+    return BadRequestError("model resources is in a terminal state", response=response, body=None)
+
+
+async def test_stop_async_accepts_a_resource_that_already_stopped() -> None:
+    client = MagicMock()
+    client.post_training.model_resources.stop = AsyncMock(side_effect=_bad_request())
+    client.post_training.model_resources.retrieve = AsyncMock(
+        return_value=SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_STOPPED")
+    )
+    client.close = AsyncMock()
+    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
+
+    result = await resources.stop_async()
+
+    assert result is not None
+    assert result.status == "MODEL_RESOURCES_STATUS_STOPPED"
+    client.close.assert_awaited_once()
+
+
+async def test_stop_async_raises_when_the_resource_is_still_running() -> None:
+    client = MagicMock()
+    client.post_training.model_resources.stop = AsyncMock(side_effect=_bad_request())
+    client.post_training.model_resources.retrieve = AsyncMock(
+        return_value=SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_READY")
+    )
+    client.close = AsyncMock()
+    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
+
+    with pytest.raises(BadRequestError):
+        await resources.stop_async()
 
 
 async def test_detach_async_closes_client_without_stopping() -> None:
