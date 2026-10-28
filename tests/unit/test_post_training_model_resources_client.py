@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import warnings
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
@@ -42,7 +43,7 @@ async def test_create_async_returns_resource(monkeypatch: pytest.MonkeyPatch) ->
     client = _fake_client()
     _patch_together(monkeypatch, client)
 
-    resources = await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
+    resources = await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", interval=0.0)
 
     assert resources.model_resources_id == "res-1"
     create_kwargs = client.post_training.model_resources.create.await_args.kwargs
@@ -62,7 +63,6 @@ async def test_create_async_passes_compute_config(
     await ModelResourcesClient.create_async(
         base_model="Qwen/Qwen3-0.6B",
         compute_config=ComputeConfig(num_generator_replicas=num_generator_replicas),
-        timeout=0.1,
         interval=0.0,
     )
 
@@ -78,7 +78,6 @@ async def test_create_async_omits_compute_config_so_the_server_decides(
 
     await ModelResourcesClient.create_async(
         base_model="Qwen/Qwen3-0.6B",
-        timeout=0.1,
         interval=0.0,
     )
 
@@ -94,7 +93,6 @@ async def test_create_async_forwards_optimizer_config(monkeypatch: pytest.Monkey
     await ModelResourcesClient.create_async(
         base_model="Qwen/Qwen3-0.6B",
         optimizer_config=optimizer_config,
-        timeout=0.1,
         interval=0.0,
     )
 
@@ -106,7 +104,7 @@ async def test_create_async_omits_optimizer_config_by_default(monkeypatch: pytes
     client = _fake_client()
     _patch_together(monkeypatch, client)
 
-    await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
+    await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", interval=0.0)
 
     create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["optimizer_config"] is model_resources_client_module.omit
@@ -118,20 +116,19 @@ async def test_create_async_forwards_inactive_timeout(monkeypatch: pytest.Monkey
 
     await ModelResourcesClient.create_async(
         base_model="Qwen/Qwen3-0.6B",
-        inactive_timeout=120,
-        timeout=0.1,
+        inactive_timeout=7200,
         interval=0.0,
     )
 
     create_kwargs = client.post_training.model_resources.create.await_args.kwargs
-    assert create_kwargs["inactive_timeout"] == 120
+    assert create_kwargs["inactive_timeout"] == 7200
 
 
 async def test_create_async_omits_inactive_timeout_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
     client = _fake_client()
     _patch_together(monkeypatch, client)
 
-    await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
+    await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", interval=0.0)
 
     create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["inactive_timeout"] is omit
@@ -144,7 +141,6 @@ def test_create_forwards_base_weights_ref(monkeypatch: pytest.MonkeyPatch) -> No
     ModelResourcesClient.create(
         base_model="Qwen/Qwen3.5-9B",
         base_weights_ref="together://ml_abc@rv_def",
-        timeout=0.1,
         interval=0.0,
     )
 
@@ -156,7 +152,7 @@ async def test_create_async_omits_base_weights_ref_by_default(monkeypatch: pytes
     client = _fake_client()
     _patch_together(monkeypatch, client)
 
-    await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
+    await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", interval=0.0)
 
     create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["base_weights_ref"] is omit
@@ -167,7 +163,7 @@ async def test_create_async_stops_and_closes_on_terminal_status(monkeypatch: pyt
     _patch_together(monkeypatch, client)
 
     with pytest.raises(RuntimeError, match="MODEL_RESOURCES_STATUS_ERROR"):
-        await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
+        await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", interval=0.0)
 
     client.post_training.model_resources.stop.assert_awaited_once_with("res-1")
     client.close.assert_awaited_once()
@@ -177,8 +173,10 @@ async def test_create_async_times_out_and_cleans_up(monkeypatch: pytest.MonkeyPa
     client = _fake_client(status="MODEL_RESOURCES_STATUS_CREATING")
     _patch_together(monkeypatch, client)
 
-    with pytest.raises(TimeoutError):
-        await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.0, interval=0.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with pytest.raises(TimeoutError):
+            await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", ready_timeout=0, interval=0.0)
 
     client.post_training.model_resources.stop.assert_awaited_once_with("res-1")
     client.close.assert_awaited_once()
@@ -210,8 +208,33 @@ async def test_create_async_prints_queue_position_while_waiting(
 
 
 def test_create_waits_for_ready_without_a_timeout_by_default() -> None:
-    assert inspect.signature(ModelResourcesClient.create).parameters["timeout"].default is None
-    assert inspect.signature(ModelResourcesClient.create_async).parameters["timeout"].default is None
+    for method in (ModelResourcesClient.create, ModelResourcesClient.create_async):
+        parameters = inspect.signature(method).parameters
+        assert parameters["ready_timeout"].default is None
+        assert parameters["timeout"].default is None
+
+
+def test_create_warns_once_when_timeout_is_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _fake_client(status="MODEL_RESOURCES_STATUS_CREATING")
+    _patch_together(monkeypatch, client)
+
+    with pytest.warns(FutureWarning, match="timeout in ModelResourcesClient.create") as record, pytest.raises(
+        TimeoutError
+    ):
+        ModelResourcesClient.create(base_model="Qwen/Qwen3-0.6B", timeout=0.0, interval=0.0)
+
+    assert len(record) == 1
+    assert "use ready_timeout" in str(record[0].message)
+
+
+async def test_create_async_uses_ready_timeout_when_both_are_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _fake_client(status="MODEL_RESOURCES_STATUS_CREATING")
+    _patch_together(monkeypatch, client)
+
+    with pytest.warns(FutureWarning, match="use ready_timeout"), pytest.raises(TimeoutError):
+        await ModelResourcesClient.create_async(
+            base_model="Qwen/Qwen3-0.6B", ready_timeout=0, timeout=3600.0, interval=0.0
+        )
 
 
 async def test_stop_async_closes_client() -> None:
@@ -283,10 +306,10 @@ def test_extend_expiry_returns_resource() -> None:
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
-    result = resources.extend_expiry(minutes=120)
+    result = resources.extend_expiry(seconds=7200)
 
     assert result.id == "res-1"
-    client.post_training.model_resources.extend_expiry.assert_awaited_once_with("res-1", minutes=120)
+    client.post_training.model_resources.extend_expiry.assert_awaited_once_with("res-1", seconds=7200)
     resources.stop()
 
 
@@ -297,10 +320,10 @@ async def test_extend_expiry_async_returns_resource() -> None:
     )
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
-    result = await resources.extend_expiry_async(minutes=120)
+    result = await resources.extend_expiry_async(seconds=7200)
 
     assert result.id == "res-1"
-    client.post_training.model_resources.extend_expiry.assert_awaited_once_with("res-1", minutes=120)
+    client.post_training.model_resources.extend_expiry.assert_awaited_once_with("res-1", seconds=7200)
 
 
 async def test_create_session_async_uses_model_resources_id(monkeypatch: pytest.MonkeyPatch) -> None:
