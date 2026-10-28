@@ -617,8 +617,8 @@ class TestBetaJigModelMounts:
         assert "extra_body" not in calls[0]
 
     def test_deploy_warns_about_secrets_expiring_soon(self, capsys: pytest.CaptureFixture[str]) -> None:
-        def expires_in(days: int) -> str:
-            return (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+        def expires_in(days: int) -> datetime:
+            return datetime.now(timezone.utc) + timedelta(days=days)
 
         class _Api:
             def update(self, _id: str, **_kwargs: Any) -> SimpleNamespace:
@@ -627,7 +627,7 @@ class TestBetaJigModelMounts:
                     environment_variables=[
                         SimpleNamespace(name="SOON", value_from_secret_expires_at=expires_in(2)),
                         SimpleNamespace(name="LATER", value_from_secret_expires_at=expires_in(10)),
-                        SimpleNamespace(name="PLAIN"),
+                        SimpleNamespace(name="PLAIN", value_from_secret_expires_at=None),
                     ],
                 )
 
