@@ -138,11 +138,23 @@ def _parse_ttl(ttl: str) -> int:
     return int(match.group(1)) * 86400
 
 
-def _format_timestamp(iso: str) -> str:
+def _coerce_timestamp(value: dt | str | None) -> dt | None:
+    """Normalize an SDK datetime or an ISO-8601 string."""
+    if isinstance(value, dt):
+        return value
+    if not isinstance(value, str) or not value:
+        return None
     try:
-        return dt.fromisoformat(iso.replace("Z", "+00:00")).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+        return dt.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
-        return iso
+        return None
+
+
+def _format_timestamp(value: dt | str) -> str:
+    parsed = _coerce_timestamp(value)
+    if parsed is None:
+        return str(value)
+    return parsed.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 # matches the server's grace period, during which owners are warned before a secret is deleted
@@ -153,15 +165,12 @@ def _warn_expiring_secrets(deployment: Deployment) -> None:
     """Warn about secrets the deployment references that are deleted within the warning window."""
     soon = dt.now(timezone.utc) + _SECRET_EXPIRY_WARNING_WINDOW
     for var in deployment.environment_variables or []:
-        # not in the generated SDK model yet
-        expires_at: str | None = getattr(var, "value_from_secret_expires_at", None)
-        if not expires_at:
+        expires_at = _coerce_timestamp(getattr(var, "value_from_secret_expires_at", None))
+        if expires_at is None:
             continue
-        try:
-            expiring = dt.fromisoformat(expires_at.replace("Z", "+00:00")) <= soon
-        except ValueError:
-            continue
-        if expiring:
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at <= soon:
             console.print(
                 f"\N{WARNING SIGN} Secret {var.name} used by this deployment will expire and be permanently "
                 f"deleted at {_format_timestamp(expires_at)}. Renew it with: "
@@ -690,28 +699,25 @@ class Jig:
         self.state._secrets_initialized = True
         self.state.save()
 
-    def set_secret(self, name: str, value: str, description: str, ttl_seconds: int | None = None) -> str | None:
+    def set_secret(self, name: str, value: str, description: str, ttl_seconds: int | None = None) -> dt | None:
         """Set secret for the deployment (create or update) and return when it expires"""
         self.sync_secrets_from_deployment()
         scoped_name = f"{self.name}-{name}"
-        # ttl_seconds is not in the generated SDK params yet
-        extra_body = {"ttl_seconds": ttl_seconds} if ttl_seconds else None
+        ttl = ttl_seconds if ttl_seconds is not None else omit
 
         try:
             secret = self.api.secrets.update(
-                id=scoped_name, name=scoped_name, description=description, value=value, extra_body=extra_body
+                id=scoped_name, name=scoped_name, description=description, value=value, ttl_seconds=ttl
             )
             console.print(f"\N{CHECK MARK} Updated secret {name}")
         except NotFoundError:
-            secret = self.api.secrets.create(
-                name=scoped_name, value=value, description=description, extra_body=extra_body
-            )
+            secret = self.api.secrets.create(name=scoped_name, value=value, description=description, ttl_seconds=ttl)
             console.print(f"\N{CHECK MARK} Created secret {name}")
 
         self.state.secrets[name] = scoped_name
         self.state.save()
 
-        expires_at: str | None = getattr(secret, "expires_at", None)
+        expires_at = secret.expires_at
         if expires_at:
             console.print(
                 f"\N{WARNING SIGN} Secret {name} will expire and be permanently deleted at "
@@ -1519,7 +1525,7 @@ def list_deployments(jig: Jig) -> Any:
     return jig.api.with_raw_response.list()
 
 
-def secrets_set(jig: Jig, name: str, value: str, description: str, ttl: str | None = None) -> str | None:
+def secrets_set(jig: Jig, name: str, value: str, description: str, ttl: str | None = None) -> dt | None:
     """Set a secret (create or update)"""
     return jig.set_secret(name, value, description, _parse_ttl(ttl) if ttl else None)
 
