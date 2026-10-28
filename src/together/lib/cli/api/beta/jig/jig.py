@@ -692,9 +692,7 @@ class Jig:
             )
             console.print(f"\N{CHECK MARK} Updated secret {name}")
         except NotFoundError:
-            secret = self.api.secrets.create(
-                name=scoped_name, value=value, description=description, ttl_seconds=ttl
-            )
+            secret = self.api.secrets.create(name=scoped_name, value=value, description=description, ttl_seconds=ttl)
             console.print(f"\N{CHECK MARK} Created secret {name}")
 
         self.state.secrets[name] = scoped_name
