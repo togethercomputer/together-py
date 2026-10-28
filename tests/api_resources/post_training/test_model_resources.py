@@ -37,7 +37,7 @@ class TestModelResources:
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
             },
-            inactive_timeout=60,
+            inactive_timeout=3600,
             lora_enabled=True,
             optimizer_config={
                 "adam": {},
@@ -159,7 +159,7 @@ class TestModelResources:
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
             },
-            inactive_timeout=60,
+            inactive_timeout=3600,
             lora_enabled=True,
             optimizer_config={
                 "adam": {},
@@ -196,7 +196,7 @@ class TestModelResources:
     def test_method_extend_expiry(self, client: Together) -> None:
         model_resource = client.post_training.model_resources.extend_expiry(
             model_resources_id="model_resources_id",
-            minutes=120,
+            seconds=7200,
         )
         assert_matches_type(ModelResources, model_resource, path=["response"])
 
@@ -204,7 +204,7 @@ class TestModelResources:
     def test_raw_response_extend_expiry(self, client: Together) -> None:
         response = client.post_training.model_resources.with_raw_response.extend_expiry(
             model_resources_id="model_resources_id",
-            minutes=120,
+            seconds=7200,
         )
 
         assert response.is_closed is True
@@ -216,7 +216,7 @@ class TestModelResources:
     def test_streaming_response_extend_expiry(self, client: Together) -> None:
         with client.post_training.model_resources.with_streaming_response.extend_expiry(
             model_resources_id="model_resources_id",
-            minutes=120,
+            seconds=7200,
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -231,7 +231,7 @@ class TestModelResources:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `model_resources_id` but received ''"):
             client.post_training.model_resources.with_raw_response.extend_expiry(
                 model_resources_id="",
-                minutes=120,
+                seconds=7200,
             )
 
     @parametrize
@@ -302,7 +302,7 @@ class TestAsyncModelResources:
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
             },
-            inactive_timeout=60,
+            inactive_timeout=3600,
             lora_enabled=True,
             optimizer_config={
                 "adam": {},
@@ -424,7 +424,7 @@ class TestAsyncModelResources:
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
             },
-            inactive_timeout=60,
+            inactive_timeout=3600,
             lora_enabled=True,
             optimizer_config={
                 "adam": {},
@@ -461,7 +461,7 @@ class TestAsyncModelResources:
     async def test_method_extend_expiry(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.post_training.model_resources.extend_expiry(
             model_resources_id="model_resources_id",
-            minutes=120,
+            seconds=7200,
         )
         assert_matches_type(ModelResources, model_resource, path=["response"])
 
@@ -469,7 +469,7 @@ class TestAsyncModelResources:
     async def test_raw_response_extend_expiry(self, async_client: AsyncTogether) -> None:
         response = await async_client.post_training.model_resources.with_raw_response.extend_expiry(
             model_resources_id="model_resources_id",
-            minutes=120,
+            seconds=7200,
         )
 
         assert response.is_closed is True
@@ -481,7 +481,7 @@ class TestAsyncModelResources:
     async def test_streaming_response_extend_expiry(self, async_client: AsyncTogether) -> None:
         async with async_client.post_training.model_resources.with_streaming_response.extend_expiry(
             model_resources_id="model_resources_id",
-            minutes=120,
+            seconds=7200,
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -496,7 +496,7 @@ class TestAsyncModelResources:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `model_resources_id` but received ''"):
             await async_client.post_training.model_resources.with_raw_response.extend_expiry(
                 model_resources_id="",
-                minutes=120,
+                seconds=7200,
             )
 
     @parametrize

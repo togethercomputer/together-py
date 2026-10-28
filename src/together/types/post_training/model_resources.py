@@ -55,7 +55,7 @@ class ModelResources(BaseModel):
     """ID of the user who created the model resource"""
 
     inactive_timeout: int
-    """Minutes without activity after which the resource stops and its sessions expire.
+    """Seconds without activity after which the resource stops and its sessions expire.
 
     Every operation on any of its sessions restarts the count.
     """
@@ -91,7 +91,7 @@ class ModelResources(BaseModel):
     expires_at: Optional[datetime] = None
     """
     The earliest time the resource can stop for inactivity, which also expires its
-    sessions. It is the resource's last activity plus `inactive_timeout` minutes.
+    sessions. It is the resource's last activity plus `inactive_timeout` seconds.
     Becoming ready, a session start and every operation on any of its sessions count
     as activity, and the resource does not stop while an operation is running. An
     extend expiry call can move it later. It never moves earlier. Refreshed about

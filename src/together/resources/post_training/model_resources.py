@@ -80,7 +80,7 @@ class ModelResourcesResource(SyncAPIResource):
 
           compute_config: Compute layout to provision.
 
-          inactive_timeout: Minutes without activity after which the resource stops and its sessions expire,
+          inactive_timeout: Seconds without activity after which the resource stops and its sessions expire,
               counted from when it becomes ready and from its last activity. Every operation
               on any of its sessions restarts the count, and an extend expiry call can keep it
               up longer.
@@ -243,7 +243,7 @@ class ModelResourcesResource(SyncAPIResource):
 
           compute_config: Compute layout to provision.
 
-          inactive_timeout: Minutes without activity after which the resource stops and its sessions expire,
+          inactive_timeout: Seconds without activity after which the resource stops and its sessions expire,
               counted from when it becomes ready and from its last activity. Every operation
               on any of its sessions restarts the count, and an extend expiry call can keep it
               up longer.
@@ -283,7 +283,7 @@ class ModelResourcesResource(SyncAPIResource):
         self,
         model_resources_id: str,
         *,
-        minutes: int,
+        seconds: int,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -293,16 +293,16 @@ class ModelResourcesResource(SyncAPIResource):
     ) -> ModelResources:
         """
         Keeps a ready model resource from stopping for inactivity for at least the given
-        number of minutes from now. It moves the resource's `expires_at` to at least
+        number of seconds from now. It moves the resource's `expires_at` to at least
         that time, and never earlier. Every operation on the resource's sessions already
-        keeps it up for `inactive_timeout` minutes, so use this only to stay up longer
+        keeps it up for `inactive_timeout` seconds, so use this only to stay up longer
         without operations, for example while you compute rewards. Fails if the resource
         is not ready.
 
         Args:
           model_resources_id: ID of the model resource
 
-          minutes: Minutes from now the resource must not stop for inactivity.
+          seconds: Seconds from now the resource must not stop for inactivity.
 
           extra_headers: Send extra headers
 
@@ -319,7 +319,7 @@ class ModelResourcesResource(SyncAPIResource):
                 "/v1/rl/model-resources/{model_resources_id}/extend-expiry", model_resources_id=model_resources_id
             ),
             body=maybe_transform(
-                {"minutes": minutes}, model_resource_extend_expiry_params.ModelResourceExtendExpiryParams
+                {"seconds": seconds}, model_resource_extend_expiry_params.ModelResourceExtendExpiryParams
             ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -421,7 +421,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
 
           compute_config: Compute layout to provision.
 
-          inactive_timeout: Minutes without activity after which the resource stops and its sessions expire,
+          inactive_timeout: Seconds without activity after which the resource stops and its sessions expire,
               counted from when it becomes ready and from its last activity. Every operation
               on any of its sessions restarts the count, and an extend expiry call can keep it
               up longer.
@@ -584,7 +584,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
 
           compute_config: Compute layout to provision.
 
-          inactive_timeout: Minutes without activity after which the resource stops and its sessions expire,
+          inactive_timeout: Seconds without activity after which the resource stops and its sessions expire,
               counted from when it becomes ready and from its last activity. Every operation
               on any of its sessions restarts the count, and an extend expiry call can keep it
               up longer.
@@ -624,7 +624,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         self,
         model_resources_id: str,
         *,
-        minutes: int,
+        seconds: int,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -634,16 +634,16 @@ class AsyncModelResourcesResource(AsyncAPIResource):
     ) -> ModelResources:
         """
         Keeps a ready model resource from stopping for inactivity for at least the given
-        number of minutes from now. It moves the resource's `expires_at` to at least
+        number of seconds from now. It moves the resource's `expires_at` to at least
         that time, and never earlier. Every operation on the resource's sessions already
-        keeps it up for `inactive_timeout` minutes, so use this only to stay up longer
+        keeps it up for `inactive_timeout` seconds, so use this only to stay up longer
         without operations, for example while you compute rewards. Fails if the resource
         is not ready.
 
         Args:
           model_resources_id: ID of the model resource
 
-          minutes: Minutes from now the resource must not stop for inactivity.
+          seconds: Seconds from now the resource must not stop for inactivity.
 
           extra_headers: Send extra headers
 
@@ -660,7 +660,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
                 "/v1/rl/model-resources/{model_resources_id}/extend-expiry", model_resources_id=model_resources_id
             ),
             body=await async_maybe_transform(
-                {"minutes": minutes}, model_resource_extend_expiry_params.ModelResourceExtendExpiryParams
+                {"seconds": seconds}, model_resource_extend_expiry_params.ModelResourceExtendExpiryParams
             ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout

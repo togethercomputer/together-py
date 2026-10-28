@@ -8,5 +8,5 @@ __all__ = ["ModelResourceExtendExpiryParams"]
 
 
 class ModelResourceExtendExpiryParams(TypedDict, total=False):
-    minutes: Required[int]
-    """Minutes from now the resource must not stop for inactivity."""
+    seconds: Required[int]
+    """Seconds from now the resource must not stop for inactivity."""

@@ -24,7 +24,7 @@ class ModelResourceEstimateCostParams(TypedDict, total=False):
 
     inactive_timeout: int
     """
-    Minutes without activity after which the resource stops and its sessions expire,
+    Seconds without activity after which the resource stops and its sessions expire,
     counted from when it becomes ready and from its last activity. Every operation
     on any of its sessions restarts the count, and an extend expiry call can keep it
     up longer.
