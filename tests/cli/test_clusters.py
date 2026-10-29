@@ -1036,10 +1036,11 @@ class TestClustersRetrieve:
 
 
 class TestClustersCreate:
-    def test_create_help_mentions_b300_gpu_type(self, cli_runner: CliRunner) -> None:
+    def test_create_help_mentions_known_gpu_types(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["clusters", "create", "--help"])
 
         assert "B300_SXM" in result.output
+        assert "GB200_SXM" in result.output
         assert result.exit_code == 0
 
     def test_invalid_nvidia_selector_is_json_in_json_mode(self, cli_runner: CliRunner) -> None:
