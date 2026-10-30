@@ -86,6 +86,16 @@ def _compute_summary(resource: ModelResources) -> str:
     return f"{replicas}× {gpu}"
 
 
+def _inactive_timeout(resource: ModelResources) -> str:
+    return f"{resource.inactive_timeout} min"
+
+
+def _expires_at(resource: ModelResources) -> str:
+    if resource.expires_at is None:
+        return "-"
+    return format_datetime(resource.expires_at)
+
+
 def print_resources_table(resources: list[ModelResources]) -> None:
     table = ListTable("Model resources", empty_message="No model resources found.")
     table.add_primary_column("ID", ratio=2, overflow="fold")
@@ -112,6 +122,8 @@ def print_model_resource(resource: ModelResources) -> None:
         ("LoRA", "yes" if resource.lora_enabled else "no"),
         ("Compute", cell(_compute_summary(resource))),
         ("Optimizer", cell(_optimizer_name(resource))),
+        ("Inactive timeout", cell(_inactive_timeout(resource))),
+        ("Expires", cell(_expires_at(resource))),
         ("Created by", cell(resource.created_by)),
         ("Created", format_datetime(resource.created_at)),
         ("Updated", format_datetime(resource.updated_at)),

@@ -762,6 +762,12 @@ training_app.command(
     help="Get a model resource, training session, or checkpoint by ID",
     sort_key=4,
 )
+training_app.command(
+    (f"{_TRAINING}.extend_expiry:extend_expiry"),
+    name="extend-expiry",
+    help="Keep a ready model resource from stopping for inactivity",
+    sort_key=5,
+)
 _FP4 = f"{_TRAINING}.prepare_for_fp4_inference"
 training_fp4_app = training_app.command(
     App(
@@ -769,7 +775,7 @@ training_fp4_app = training_app.command(
         alias="fp4",
         help="Prepare fine-tuned models for FP4 inference",
         help_epilogue=TRAINING_FP4_HELP_EXAMPLES,
-        sort_key=5,
+        sort_key=6,
     )
 )
 training_fp4_app.command(
