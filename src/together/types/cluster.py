@@ -15,13 +15,11 @@ __all__ = [
     "AddOnConfigHeadlamp",
     "AddOnConfigIngress",
     "AddOnConfigSlurmWeb",
-    "AddOnConfigTorchpass",
     "AddOnState",
     "AddOnStateDashboard",
     "AddOnStateHeadlamp",
     "AddOnStateIngress",
     "AddOnStateSlurmWeb",
-    "AddOnStateTorchpass",
     "ControlPlaneNode",
     "ControlPlaneNodePhaseTransition",
     "GPUWorkerNode",
@@ -61,13 +59,6 @@ class AddOnConfigSlurmWeb(BaseModel):
     """Whether to enable the Slurm Web add-on."""
 
 
-class AddOnConfigTorchpass(BaseModel):
-    """Configuration for the Model Aware TorchPass add-on."""
-
-    enabled: Optional[bool] = None
-    """Whether to enable the Model Aware TorchPass add-on."""
-
-
 class AddOnConfig(BaseModel):
     """Configuration for a cluster add-on."""
 
@@ -80,9 +71,6 @@ class AddOnConfig(BaseModel):
 
     slurm_web: Optional[AddOnConfigSlurmWeb] = None
     """Configuration for the Slurm Web add-on."""
-
-    torchpass: Optional[AddOnConfigTorchpass] = None
-    """Configuration for the Model Aware TorchPass add-on."""
 
 
 class AddOnStateDashboard(BaseModel):
@@ -105,12 +93,6 @@ class AddOnStateSlurmWeb(BaseModel):
     pass
 
 
-class AddOnStateTorchpass(BaseModel):
-    """State for the Model Aware TorchPass add-on."""
-
-    pass
-
-
 class AddOnState(BaseModel):
     """State for a cluster add-on."""
 
@@ -123,9 +105,6 @@ class AddOnState(BaseModel):
 
     slurm_web: Optional[AddOnStateSlurmWeb] = None
     """State for the Slurm Web add-on."""
-
-    torchpass: Optional[AddOnStateTorchpass] = None
-    """State for the Model Aware TorchPass add-on."""
 
 
 class AddOn(BaseModel):
