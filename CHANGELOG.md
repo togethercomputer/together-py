@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.1.0](https://github.com/togethercomputer/together-py/compare/v3.0.0...v3.1.0) (2026-10-30)
+
+
+### Features
+
+* **clusters:** add GB200 GPU cluster type ([baacd65](https://github.com/togethercomputer/together-py/commit/baacd659d8279122e38c68c4e8b878c91eaf7c5b))
+* **jig:** stop storing the user's api key as a deployment secret in jig ([#654](https://github.com/togethercomputer/together-py/issues/654)) ([588f882](https://github.com/togethercomputer/together-py/commit/588f88273398ddc42de663de02f65aca7edbed59))
+* **openapi:** add applied_credit to billing usage line items ([704cfc2](https://github.com/togethercomputer/together-py/commit/704cfc2a75ba61666803c9f6b33f9baaf7e003a7))
+* **rl/mosh-5822:** rename timeout to ready_timeout on ModelResourcesClient.create ([#194](https://github.com/togethercomputer/together-py/issues/194)) ([3428f80](https://github.com/togethercomputer/together-py/commit/3428f80887121c5715f670f3cffa71b2ed482c12))
+* **rl:** add inactive_timeout and extend_expiry to ModelResourcesClient ([#193](https://github.com/togethercomputer/together-py/issues/193)) ([860ec13](https://github.com/togethercomputer/together-py/commit/860ec13fe9ce4a9440dbd97619d7e05c3017807f))
+* **rl:** add methods to extend and manage model resources expiry ([1023fd1](https://github.com/togethercomputer/together-py/commit/1023fd1906308d1e8314e2dec255128051395a18))
+* **rl:** inactive_timeout and extend-expiry in seconds ([20689a3](https://github.com/togethercomputer/together-py/commit/20689a3005d3474d2351db19514caf0ed069eba6))
+* **secrets:** Add parameters for secret expiry ttl ([ae71634](https://github.com/togethercomputer/together-py/commit/ae71634495cd77ba5a35ce230f0c8ad881188771))
+
+
+### Bug Fixes
+
+* **cli:** read secret expiry as datetime now that the sdk types it ([#662](https://github.com/togethercomputer/together-py/issues/662)) ([edef002](https://github.com/togethercomputer/together-py/commit/edef002ac2b5fa6706644ec3eec934124be76190))
+* **clusters:** Update add-on specs ([cf0549a](https://github.com/togethercomputer/together-py/commit/cf0549a9d06fc812aaed928321a69f608a1c1bda))
+
 ## [3.0.0](https://github.com/togethercomputer/together-py/compare/v2.42.0...v3.0.0) (2026-10-22)
 
 
