@@ -726,6 +726,7 @@ def _print_deployment_preview(
     add_row("--model", f"{model.name} ({model_path})")
     if adapter_label is not None:
         add_row("--adapter", adapter_label)
+    shown_config: str | None
     if config_value is not None and config_value.id and config_value.project_id:
         shown_config = construct_config_path(config_value)
     elif config_value is not None and config_value.id:
