@@ -12,6 +12,7 @@ from together.lib.cli.api.endpoints._utils._resolve_config import (
     find_config,
     resolve_config,
     prompt_for_config,
+    config_from_explicit_ref,
 )
 from together.lib.cli.api.endpoints._utils._hardware_pricing import selector_value
 
@@ -80,19 +81,24 @@ def deployment_serves_model(deployment: EndpointDeployment, model: Model) -> boo
     return False
 
 
-def select_lora_config(configs: list[Config], config_id: str | None, *, model: str) -> Config:
+def select_lora_config(
+    configs: list[Config],
+    config_id: str | None,
+    *,
+    model: str,
+    project_id: str | None = None,
+) -> Config:
     """Pick a fixed or dynamic LoRA config.
 
-    An explicit ``config_id`` must itself be fixed or dynamic. With no id, the only LoRA
-    config is used. Several LoRA configs fail here; interactive deploy prompts instead.
+    An explicit ``config_id`` is forwarded when missing from the client-side list —
+    the API validates compatibility. When the list hit is present, it must itself be
+    fixed or dynamic. With no id, the only LoRA config is used. Several LoRA configs
+    fail here; interactive deploy prompts instead.
     """
     if config_id is not None:
         selected = find_config(configs, config_id)
         if selected is None:
-            raise ValueError(
-                f"Config {config_id} is not valid for model {model}. "
-                "Use `tg models configs <model-id>` to list configs."
-            )
+            return config_from_explicit_ref(config_id, project_id=project_id)
         if not config_serves_adapters(selected):
             mode = config_adapter_mode(selected) or "disabled"
             raise ValueError(
@@ -110,7 +116,7 @@ def select_lora_config(configs: list[Config], config_id: str | None, *, model: s
         )
     if len(lora_configs) == 1:
         return lora_configs[0]
-    return resolve_config(lora_configs, None, model=model)
+    return resolve_config(lora_configs, None, model=model, project_id=project_id)
 
 
 async def select_lora_config_for_deploy(
@@ -122,11 +128,11 @@ async def select_lora_config_for_deploy(
 ) -> Config:
     """Same as ``select_lora_config``, but prompt when several LoRA configs exist."""
     if config_id is not None or cli.non_interactive:
-        return select_lora_config(configs, config_id, model=model)
+        return select_lora_config(configs, config_id, model=model, project_id=cli.project_id)
 
     lora_configs = _ordered_lora_configs(configs)
     if len(lora_configs) <= 1:
-        return select_lora_config(configs, None, model=model)
+        return select_lora_config(configs, None, model=model, project_id=cli.project_id)
     return await prompt_for_config(lora_configs, model=model)
 
 

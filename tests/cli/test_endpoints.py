@@ -436,6 +436,8 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code != 0
         assert "Deploy" in output
         assert "preview" in output
+        assert "projects/proj/models/ml_1" in output
+        assert "projects/proj/configs/cr_1" in output
         assert "This deployment will utilize 1x H100" in output
         assert "estimated to cost approximately" in output
         assert "$24.00/hr - $48.00/hr" in output

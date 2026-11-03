@@ -25,9 +25,7 @@ from together.lib.cli.api.endpoints._utils._ab_experiments import (
     find_ab_experiment_by_name,
     print_ab_experiment_detail,
 )
-from together.lib.cli.api.endpoints._utils._resolve_config import (
-    construct_config_path,
-)
+from together.lib.cli.api.endpoints._utils._resolve_config import construct_config_path
 from together.lib.cli.api.endpoints._utils._build_autoscaling import build_autoscaling
 from together.lib.cli.api.endpoints._utils._find_endpoint_by_deployment import find_endpoint_by_deployment
 

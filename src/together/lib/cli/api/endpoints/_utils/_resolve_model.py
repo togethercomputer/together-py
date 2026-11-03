@@ -17,6 +17,7 @@ from together.lib.cli.api.endpoints._utils._resolve_config import (
     choose_config,
     resolve_configs,
     config_from_profile,
+    config_from_explicit_ref,
     validate_requested_config,
 )
 
@@ -92,16 +93,6 @@ Please specify a more specific model name. To find a matching model, try this:
     if supported_model.base_model_id:
         return ResolvedModelReference(None, supported_model.base_model_id)
     raise ValueError(f"Model {model_input} has no usable base model reference.")
-
-
-async def resolve_model(
-    config: CLIConfigParameter,
-    model_input: str,
-    *,
-    config_id: str | None = None,
-) -> Model:
-    resolved = await resolve_model_and_config(config, model_input, config_id=config_id)
-    return resolved.model
 
 
 async def resolve_model_display_name(
@@ -230,14 +221,50 @@ async def _resolve_config_for_model(
     model_input: str,
     revision_id: str | None = None,
 ) -> ResolvedModelAndConfig:
+    if config_id is not None:
+        # Explicit --config: never membership-check against the client-side list.
+        # Enrich from known reference ids when possible (owning projectId / selectors);
+        # otherwise forward the bare id and let the API validate compatibility.
+        selected = await _lookup_explicit_config(
+            config,
+            config_id,
+            reference_model_ids=_model_config_reference_ids(model, reference_model_id),
+        )
+        return ResolvedModelAndConfig(model=model, config=selected, revision_id=revision_id)
+
     selected = await choose_config(
         config,
         await resolve_configs(config, reference_model_id),
-        config_id,
+        None,
         model=model_input,
     )
-    selected = validate_requested_config(selected, config_id, model=model_input)
     return ResolvedModelAndConfig(model=model, config=selected, revision_id=revision_id)
+
+
+def _model_config_reference_ids(model: Model, reference_model_id: str) -> list[str]:
+    """Ids to list configs against for an explicit ``--config`` enrichment lookup.
+
+    Derived models may register configs on their own id while ``base_model_id`` is
+    still set, so searching only the base misses valid per-model configs.
+    """
+    ids: list[str] = []
+    for candidate in (reference_model_id, model.id, model.base_model_id):
+        if candidate and candidate not in ids:
+            ids.append(candidate)
+    return ids
+
+
+async def _lookup_explicit_config(
+    config: CLIConfigParameter,
+    config_id: str,
+    *,
+    reference_model_ids: list[str],
+) -> Config:
+    for reference_model_id in reference_model_ids:
+        selected = find_config(await resolve_configs(config, reference_model_id), config_id)
+        if selected is not None:
+            return selected
+    return config_from_explicit_ref(config_id, project_id=config.project_id)
 
 
 async def _resolve_via_configs(
@@ -252,13 +279,18 @@ async def _resolve_via_configs(
     The deploy target is the config's reference model — correct when the user
     passed a bare reference-model id that is not retrievable under --project.
     """
-    selected = await choose_config(
-        config,
-        await resolve_configs(config, reference_model_id),
-        config_id,
-        model=model_input,
-    )
-    selected = validate_requested_config(selected, config_id, model=model_input)
+    configs = await resolve_configs(config, reference_model_id)
+    if config_id is not None:
+        # Need the config body for referenceModel before we can load the model.
+        # If it's missing from the list, we cannot forward a bare stub here.
+        selected = find_config(configs, config_id)
+        if selected is None:
+            raise ValueError(
+                f"Config {config_id} is not valid for model {model_input}. "
+                "Use `tg models configs <model-id>` to list configs."
+            )
+    else:
+        selected = await choose_config(config, configs, None, model=model_input)
     model = await _retrieve_model_from_reference(config, selected, model_input=model_input)
     return ResolvedModelAndConfig(model=model, config=selected)
 
@@ -495,7 +527,7 @@ Please specify a more specific model ID. To find a more specific model variant t
     selected_config = validate_requested_config(
         config_from_profile(profile),
         config_id,
-        model=model_input,
+        project_id=config.project_id,
     )
     model = Model.construct(
         id=model_id,
@@ -525,7 +557,11 @@ async def _resolve_explicit_config_for_public_model(
             break
     if selected is None:
         return None
-    selected = validate_requested_config(selected, config_id, model=model_input)
+    selected = validate_requested_config(
+        selected,
+        config_id,
+        project_id=config.project_id,
+    )
     model = await _retrieve_model_from_reference(config, selected, model_input=model_input)
     revision_id: str | None = None
     for profile in profiles:

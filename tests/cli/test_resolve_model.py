@@ -395,7 +395,8 @@ async def test_public_model_multiple_profiles_requires_flags(capsys: pytest.Capt
 
 
 @pytest.mark.asyncio
-async def test_raw_model_rejects_mismatched_config_id() -> None:
+async def test_raw_model_rejects_mismatched_config_id_when_model_unresolved() -> None:
+    """Without a loaded model we need the config body for referenceModel — still reject."""
     client = MagicMock()
     client.models.retrieve = AsyncMock(
         side_effect=NotFoundError(message="Model not found", response=MagicMock(), body=None),
@@ -406,6 +407,81 @@ async def test_raw_model_rejects_mismatched_config_id() -> None:
 
     with pytest.raises(ValueError, match="Config cr_other is not valid"):
         await resolve_model_and_config(_cli_config(client), "ml_base", config_id="cr_other")
+
+
+@pytest.mark.asyncio
+async def test_derived_model_forwards_explicit_config_registered_on_own_id() -> None:
+    """Per-model configs live on model.id; base_model_id-only lookup used to reject them."""
+    derived = _private_model(
+        id="ml_derived",
+        projectId="proj_mine",
+        name="my-slug/derived",
+        baseModelId="ml_base",
+    )
+    per_model = _config(
+        id="cr_custom",
+        projectId="proj_mine",
+        referenceModelId="ml_derived",
+        referenceModel="projects/proj_mine/models/ml_derived",
+    )
+
+    async def _list_configs(*, reference_model_id: str) -> MagicMock:
+        if reference_model_id == "ml_derived":
+            return MagicMock(data=[per_model])
+        return MagicMock(data=[_config()])  # base configs only
+
+    client = MagicMock()
+    client.models.retrieve = AsyncMock(return_value=derived)
+    client.models.configs.list = AsyncMock(side_effect=_list_configs)
+
+    resolved = await resolve_model_and_config(
+        _cli_config(client),
+        "ml_derived",
+        config_id="cr_custom",
+    )
+
+    assert resolved.model.id == "ml_derived"
+    assert resolved.config.id == "cr_custom"
+    assert construct_config_path(resolved.config) == "projects/proj_mine/configs/cr_custom"
+    assert [call.kwargs["reference_model_id"] for call in client.models.configs.list.await_args_list] == [
+        "ml_base",
+        "ml_derived",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_loaded_model_forwards_explicit_config_missing_from_lists() -> None:
+    """Explicit --config is qualified with --project when missing from client lists."""
+    derived = _private_model()
+    client = MagicMock()
+    client.models.retrieve = AsyncMock(return_value=derived)
+    client.models.configs.list = AsyncMock(return_value=MagicMock(data=[_config()]))
+
+    resolved = await resolve_model_and_config(
+        _cli_config(client),
+        "ml_custom",
+        config_id="cr_unknown",
+    )
+
+    assert resolved.model.id == "ml_custom"
+    assert resolved.config.id == "cr_unknown"
+    assert construct_config_path(resolved.config) == "projects/proj_mine/configs/cr_unknown"
+
+
+@pytest.mark.asyncio
+async def test_loaded_model_forwards_fully_qualified_explicit_config() -> None:
+    derived = _private_model()
+    client = MagicMock()
+    client.models.retrieve = AsyncMock(return_value=derived)
+    client.models.configs.list = AsyncMock(return_value=MagicMock(data=[_config()]))
+
+    resolved = await resolve_model_and_config(
+        _cli_config(client),
+        "ml_custom",
+        config_id="projects/proj_other/configs/cr_unknown",
+    )
+
+    assert construct_config_path(resolved.config) == "projects/proj_other/configs/cr_unknown"
 
 
 @pytest.mark.asyncio

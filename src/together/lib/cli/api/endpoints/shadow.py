@@ -30,9 +30,7 @@ from together.lib.cli.api.endpoints._utils._resolve_model import (
     construct_model_path,
     resolve_model_and_config,
 )
-from together.lib.cli.api.endpoints._utils._resolve_config import (
-    construct_config_path,
-)
+from together.lib.cli.api.endpoints._utils._resolve_config import construct_config_path
 from together.lib.cli.api.endpoints._utils._build_autoscaling import build_autoscaling
 
 
