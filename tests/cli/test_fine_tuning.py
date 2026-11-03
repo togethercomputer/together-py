@@ -173,7 +173,8 @@ class TestFineTuningCreate:
         assert "Dropout probability applied to LoRA adapter inputs" in output
         assert "Scaling factor applied to the LoRA adapter weights" in output
         assert "MoE expert modules" in output
-        assert "adapter-only output" in output
+        assert "combined with attention modules" in output
+        assert "adapter-only" not in output
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_handles_unavailable_price_estimation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
