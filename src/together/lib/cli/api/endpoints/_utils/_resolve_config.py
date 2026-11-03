@@ -28,8 +28,38 @@ MULTIPLE_CONFIGS_MESSAGE = (
 )
 
 
-def resolve_config(configs: list[Config], config_id: str | None, *, model: str) -> Config:
-    """Pick a config from the model's config list, validating an explicit --config when given."""
+def config_from_explicit_ref(config_id: str, *, project_id: str | None) -> Config:
+    """Build a Config stub from an explicit ``--config`` value without membership checks.
+
+    Fully-qualified ``projects/{projectId}/configs/{id}`` paths keep both fields.
+    Bare ``cr_...`` ids are qualified with the CLI ``--project`` (required by deploy
+    commands) so callers can always send the resource-name ``config`` field.
+    """
+    match = _CONFIG_PATH_RE.match(config_id)
+    if match:
+        return Config.construct(id=match.group(2), projectId=match.group(1))
+    if not project_id:
+        raise ValueError(
+            f"Config {config_id} needs a project. Pass --project, or a fully-qualified "
+            "path projects/<project-id>/configs/<config-id>."
+        )
+    return Config.construct(id=config_id, projectId=project_id)
+
+
+def resolve_config(
+    configs: list[Config],
+    config_id: str | None,
+    *,
+    model: str,
+    project_id: str | None = None,
+) -> Config:
+    """Pick a config from the model's config list.
+
+    An explicit ``--config`` is preferred from the list when present (so we keep the
+    owning ``projectId`` / selectors for pricing). If it is missing from the
+    client-side list, forward it anyway — the API validates model/config
+    compatibility. Auto-selection (no ``--config``) still requires a unique list hit.
+    """
     if config_id is None:
         if len(configs) > 1:
             from together.lib.cli.api.models._utils import print_configs_table
@@ -43,9 +73,7 @@ def resolve_config(configs: list[Config], config_id: str | None, *, model: str) 
     selected = find_config(configs, config_id)
     if selected is not None:
         return selected
-    raise ValueError(
-        f"Config {config_id} is not valid for model {model}. Use `tg models configs <model-id>` to list configs."
-    )
+    return config_from_explicit_ref(config_id, project_id=project_id)
 
 
 async def choose_config(
@@ -58,7 +86,7 @@ async def choose_config(
     """Use ``--config`` or the only config. Several configs prompt, or fail when non-interactive."""
     if config_id is None and len(configs) > 1 and not cli.non_interactive:
         return await prompt_for_config(configs, model=model)
-    return resolve_config(configs, config_id, model=model)
+    return resolve_config(configs, config_id, model=model, project_id=cli.project_id)
 
 
 async def prompt_for_config(configs: list[Config], *, model: str) -> Config:
@@ -98,13 +126,22 @@ def _config_id_matches(config: Config, config_id: str) -> bool:
     return False
 
 
-def validate_requested_config(config: Config, config_id: str | None, *, model: str) -> Config:
-    """Re-check the resolved config against an explicit CLI --config, when provided."""
+def validate_requested_config(
+    config: Config,
+    config_id: str | None,
+    *,
+    project_id: str | None = None,
+) -> Config:
+    """Prefer an explicit CLI ``--config`` over a resolved default.
+
+    When the resolved config already matches, keep it (full body / owning project).
+    Otherwise forward the explicit ref and let the API validate compatibility.
+    """
     if config_id is None:
         return config
     if _config_id_matches(config, config_id):
         return config
-    raise ValueError(f"Config {config_id} is not valid for model {model}. Resolved config id is {config.id}.")
+    return config_from_explicit_ref(config_id, project_id=project_id)
 
 
 def config_from_profile(profile: SupportedModelDeploymentProfile) -> Config:

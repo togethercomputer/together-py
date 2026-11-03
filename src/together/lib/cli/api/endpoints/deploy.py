@@ -45,9 +45,7 @@ from together.lib.cli.api.endpoints._utils._adapter_deploy import (
     load_client_project_adapter,
     select_lora_config_for_deploy,
 )
-from together.lib.cli.api.endpoints._utils._resolve_config import (
-    construct_config_path,
-)
+from together.lib.cli.api.endpoints._utils._resolve_config import construct_config_path
 from together.lib.cli.api.endpoints._utils._hardware_pricing import (
     HardwarePricing,
     resolve_hardware_pricing,
@@ -728,7 +726,13 @@ def _print_deployment_preview(
     add_row("--model", f"{model.name} ({model_path})")
     if adapter_label is not None:
         add_row("--adapter", adapter_label)
-    shown_config = config_value.id if config_value is not None and config_value.id else config_label
+    shown_config: str | None
+    if config_value is not None and config_value.id and config_value.project_id:
+        shown_config = construct_config_path(config_value)
+    elif config_value is not None and config_value.id:
+        shown_config = config_value.id
+    else:
+        shown_config = config_label
     if shown_config:
         add_row("--config", shown_config)
 
