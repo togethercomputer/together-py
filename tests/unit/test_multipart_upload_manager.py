@@ -35,7 +35,7 @@ def test_calculate_parts_large_file():
 
 @patch("together.lib.resources.files.os.stat")
 def test_file_size_exceeds_limit_raises_error(mock_stat: MagicMock):
-    """Uploading a file above 50.1GB should raise FileTypeError."""
+    """Uploading a file above the configured max size should raise FileTypeError."""
 
     mock_stat.return_value.st_size = int((MAX_FILE_SIZE_GB + 1) * NUM_BYTES_IN_GB)
     manager = MultipartUploadManager(MagicMock())
