@@ -18,6 +18,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.auth import (
     TogetherAuth,
     StoredTokenAuth,
+    issuer_from_base_url,
     load_stored_base_url,
     load_stored_credentials,
 )
@@ -216,6 +217,11 @@ def _create_client(
 ) -> tuple[AsyncTogether, bool]:
     api_key = _resolve_cli_api_key(api_key)
     missing_api_key = False
+    if base_url is None and not ignore_base_url_env:
+        base_url = os.environ.get("TOGETHER_BASE_URL")
+    if base_url is not None:
+        # Paths carry their own API version, so a legacy `/v1` base URL would double it.
+        base_url = issuer_from_base_url(base_url)
     # A logged-in session is pinned to its issuer. Hide TOGETHER_BASE_URL from the
     # SDK when we are not passing an explicit URL, so production keeps the default
     # (and its non-overridden v2 routing) instead of the env host.
