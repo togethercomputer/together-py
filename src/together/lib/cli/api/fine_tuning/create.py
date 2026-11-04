@@ -142,8 +142,9 @@ async def create(
         str,
         Parameter(
             help=(
-                "LoRA target modules (e.g. 'all-linear', 'q_proj,v_proj'). "
-                "Fine-tunes targeting MoE expert modules (w_up, w_gate, w_down) produce adapter-only output."
+                "Comma-separated LoRA target modules (e.g. 'all-linear', 'q_proj,v_proj'). "
+                "Use all-linear for model defaults; MoE expert modules (w_up, w_gate, w_down) "
+                "can be combined with attention modules on compatible models."
             )
         ),
     ] = "all-linear",
