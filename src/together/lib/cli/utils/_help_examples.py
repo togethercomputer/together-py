@@ -24,6 +24,9 @@ FILES_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Upload a file for fine-tuning:
   [primary]tg files upload ./my-dataset.jsonl --purpose fine-tune[/primary]
 
+[dim]-[/dim] Upload a conversation dataset for calibration:
+  [primary]tg files upload ./calibration.jsonl --purpose calibration[/primary]
+
 [dim]-[/dim] Check a local file for issues:
   [primary]tg files check ./my-dataset.jsonl[/primary]
 
@@ -38,8 +41,11 @@ FILES_UPLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Upload a file for fine-tuning:
   [primary]tg files upload ./my-dataset.jsonl --purpose fine-tune[/primary]
 
+[dim]-[/dim] Upload a conversation dataset for calibration:
+  [primary]tg files upload ./calibration.jsonl --purpose calibration[/primary]
+
 [dim]-[/dim] Upload a file for evals:
-  [primary]tg files upload ./my-dataset.jsonl --purpose evals[/primary]
+  [primary]tg files upload ./my-dataset.jsonl --purpose eval[/primary]
 
 [dim]-[/dim] Skip file checks:
   [primary]tg files upload ./my-dataset.jsonl --no-check[/primary]

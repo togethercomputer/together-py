@@ -197,7 +197,7 @@ def test_check_jsonl_valid_conversational_multimodal_single_turn(tmp_path: Path)
     assert report["has_min_samples"]
 
 
-@pytest.mark.parametrize("purpose", ["fine-tune", "eval"])
+@pytest.mark.parametrize("purpose", ["fine-tune", "calibration", "eval"])
 def test_check_jsonl_allows_trailing_blank_line(tmp_path: Path, purpose: str):
     file = tmp_path / "trailing_blank.jsonl"
     file.write_text('{"text": "hello"}\n{"text": "world"}\n\n')
@@ -207,6 +207,18 @@ def test_check_jsonl_allows_trailing_blank_line(tmp_path: Path, purpose: str):
     assert report["is_check_passed"]
     assert report["num_samples"] == 2
     assert report["load_json"] is True
+
+
+def test_check_calibration_rejects_oversized_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    file = tmp_path / "oversized.jsonl"
+    file.write_bytes(b"x" * (1024 * 1024 + 1))
+    monkeypatch.setattr("together.lib.utils.files.MAX_CALIBRATION_FILE_SIZE_BYTES", 1024 * 1024)
+
+    report = check_file(file, purpose="calibration")
+
+    assert not report["is_check_passed"]
+    assert report["file_size"] == file.stat().st_size
+    assert "Maximum supported calibration file size is 1 MiB" in report["message"]
 
 
 def test_check_jsonl_empty_file(tmp_path: Path):
@@ -438,6 +450,17 @@ def test_check_csv_valid_general(tmp_path: Path):
     assert report["utf8"]
     assert report["num_samples"] == 2
     assert report["has_min_samples"]
+
+
+@pytest.mark.parametrize("extension", ["csv", "parquet"])
+def test_check_calibration_rejects_non_jsonl_uploads(tmp_path: Path, extension: str) -> None:
+    file = tmp_path / f"calibration.{extension}"
+    file.write_text("not relevant", encoding="utf-8")
+
+    report = check_file(file, purpose="calibration")
+
+    assert not report["is_check_passed"]
+    assert "Only JSONL files are supported" in report["message"]
 
 
 def test_check_csv_empty_file(tmp_path: Path):
