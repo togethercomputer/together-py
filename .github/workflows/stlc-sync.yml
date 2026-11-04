@@ -115,7 +115,7 @@ jobs:
               --repo "${GITHUB_REPOSITORY}" \
               --base main \
               --head "$branch" \
-              --title "Merge production into staging (heal promote ancestry)" \
+              --title "chore(stlc): merge production into staging" \
               --reviewer blainekasten \
               --body "$(cat <<'EOF'
           Staging and production have forked, so a fast-forward back-sync is unsafe.

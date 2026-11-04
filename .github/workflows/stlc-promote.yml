@@ -4,7 +4,7 @@ name: Promote SDKs
 # preserving SHAs so the trunks stay identical and linear (nothing to heal on the
 # next stlc build). If the direct push is blocked (e.g. org ruleset pull_request
 # without stlc-workflow-app as a bypass actor), fall back to force-pushing
-# stainless/release and opening/updating a "Release SDK updates" PR — the old
+# stainless/release and opening/updating a "chore(stlc): release SDK updates" PR — the old
 # protection-compatible path. Manual dispatch by design: a maintainer promotes
 # the accumulated batch to cut a release; release-please then opens its version
 # PR on production.
@@ -105,7 +105,7 @@ jobs:
               --repo "${PRODUCTION_REPO}" \
               --base main \
               --head stainless/release \
-              --title "Release SDK updates" \
+              --title "chore(stlc): release SDK updates" \
               --body "$(git log --oneline production/main..origin/main)"
           else
             echo "Release PR #${EXISTING_PR} already exists. Force-push has updated it."
