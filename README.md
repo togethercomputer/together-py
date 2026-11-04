@@ -843,4 +843,4 @@ tg beta jig volumes list
 
 ## Contributing
 
-See [the contributing documentation](./CONTRIBUTING.md).
+See [the contributing documentation](./CONTRIBUTING.md) and our [Code of Conduct](./CODE_OF_CONDUCT.md).
