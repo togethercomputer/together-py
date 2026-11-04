@@ -189,7 +189,7 @@ class TestFineTuningCreate:
                 },
             )
         )
-        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+        create = respx_mock.post("/v1/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
 
         result = cli_runner.invoke(
             [
@@ -224,7 +224,7 @@ class TestFineTuningCreate:
                 },
             )
         )
-        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+        create = respx_mock.post("/v1/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
 
         result = cli_runner.invoke(
             [
@@ -258,7 +258,7 @@ class TestFineTuningCreate:
                 },
             )
         )
-        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+        create = respx_mock.post("/v1/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
 
         result = cli_runner.invoke(
             [
@@ -284,7 +284,7 @@ class TestFineTuningCreate:
         respx_mock.post("/v1/fine-tunes/estimate-price").mock(
             return_value=httpx.Response(200, json={"estimated_total_price": 1.0, "allowed_to_proceed": True})
         )
-        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+        create = respx_mock.post("/v1/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
 
         result = cli_runner.invoke(
             [
@@ -311,7 +311,7 @@ class TestFineTuningCreate:
         respx_mock.post("/v1/fine-tunes/estimate-price").mock(
             return_value=httpx.Response(200, json={"estimated_total_price": 1.0, "allowed_to_proceed": True})
         )
-        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+        create = respx_mock.post("/v1/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
 
         result = cli_runner.invoke(
             [
@@ -349,7 +349,7 @@ class TestFineTuningCreate:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         respx_mock.get("/v1/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
-        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+        create = respx_mock.post("/v1/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
 
         # default patience(2) + warmup(1) + 1 = 4 > n_evals=3, so this must fail before any create call.
         result = cli_runner.invoke(
