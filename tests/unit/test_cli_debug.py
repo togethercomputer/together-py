@@ -82,9 +82,9 @@ def test_request_render_is_method_and_path_only() -> None:
         },
         content=b'{"model":"demo"}',
     )
-    blob = "\n".join(render_request_lines(request, base_url="https://api.together.ai/v1"))
+    blob = "\n".join(render_request_lines(request, base_url="https://api.together.ai"))
     assert "→ POST" in blob
-    assert "/fine-tunes" in blob
+    assert "/v1/fine-tunes" in blob
     assert "foo=bar" not in blob
     assert "secretvalue" not in blob
     assert "supersecretapikeyvalue" not in blob

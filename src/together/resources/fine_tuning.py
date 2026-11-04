@@ -303,7 +303,7 @@ class FineTuningResource(SyncAPIResource):
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
         return self._client.post(
-            "/fine-tunes",
+            "/v1/fine-tunes",
             body=parameter_payload,
             cast_to=FinetuneResponseLib,
         )
@@ -1081,7 +1081,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
         return await self._client.post(
-            "/fine-tunes",
+            "/v1/fine-tunes",
             body=parameter_payload,
             cast_to=FinetuneResponse,
         )
