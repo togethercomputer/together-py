@@ -25,6 +25,8 @@ def _resource_body(resource_id: str = "res-1", **overrides: Any) -> dict[str, An
         "compute_config": {"num_generator_replicas": 1, "gpu_type": "H100-80GB"},
         "created_at": "2026-01-01T00:00:00Z",
         "created_by": "user-1",
+        "inactive_timeout": 30,
+        "expires_at": "2026-06-15T18:00:00Z",
         "lora_enabled": True,
         "optimizer_config": {"adam": {}},
         "status": "MODEL_RESOURCES_STATUS_READY",
@@ -106,6 +108,7 @@ class TestTrainingHelp:
         assert "ls-checkpoints" in result.output
         assert "List training and inference checkpoints" in result.output
         assert "get" in result.output
+        assert "extend-expiry" in result.output
         assert "prepare-for-fp4-inference" in result.output
 
     @pytest.mark.usefixtures("plain_cli_help")
@@ -190,6 +193,47 @@ class TestTrainingResources:
 
         assert result.exit_code == 1
         assert "--limit must be at least 1" in result.output
+
+
+class TestTrainingExtendExpiry:
+    @pytest.mark.respx(base_url=base_url)
+    def test_extend_expiry_posts_seconds_and_prints_resource(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        route = respx_mock.post("/v1/rl/model-resources/res-1/extend-expiry").mock(
+            return_value=httpx.Response(200, json=_resource_body(expires_at="2026-06-15T19:00:00Z"))
+        )
+
+        result = cli_runner.invoke(["training", "extend-expiry", "res-1", "--seconds", "45"])
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(cast(Call, route.calls[0]).request.content) == {"seconds": 45}
+        assert "Model resource" in result.output
+        assert "res-1" in result.output
+        assert "30 sec" in result.output
+        assert "Expires" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_extend_expiry_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/v1/rl/model-resources/res-1/extend-expiry").mock(
+            return_value=httpx.Response(200, json=_resource_body())
+        )
+
+        result = cli_runner.invoke(["training", "extend-expiry", "res-1", "--seconds", "45", "--json"])
+
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.out_out)
+        assert payload["id"] == "res-1"
+        assert payload["inactive_timeout"] == 30
+        assert payload["expires_at"] == "2026-06-15T18:00:00Z"
+
+    @pytest.mark.usefixtures("plain_cli_help")
+    def test_extend_expiry_help_requires_seconds(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["training", "extend-expiry", "--help"])
+
+        assert result.exit_code == 0, result.output
+        assert "--seconds" in result.output
+        assert "must not stop for inactivity" in result.output
 
 
 class TestTrainingSessions:
@@ -380,6 +424,20 @@ class TestTrainingGet:
         assert payload["kind"] == "model_resource"
         assert payload["data"]["id"] == "res-1"
         assert payload["data"]["base_weights_ref"] == "ml_weights"
+        assert payload["data"]["inactive_timeout"] == 30
+        assert payload["data"]["expires_at"] == "2026-06-15T18:00:00Z"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_get_model_resource_shows_expiry(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/v1/rl/model-resources/res-1").mock(return_value=httpx.Response(200, json=_resource_body()))
+        _mock_get_misses(respx_mock, "res-1", hit="resource")
+
+        result = cli_runner.invoke(["training", "get", "res-1"])
+
+        assert result.exit_code == 0, result.output
+        assert "Inactive timeout" in result.output
+        assert "30 sec" in result.output
+        assert "Expires" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_get_training_session(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
