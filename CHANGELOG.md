@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.1.1](https://github.com/togethercomputer/together-py/compare/v3.1.0...v3.1.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **ft:** Update fine_tuning.create to reference the correct url after the base url change ([#669](https://github.com/togethercomputer/together-py/issues/669)) ([4d103de](https://github.com/togethercomputer/together-py/commit/4d103de17125bc7ca3b4c2a87dfa2d7cd4e2647a))
+
+
+### Chores
+
+* **rl:** Drop the stale expert-module note from lora_trainable_modules ([6055eb1](https://github.com/togethercomputer/together-py/commit/6055eb16fe8adcc7bd742853ef5359d864481705))
+
 ## [3.1.0](https://github.com/togethercomputer/together-py/compare/v3.0.0...v3.1.0) (2026-11-03)
 
 
