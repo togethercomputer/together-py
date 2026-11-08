@@ -553,6 +553,22 @@ class TestBetaModelsListRevisions:
 
 
 class TestBetaModelsConfigs:
+    @pytest.mark.respx(base_url=base_url)
+    @pytest.mark.parametrize("prefix", [True, False])
+    def test_configs_preserves_global_options(
+        self, respx_mock: MockRouter, cli_runner: CliRunner, prefix: bool
+    ) -> None:
+        route = respx_mock.get("/v2/projects/proj/configs").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()]})
+        )
+        options = ["--project", "proj", "--json", "--non-interactive"]
+        command = ["models", "configs", "ml_1", "--limit", "5"]
+        result = cli_runner.invoke(options + command if prefix else command + options)
+        assert result.exit_code == 0, result.output
+        assert json.loads(result.out_out)["data"][0]["id"] == _config_body()["id"]
+        assert route.calls[0].request.url.params["referenceModelId"] == "ml_1"
+        assert route.calls[0].request.url.params["limit"] == "5"
+
     @pytest.mark.respx(base_url=base_url, assert_all_called=False)
     @pytest.mark.parametrize(
         "args, unexpected",
