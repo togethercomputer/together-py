@@ -652,6 +652,75 @@ class TestBetaModelsConfigs:
         assert params["referenceModel"] == "projects/together/models/ml_base"
         assert "referenceModelId" not in params
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_configs_ls_alias_lists(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/v2/projects/proj/configs").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
+        )
+
+        result = cli_runner.invoke(["models", "configs", "ls", "ml_1", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        assert cast(Call, route.calls[0]).request.url.params["referenceModelId"] == "ml_1"
+
+    @pytest.mark.respx(base_url=base_url)
+    @pytest.mark.parametrize("subcommand", [["get"], ["retrieve"], []])
+    def test_configs_retrieve(self, respx_mock: MockRouter, cli_runner: CliRunner, subcommand: list[str]) -> None:
+        route = respx_mock.get("/v2/projects/proj/configs/cr_1").mock(
+            return_value=httpx.Response(200, json=_config_body())
+        )
+
+        result = cli_runner.invoke(["models", "configs", *subcommand, "cr_1", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        assert len(route.calls) == 1
+        body = json.loads(result.output)
+        assert body["id"] == "cr_1"
+        assert body["referenceModelId"] == "ml_1"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_configs_retrieve_text_output(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/v2/projects/proj/configs/cr_1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_config_body(
+                    draftModel="projects/proj/models/ml_draft",
+                    certifications=[
+                        {
+                            "certificationType": "CERTIFICATION_TYPE_CERTIFIED",
+                            "certifiedAt": "2026-01-01T00:00:00Z",
+                            "certifiedBy": "bot",
+                            "model": "projects/proj/models/ml_1",
+                            "modelRevisionId": "rev_1",
+                            "target": "CERTIFICATION_TARGET_MRE",
+                        }
+                    ],
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(["models", "configs", "get", "cr_1", "--project", "proj", "--no-json"])
+
+        assert result.exit_code == 0, result.output
+        assert "cr_1" in result.output
+        assert "projects/proj/models/ml_1" in result.output
+        assert "ml_draft" in result.output
+        assert "H100" in result.output
+        assert "Certified" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_configs_retrieve_uses_client_project_when_flag_omitted(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        route = respx_mock.get("/v2/projects/proj/configs/cr_1").mock(
+            return_value=httpx.Response(200, json=_config_body())
+        )
+
+        result = cli_runner.invoke(["models", "configs", "get", "cr_1", "--json"])
+
+        assert result.exit_code == 0, result.output
+        assert len(route.calls) == 1
+
 
 class TestBetaModelsUpload:
     @pytest.mark.respx(base_url=base_url)

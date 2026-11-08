@@ -13,7 +13,7 @@ _COMMAND_ID_IDENTIFIERS = {
     "files": re.compile(r"^file-"),
     "evals": re.compile(r"^eval-"),
     "batches": re.compile(r"^batch"),
-    "models configs": re.compile(r"^ep_"),
+    "models configs": re.compile(r"^cr_"),
     # `endpoints` uses App.default(retrieve) instead of token rewriting.
     "models": re.compile(r"^ml_"),
     "endpoints deployments": re.compile(r"^dep_"),

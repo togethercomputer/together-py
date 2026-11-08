@@ -870,12 +870,32 @@ models_remote_uploads_app.command(
 )
 
 ### Models > Configs API commands
-models_app.command(
-    (f"{_CLI}.models.configs.list:list"),
-    name="configs",
-    help="List deployable configs for a model",
-    help_epilogue=MODELS_CONFIGS_HELP_EXAMPLES,
+models_configs_app = models_app.command(
+    App(
+        name="configs",
+        help="List and inspect deployable model configs",
+        group="Subcommands",
+        help_epilogue=MODELS_CONFIGS_HELP_EXAMPLES,
+    )
 )
+models_configs_app.command(
+    (f"{_CLI}.models.configs.list:list"),
+    name="ls",
+    help="List deployable configs for a model",
+)
+# Hidden `list` alias for `tg models configs list …` (visible command is `ls`).
+models_configs_app.command((f"{_CLI}.models.configs.list:list"), name="list", show=False)
+models_configs_app.command(
+    (f"{_CLI}.models.configs.retrieve:retrieve"),
+    name="get",
+    help="Get a model config revision by ID",
+)
+# Explicit `retrieve` stays registered (hidden) for `tg models configs retrieve …`.
+models_configs_app.command((f"{_CLI}.models.configs.retrieve:retrieve"), show=False)
+# Implicit list keeps `tg models configs <model>` working as it did before this
+# became a sub-app. `tg models configs cr_...` resolves to retrieve through
+# _preparse_tokens (which also handles leading global flags).
+models_configs_app.default(models_configs_app["ls"].default_command)
 
 ## Endpoints API commands
 endpoints_app = app.command(

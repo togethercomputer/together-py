@@ -512,6 +512,11 @@ MODELS_PUBLIC_HELP_EXAMPLES = """[dim]Examples:[/dim]
 MODELS_CONFIGS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] List configs you can pass to [primary]tg models deploy --config[/primary]:
   [primary]tg models configs ml_xxxxxxxxxxxx[/primary]
+  [primary]tg models configs ls ml_xxxxxxxxxxxx[/primary]
+
+[dim]-[/dim] Inspect a config's selectors and certifications:
+  [primary]tg models configs get cr_xxxxxxxxxxxx[/primary]
+  [primary]tg models configs cr_xxxxxxxxxxxx[/primary]
 """
 
 MODELS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
