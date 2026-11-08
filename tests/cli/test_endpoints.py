@@ -242,8 +242,8 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code != 0
         assert "Use either --placement or inline placement options" in result.output
 
-    @pytest.mark.respx(base_url=base_url)
-    def test_deploy_ignores_leftover_scale_to_zero_window(
+    @pytest.mark.respx(base_url=base_url, assert_all_called=False)
+    def test_deploy_rejects_leftover_scale_to_zero_window(
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
@@ -274,10 +274,9 @@ class TestBetaEndpointsDeploy:
             ]
         )
 
-        assert result.exit_code == 0, result.output
-        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
-        assert "scaleToZeroWindow" not in deployment_body.get("autoscaling", {})
-        assert "scale_to_zero_window" not in deployment_body.get("autoscaling", {})
+        assert result.exit_code != 0
+        assert "--scale-to-zero-window" in json.loads(result.output)["error"]
+        assert not create_deployment_route.called
 
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_creates_endpoint_deployment_and_traffic_split(

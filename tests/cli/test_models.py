@@ -553,6 +553,26 @@ class TestBetaModelsListRevisions:
 
 
 class TestBetaModelsConfigs:
+    @pytest.mark.respx(base_url=base_url, assert_all_called=False)
+    @pytest.mark.parametrize(
+        "args, unexpected",
+        [
+            (["models", "configs", "get", "ml_1"], "ml_1"),
+            (["models", "configs", "ml_1", "--limti", "5"], "--limti"),
+        ],
+    )
+    def test_configs_rejects_unused_arguments(
+        self, respx_mock: MockRouter, cli_runner: CliRunner, args: list[str], unexpected: str
+    ) -> None:
+        route = respx_mock.get("/v2/projects/proj/configs").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": []})
+        )
+        result = cli_runner.invoke(args)
+        assert result.exit_code != 0
+        assert unexpected in result.output
+        assert not route.called
+        assert "No model configs found" not in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_configs_filters_by_model(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.get("/v2/projects/proj/configs").mock(
