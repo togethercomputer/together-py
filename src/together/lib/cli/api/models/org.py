@@ -17,6 +17,12 @@ async def org(
     config: CLIConfigParameter,
     limit: Annotated[Optional[int], Parameter(help="Maximum models to return")] = None,
     after: AfterParameter = None,
+    order_by: Annotated[
+        Optional[str],
+        Parameter(
+            help="Sort field. Supports created_at, optionally followed by asc or desc. Defaults to ascending.",
+        ),
+    ] = None,
 ) -> None:
     organization = organization_of(await config.client.whoami())
     if organization is None:
@@ -28,6 +34,7 @@ async def org(
             organization.id,
             limit=limit if limit is not None else omit,
             after=after or omit,
+            order_by=order_by or omit,
         ),
     )
 

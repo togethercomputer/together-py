@@ -5,6 +5,8 @@ import json
 import hashlib
 from typing import Any, cast
 from pathlib import Path
+from datetime import datetime
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 import pytest
@@ -12,6 +14,7 @@ from respx import MockRouter
 from respx.models import Call
 
 from tests.cli.utils import CliRunner
+from together.lib.utils.tools import format_datetime
 from together.lib.cli.api.models.download import _download_failure_diagnostic
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -317,6 +320,38 @@ class TestBetaModelsList:
         assert "after=tok" in url
         assert json.loads(result.output)["next_cursor"] == "next"
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_sends_order_by_and_shows_timestamps(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        created_at = datetime.fromisoformat("2026-01-15T12:00:00+00:00")
+        updated_at = datetime.fromisoformat("2026-02-02T18:30:00+00:00")
+        route = respx_mock.get("/v2/projects/proj/models").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _model_body(
+                            createdAt=created_at.isoformat().replace("+00:00", "Z"),
+                            updatedAt=updated_at.isoformat().replace("+00:00", "Z"),
+                        )
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(
+            ["models", "ls", "--project", "proj", "--order-by", "created_at desc"],
+        )
+
+        assert result.exit_code == 0, result.output
+        assert parse_qs(urlparse(str(cast(Call, route.calls[0]).request.url)).query)["orderBy"] == ["created_at desc"]
+        for timestamp in (created_at, updated_at):
+            rendered = format_datetime(timestamp)
+            date_part, time_part = rendered.split(", ", 1)
+            assert date_part in result.output
+            assert time_part in result.output
+
 
 class TestBetaModelsPublic:
     @pytest.mark.respx(base_url=base_url)
@@ -394,6 +429,23 @@ class TestBetaModelsOrg:
         assert "after=tok" in url
         assert json.loads(result.output)["data"][0]["id"] == "ml_1"
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_org_sends_order_by(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        route = respx_mock.get("/v2/organizations/org-1/models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_model_body()], "next_cursor": None},
+            )
+        )
+
+        result = cli_runner.invoke(
+            ["models", "org", "--project", "proj", "--order-by", "created_at asc", "--json"],
+        )
+
+        assert result.exit_code == 0, result.output
+        assert parse_qs(urlparse(str(cast(Call, route.calls[0]).request.url)).query)["orderBy"] == ["created_at asc"]
+
 
 class TestBetaModelsRetrieve:
     @pytest.mark.respx(base_url=base_url)
@@ -437,6 +489,27 @@ class TestBetaModelsRetrieve:
         assert result.exit_code == 0, result.output
         assert "Multiple configs" not in output
         assert "Qwen/Qwen3.5-9B-BF16" in output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_shows_model_timestamps(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        created_at = datetime.fromisoformat("2026-01-15T12:00:00+00:00")
+        updated_at = datetime.fromisoformat("2026-02-02T18:30:00+00:00")
+        respx_mock.get("/v2/projects/proj/models/ml_1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_model_body(
+                    createdAt=created_at.isoformat().replace("+00:00", "Z"),
+                    updatedAt=updated_at.isoformat().replace("+00:00", "Z"),
+                ),
+            )
+        )
+        respx_mock.get("/v2/projects/proj/models/ml_1/files").mock(return_value=httpx.Response(200, json=_files_body()))
+
+        result = cli_runner.invoke(["models", "get", "ml_1", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert format_datetime(created_at) in result.output
+        assert format_datetime(updated_at) in result.output
 
 
 class TestBetaModelsRm:

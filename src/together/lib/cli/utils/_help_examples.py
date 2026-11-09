@@ -459,6 +459,7 @@ MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] List project models and inspect one:
   [primary]tg models ls[/primary]
+  [primary]tg models ls --order-by "created_at desc"[/primary]
   [primary]tg models ml_yyyyyyyyyyyy[/primary]
 
 [dim]-[/dim] List configs for a model to be used with [primary]tg models deploy --config[/primary]:
