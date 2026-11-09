@@ -19,6 +19,13 @@ class ModelListParams(TypedDict, total=False):
     limit: int
     """Maximum number of models to return."""
 
+    order_by: Annotated[str, PropertyInfo(alias="orderBy")]
+    """Sort field for the results.
+
+    Supports `created_at`, optionally followed by `asc` or `desc`. Defaults to
+    ascending.
+    """
+
     organization_id: Annotated[str, PropertyInfo(alias="organizationId")]
     """Organization whose shared models should be included.
 

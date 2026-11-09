@@ -206,6 +206,7 @@ class TestModels:
             project_id="projectId",
             after="after",
             limit=0,
+            order_by="orderBy",
             organization_id="organizationId",
             visibility="VISIBILITY_PRIVATE",
         )
@@ -360,6 +361,7 @@ class TestModels:
             organization_id="organizationId",
             after="after",
             limit=0,
+            order_by="orderBy",
         )
         assert_matches_type(SyncCursorPagination[Model], model, path=["response"])
 
@@ -753,6 +755,7 @@ class TestAsyncModels:
             project_id="projectId",
             after="after",
             limit=0,
+            order_by="orderBy",
             organization_id="organizationId",
             visibility="VISIBILITY_PRIVATE",
         )
@@ -907,6 +910,7 @@ class TestAsyncModels:
             organization_id="organizationId",
             after="after",
             limit=0,
+            order_by="orderBy",
         )
         assert_matches_type(AsyncCursorPagination[Model], model, path=["response"])
 

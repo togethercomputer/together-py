@@ -259,6 +259,7 @@ class ModelsResource(SyncAPIResource):
         project_id: str | None = None,
         after: str | Omit = omit,
         limit: int | Omit = omit,
+        order_by: str | Omit = omit,
         organization_id: str | Omit = omit,
         visibility: Literal["VISIBILITY_PRIVATE", "VISIBILITY_INTERNAL"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -280,6 +281,9 @@ class ModelsResource(SyncAPIResource):
           after: Cursor from a previous model list response.
 
           limit: Maximum number of models to return.
+
+          order_by: Sort field for the results. Supports `created_at`, optionally followed by `asc`
+              or `desc`. Defaults to ascending.
 
           organization_id: Organization whose shared models should be included. Defaults to the
               authenticated project's organization.
@@ -311,6 +315,7 @@ class ModelsResource(SyncAPIResource):
                     {
                         "after": after,
                         "limit": limit,
+                        "order_by": order_by,
                         "organization_id": organization_id,
                         "visibility": visibility,
                     },
@@ -420,6 +425,7 @@ class ModelsResource(SyncAPIResource):
         *,
         after: str | Omit = omit,
         limit: int | Omit = omit,
+        order_by: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -437,6 +443,9 @@ class ModelsResource(SyncAPIResource):
           after: Cursor from a previous list response.
 
           limit: Maximum number of results to return.
+
+          order_by: Sort field for the results. Supports `created_at`, optionally followed by `asc`
+              or `desc`. Defaults to ascending.
 
           extra_headers: Send extra headers
 
@@ -460,6 +469,7 @@ class ModelsResource(SyncAPIResource):
                     {
                         "after": after,
                         "limit": limit,
+                        "order_by": order_by,
                     },
                     model_list_org_scoped_params.ModelListOrgScopedParams,
                 ),
@@ -865,6 +875,7 @@ class AsyncModelsResource(AsyncAPIResource):
         project_id: str | None = None,
         after: str | Omit = omit,
         limit: int | Omit = omit,
+        order_by: str | Omit = omit,
         organization_id: str | Omit = omit,
         visibility: Literal["VISIBILITY_PRIVATE", "VISIBILITY_INTERNAL"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -886,6 +897,9 @@ class AsyncModelsResource(AsyncAPIResource):
           after: Cursor from a previous model list response.
 
           limit: Maximum number of models to return.
+
+          order_by: Sort field for the results. Supports `created_at`, optionally followed by `asc`
+              or `desc`. Defaults to ascending.
 
           organization_id: Organization whose shared models should be included. Defaults to the
               authenticated project's organization.
@@ -917,6 +931,7 @@ class AsyncModelsResource(AsyncAPIResource):
                     {
                         "after": after,
                         "limit": limit,
+                        "order_by": order_by,
                         "organization_id": organization_id,
                         "visibility": visibility,
                     },
@@ -1028,6 +1043,7 @@ class AsyncModelsResource(AsyncAPIResource):
         *,
         after: str | Omit = omit,
         limit: int | Omit = omit,
+        order_by: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1045,6 +1061,9 @@ class AsyncModelsResource(AsyncAPIResource):
           after: Cursor from a previous list response.
 
           limit: Maximum number of results to return.
+
+          order_by: Sort field for the results. Supports `created_at`, optionally followed by `asc`
+              or `desc`. Defaults to ascending.
 
           extra_headers: Send extra headers
 
@@ -1068,6 +1087,7 @@ class AsyncModelsResource(AsyncAPIResource):
                     {
                         "after": after,
                         "limit": limit,
+                        "order_by": order_by,
                     },
                     model_list_org_scoped_params.ModelListOrgScopedParams,
                 ),

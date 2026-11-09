@@ -1,6 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import Optional
+from datetime import datetime
 from typing_extensions import Literal
 
 from pydantic import Field as FieldInfo
@@ -53,5 +54,11 @@ class Model(BaseModel):
     base_model_id: Optional[str] = FieldInfo(alias="baseModelId", default=None)
     """ID of the supported or custom base model from which this model was derived."""
 
+    created_at: Optional[datetime] = FieldInfo(alias="createdAt", default=None)
+    """Output only. Timestamp when the model was created."""
+
     description: Optional[str] = None
     """Human-readable description of the model and its intended use."""
+
+    updated_at: Optional[datetime] = FieldInfo(alias="updatedAt", default=None)
+    """Output only. Timestamp when the model was last updated."""
