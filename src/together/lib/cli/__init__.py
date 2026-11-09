@@ -808,6 +808,11 @@ models_app.command(
 )
 models_app.command((f"{_CLI}.models.org:org"), help="List internal-visibility models in the caller's organization")
 models_app.command(
+    (f"{_CLI}.models.org_get:org_get"),
+    name="org-get",
+    help="Get an internal-visibility model in the caller's organization",
+)
+models_app.command(
     (f"{_CLI}.models.create:create"),
     alias="-c",
     help="Register a model (does not upload files)",

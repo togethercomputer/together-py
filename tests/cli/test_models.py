@@ -394,6 +394,30 @@ class TestBetaModelsOrg:
         assert "after=tok" in url
         assert json.loads(result.output)["data"][0]["id"] == "ml_1"
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_org_get_retrieves_org_scoped_model(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        route = respx_mock.get("/v2/organizations/org-1/models/ml_1").mock(
+            return_value=httpx.Response(200, json=_model_body(projectId="other-proj"))
+        )
+
+        result = cli_runner.invoke(["models", "org-get", "ml_1", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        assert route.called
+        payload = json.loads(result.output)
+        assert payload["id"] == "ml_1"
+        assert payload["projectId"] == "other-proj"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_org_get_requires_organization(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body(organization=None)))
+
+        result = cli_runner.invoke(["models", "org-get", "ml_1", "--project", "proj", "--json"])
+
+        assert result.exit_code != 0
+        assert "no organization" in result.output
+
 
 class TestBetaModelsRetrieve:
     @pytest.mark.respx(base_url=base_url)
