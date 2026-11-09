@@ -18,7 +18,6 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.auth import (
     TogetherAuth,
     StoredTokenAuth,
-    issuer_from_base_url,
     load_stored_base_url,
     load_stored_credentials,
 )
@@ -39,7 +38,7 @@ from together.lib.cli.utils._debug import (
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._whoami import project_of
-from together.lib.cli.utils._console import CliBrokenPipeError, console
+from together.lib.cli.utils._console import CliBrokenPipeError, console, error_console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._json_mode import emit_json, is_json_mode, use_json_mode, resolve_output_json
 from together.lib.cli.utils._cli_extras import inform_cli_extras_tip
@@ -205,6 +204,17 @@ def _apply_project_scope(client: AsyncTogether, config: CLIConfig, switched: Pro
 _PLACEHOLDER_API_KEY = "0" * 40
 
 
+def _warn_legacy_v1_base_url(base_url: Optional[str], source: str) -> None:
+    if base_url is None or not base_url.rstrip("/").endswith("/v1"):
+        return
+    root = base_url.rstrip("/")[: -len("/v1")]
+    error_console.print(
+        f"[yellow]Warning:[/yellow] {source} is {escape_rich_markup(base_url)}. Since together 3.0 the "
+        f"base URL is the API root without /v1, so requests to this URL will fail. Set {source} to "
+        f"{escape_rich_markup(root)}."
+    )
+
+
 def _create_client(
     api_key: Optional[str],
     base_url: Optional[str],
@@ -217,11 +227,10 @@ def _create_client(
 ) -> tuple[AsyncTogether, bool]:
     api_key = _resolve_cli_api_key(api_key)
     missing_api_key = False
-    if base_url is None and not ignore_base_url_env:
-        base_url = os.environ.get("TOGETHER_BASE_URL")
     if base_url is not None:
-        # Paths carry their own API version, so a legacy `/v1` base URL would double it.
-        base_url = issuer_from_base_url(base_url)
+        _warn_legacy_v1_base_url(base_url, "--base-url")
+    elif not ignore_base_url_env:
+        _warn_legacy_v1_base_url(os.environ.get("TOGETHER_BASE_URL"), "TOGETHER_BASE_URL")
     # A logged-in session is pinned to its issuer. Hide TOGETHER_BASE_URL from the
     # SDK when we are not passing an explicit URL, so production keeps the default
     # (and its non-overridden v2 routing) instead of the env host.
