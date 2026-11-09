@@ -573,6 +573,7 @@ Methods:
 - <code title="get /v2/organizations/{organizationId}/models">client.models.<a href="./src/together/resources/models/models.py">list_org_scoped</a>(organization_id, \*\*<a href="src/together/types/model_list_org_scoped_params.py">params</a>) -> <a href="./src/together/types/model.py">SyncCursorPagination[Model]</a></code>
 - <code title="get /v2/projects/{projectId}/models/{id}/revisions">client.models.<a href="./src/together/resources/models/models.py">list_revisions</a>(id, \*, project_id) -> <a href="./src/together/types/model_list_revisions_response.py">ModelListRevisionsResponse</a></code>
 - <code title="get /v2/supported-models">client.models.<a href="./src/together/resources/models/models.py">list_supported</a>(\*\*<a href="src/together/types/model_list_supported_params.py">params</a>) -> <a href="./src/together/types/supported_model.py">SyncCursorPagination[SupportedModel]</a></code>
+- <code title="get /v2/organizations/{organizationId}/models/{modelId}">client.models.<a href="./src/together/resources/models/models.py">retrieve_org_model</a>(organization_id, model_id) -> <a href="./src/together/types/model.py">Model</a></code>
 - <code title="get /v2/supported-models/{id}">client.models.<a href="./src/together/resources/models/models.py">retrieve_supported</a>(id) -> <a href="./src/together/types/supported_model.py">SupportedModel</a></code>
 
 ## RemoteUploads
