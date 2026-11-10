@@ -482,3 +482,26 @@ def test_telemetry_status_no_api_key(monkeypatch: pytest.MonkeyPatch, cli_runner
     result = cli_runner.invoke(["telemetry", "status"])
     assert result.exit_code == 0
     assert "Telemetry:" in result.output
+
+
+def test_parse_command_and_flags_models_configs_implicit_retrieve() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, argv = preparse_tokens(app, ["models", "configs", "cr_1", "--json"])
+    assert cmd == "models configs retrieve"
+    assert "id" in flags
+    assert is_beta is False
+    assert argv == ["models", "configs", "retrieve", "cr_1", "--json"]
+
+
+def test_parse_command_and_flags_models_configs_default_is_list() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    # `tg models configs <model>` keeps listing, so the model ID is not rewritten.
+    cmd, flags, is_beta, argv = preparse_tokens(app, ["models", "configs", "ml_1"])
+    assert cmd == "models configs list"
+    assert "model" in flags
+    assert is_beta is False
+    assert argv == ["models", "configs", "ml_1"]

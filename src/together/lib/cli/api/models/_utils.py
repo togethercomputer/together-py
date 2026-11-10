@@ -157,3 +157,48 @@ def print_configs_table(configs: list[Config], *, empty_message: str) -> None:
             selector_table,
         )
     console.print(table)
+
+
+_CERTIFICATION_TARGET_LABELS = {
+    "CERTIFICATION_TARGET_DE_SERVERLESS": "Serverless",
+    "CERTIFICATION_TARGET_MRE": "Dedicated",
+}
+
+
+def _readable_certification_target(target: str) -> str:
+    return _CERTIFICATION_TARGET_LABELS.get(target, _format_enum_suffix(target, "CERTIFICATION_TARGET_"))
+
+
+def print_config_detail(model_config: Config) -> None:
+    _print_detail_header("Config Details", model_config.id)
+    _print_detail_line("ID", model_config.id)
+    _print_detail_line("Project", model_config.project_id)
+    _print_detail_line("Reference model", model_config.reference_model)
+    if model_config.draft_model:
+        _print_detail_line("Draft model", model_config.draft_model)
+    _print_detail_footer()
+
+    if model_config.selectors:
+        selectors_table = ListTable(show_lines=False)
+        selectors_table.add_primary_column("Selector", ratio=1)
+        selectors_table.add_column("Value", ratio=2)
+        for selector in model_config.selectors:
+            selectors_table.add_row(selector.key, selector.value)
+        console.print("\nSelectors:")
+        console.print(Padding(selectors_table, (0, 0)))
+
+    if model_config.certifications:
+        certifications_table = ListTable(show_lines=False)
+        certifications_table.add_primary_column("Model", ratio=2)
+        certifications_table.add_column("Target")
+        certifications_table.add_column("Status")
+        certifications_table.add_column("Certified at", width=22, no_wrap=True)
+        for certification in model_config.certifications:
+            certifications_table.add_row(
+                certification.model,
+                _readable_certification_target(certification.target),
+                _format_enum_suffix(certification.certification_type, "CERTIFICATION_TYPE_"),
+                format_datetime(certification.certified_at),
+            )
+        console.print("\nCertifications:")
+        console.print(Padding(certifications_table, (0, 0)))
