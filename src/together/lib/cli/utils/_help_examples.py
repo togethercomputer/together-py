@@ -291,7 +291,7 @@ ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 """
 
 ENDPOINTS_ROLLOUT_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Rolling (capacity-preserving batch swap):
+[dim]-[/dim] Rolling (one replica per rung):
   [primary]tg endpoints rollout my-deployment --rolling[/primary]
 
 [dim]-[/dim] Blue-green cutover:
@@ -303,6 +303,9 @@ ENDPOINTS_ROLLOUT_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Canary with custom steps and interval:
   [primary]tg endpoints rollout my-deployment --canary \\
     --steps 5,25,50,100 --interval 30s[/primary]
+
+[dim]-[/dim] Canary bounded to two new target replicas per step:
+  [primary]tg endpoints rollout my-deployment --canary --max-surge 2[/primary]
 
 [dim]-[/dim] Canary with a metric gate (threshold or regression):
   [primary]tg endpoints rollout my-deployment --canary \\

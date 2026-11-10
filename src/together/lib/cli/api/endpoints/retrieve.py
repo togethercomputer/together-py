@@ -128,6 +128,8 @@ async def _retrieve_rollout(rollout_id: str, *, config: CLIConfigParameter) -> N
     console.print(f"[dim][primary]Source Deployment:[/primary][/dim]\t{rollout.source_deployment_id}")
     console.print(f"[dim][primary]Target Deployment:[/primary][/dim]\t{rollout.target_deployment_id}")
     console.print(f"[dim][primary]Strategy:[/primary][/dim]\t{format_rollout_strategy(rollout.strategy)}")
+    if rollout.max_surge is not None:
+        console.print(f"[dim][primary]Max surge:[/primary][/dim]\t{rollout.max_surge}")
     console.print(f"[dim][primary]State:[/primary][/dim]\t\t{format_rollout_state(rollout.state)}")
     console.print(f"[dim][primary]Traffic:[/primary][/dim]\t{traffic}")
     console.print(f"[dim][primary]Step:[/primary][/dim]\t\t{step_text}")
@@ -347,6 +349,8 @@ def render_header(
             f"[dim]State:[/dim] {format_rollout_state(rollout.state)}  "
             f"[dim]Strategy:[/dim] {format_rollout_strategy(rollout.strategy)}",
         )
+        if rollout.max_surge is not None:
+            header_table.add_row("", f"[dim]Max surge:[/dim] {rollout.max_surge}")
         header_table.add_row("", f"[dim]Source → Target:[/dim] {source_name} → {target_name}")
         traffic, step_text = format_rollout_progress(rollout)
         header_table.add_row("", f"[dim]Traffic:[/dim] {traffic}  [dim]Step:[/dim] {step_text}")

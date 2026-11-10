@@ -376,6 +376,61 @@ class TestBetaEndpointsRetrieve:
         assert payload["currentStep"] == 1
 
     @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_rollout_prints_max_surge(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_endpoint_body(activeRolloutId="rol_1")],
+                    "next_cursor": None,
+                },
+            )
+        )
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1").mock(
+            return_value=httpx.Response(200, json=_rollout_body(maxSurge=3))
+        )
+
+        result = cli_runner.invoke(["endpoints", "get", "rol_1", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "Max surge" in result.output
+        assert "3" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_endpoint_prints_max_surge(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        endpoint = _endpoint_body(activeRolloutId="rol_1")
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [endpoint], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=endpoint))
+        _mock_endpoint_get_side_resources(respx_mock)
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1").mock(
+            return_value=httpx.Response(200, json=_rollout_body(maxSurge=3))
+        )
+        respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_control/adapters").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
+
+        result = cli_runner.invoke(["endpoints", "get", "my-endpoint", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "Max surge" in result.output
+        assert "3" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_retrieve_rollout_surfaces_system_pause_reason(
         self,
         respx_mock: MockRouter,
