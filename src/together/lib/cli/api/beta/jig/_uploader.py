@@ -9,6 +9,13 @@ import asyncio
 import itertools
 from typing import Any
 from pathlib import Path
+from urllib.parse import (
+    parse_qsl,
+    unquote,
+    urlencode,
+    urlparse,
+    urlunparse,
+)
 
 import httpx
 from rich import print as rich_print
@@ -16,6 +23,7 @@ from rich import print as rich_print
 from together import Together
 from together.lib.utils import log_debug
 from together.lib.cli.utils._debug import is_enabled
+from together.lib.cli.api.beta.jig.python_docker_push.ssl_sendfile import WORKERS, Pool
 
 # check for --debug flag
 DEBUG = is_enabled()
@@ -27,6 +35,7 @@ MAX_UPLOAD_RETRIES = 3
 # How many part-sized chunks to read ahead beyond the in-flight uploads
 READ_AHEAD_CHUNKS = int(os.getenv("TOGETHER_UPLOAD_READ_AHEAD", "10"))
 MAX_IN_MEMORY_CHUNKS = UPLOAD_CONCURRENCY_LIMIT + READ_AHEAD_CHUNKS
+SSL_SENDFILE = (sys.platform == "linux" or sys.platform == "linux2")
 
 
 # --- File upload ---
@@ -63,6 +72,7 @@ class Uploader:
         self.memory_semaphore: asyncio.Semaphore
         self.progress_lock: asyncio.Lock
         self.http_client: httpx.AsyncClient
+        # self.ssl_connection_pool = Pool(host=PLACEHOLDER CODE_WILL_NOT_WORK, token=PLACEHOLDER CODE_WILL_NOT_WORK)
 
     def update_progress(self) -> None:
         spinner = next(self.spinner_iter)
@@ -150,6 +160,7 @@ class Uploader:
                 snapshot_bytes = self.uploaded_bytes
 
             try:
+                print(f"file_size: {file_size} mp_thres: {self.multipart_threshold}")
                 if file_size >= self.multipart_threshold:
                     await self._upload_file_multipart(file_path, remote_path, file_size)
                 else:
@@ -185,11 +196,17 @@ class Uploader:
             method = upload_data["upload_url"]["method"]
             headers = upload_data["upload_url"].get("headers", {})
 
-            file_data = await asyncio.to_thread(Path(file_path).read_bytes)
-
             try:
-                resp = await self.http_client.request(method, upload_url, content=file_data, headers=headers)
-                resp.raise_for_status()
+                if SSL_SENDFILE:
+                    ssl_connection_pool = Pool(host=urlparse(upload_url).hostname, token=self.client.auth_headers)
+                    file_descriptor = os.open(path=file_path, flags=os.O_RDONLY)
+
+                    ssl_connection_pool.put(upload_url, file_descriptor, file_size)
+                else:
+                    file_data = await asyncio.to_thread(Path(file_path).read_bytes)
+
+                    resp = await self.http_client.request(method, upload_url, content=file_data, headers=headers)
+                    resp.raise_for_status()
             except Exception as e:
                 raise RuntimeError(f"Failed to upload {remote_path}: {e}") from e
 
@@ -240,6 +257,9 @@ class Uploader:
                 rich_print(f"[red]Failed to abort multipart upload request: {repr(e)}[/red]", file=sys.stderr)
             raise
 
+
+
+
     async def _upload_parts(
         self,
         file_path: Path,
@@ -255,6 +275,15 @@ class Uploader:
         ``MAX_IN_MEMORY_CHUNKS * chunk_size`` instead of growing with file size.
         """
 
+        def get_part_offset_and_size(fd, part_urls, part_number):
+            file_size = os.fstat(fd).st_size
+            chunk = -(-file_size // len(part_urls))
+            offset = (part_number - 1) * chunk
+            part_size = min(chunk, file_size - offset)
+
+            return { "offset": offset, "part_size": part_size }
+
+
         async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any]:
             err = None
             try:
@@ -264,22 +293,42 @@ class Uploader:
                     method = part_info["method"]
                     headers = part_info.get("headers", {})
 
-                    part_size = len(data)
+                    if SSL_SENDFILE:
+                        file_descriptor = os.open(path=file_path, flags=os.O_RDONLY)
+                        offset_size = get_part_offset_and_size(file_descriptor, part_urls, part_number)
+                        offset = offset_size["offset"]
+                        part_size = offset_size["part_size"]
 
-                    for attempt in range(MAX_UPLOAD_RETRIES):
-                        try:
+                        parsed_url = urlparse(url)
+                        query = parsed_url.query if parsed_url.query else ""
+                        target = f"{parsed_url.path}?{query}"
+                        ssl_connection_pool = Pool(host=parsed_url.hostname, token="")
+                    else:
+                        part_size = len(data)
+
+                    
+
+                for attempt in range(MAX_UPLOAD_RETRIES):
+                    try:
+                        if SSL_SENDFILE:
+                            resp = await asyncio.to_thread(ssl_connection_pool.put, target, file_descriptor, part_size, offset=offset, req_headers=headers)
+                            etag = resp[1]["etag"].strip('"')
+                        else:
                             response = await self.http_client.request(method, url, content=data, headers=headers)
                             response.raise_for_status()
                             etag = response.headers.get("ETag", "").strip('"')
-                            await self.increment_progress(
-                                part_size,
-                                f"{file_path.name} (part {part_number}/{len(part_urls)})",
-                            )
-                            return {"part_number": part_number, "etag": etag}
-                        except Exception as e:
-                            err = e
-                            if attempt < MAX_UPLOAD_RETRIES - 1:
-                                await asyncio.sleep(1 * (attempt + 1))
+
+                        await self.increment_progress(
+                            part_size,
+                            f"{file_path.name} (part {part_number}/{len(part_urls)})",
+                        )
+
+                        return {"part_number": part_number, "etag": etag}
+                    except Exception as e:
+                        err = e
+                        if attempt < MAX_UPLOAD_RETRIES - 1:
+                            await asyncio.sleep(1 * (attempt + 1))
+
                     raise RuntimeError(f"Failed to upload part {part_number}: {err}")
             finally:
                 self.memory_semaphore.release()
@@ -298,3 +347,5 @@ class Uploader:
 
         completed_parts = await asyncio.gather(*tasks)
         return sorted(completed_parts, key=lambda x: x["part_number"])
+
+
