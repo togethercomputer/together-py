@@ -66,12 +66,13 @@ _CREATE_PARAMS = frozenset(
         "interval",
         "final_source_replicas",
         "final_target_replicas",
+        "max_surge",
         "detach",
         *_METRIC_PARAMS,
     }
 )
 _REASON_PARAMS = frozenset({"cancel", "pause"})
-_CANARY_ONLY_PARAMS = frozenset({"steps", "interval"}) | _METRIC_PARAMS
+_CANARY_ONLY_PARAMS = frozenset({"steps", "interval", "max_surge"}) | _METRIC_PARAMS
 CancelDispositionCli = Literal["freeze", "revert"]
 CancelDispositionApi = Literal["CANCEL_DISPOSITION_FREEZE", "CANCEL_DISPOSITION_REVERT"]
 _CANCEL_DISPOSITION_MAP: dict[CancelDispositionCli, CancelDispositionApi] = {
@@ -96,10 +97,10 @@ def _control_mode_validator(argument_collection: ArgumentCollection) -> None:
 
 
 def _canary_options_validator(argument_collection: ArgumentCollection) -> None:
-    """--steps/--interval/--metric* require --canary."""
+    """--steps/--interval/--max-surge/--metric* require --canary."""
     populated = _populated_names(argument_collection)
     if populated & _CANARY_ONLY_PARAMS and "canary" not in populated:
-        raise ValueError("--steps, --interval, and --metric* require --canary.")
+        raise ValueError("--steps, --interval, --max-surge, and --metric* require --canary.")
 
 
 # Display-only — do not put a mutually_exclusive validator here; --reason must
@@ -126,6 +127,7 @@ CanaryGroup = Group(
     "Canary Rollout",
     help=(
         "Use [primary]`--canary`[/primary] to create a canary rollout. "
+        "Optional [primary]`--max-surge`[/primary] bounds each step's replica raise. "
         "Optional [primary]`--metric*`[/primary] flags configure a single metric gate."
     ),
     validator=_canary_options_validator,
@@ -138,7 +140,10 @@ BlueGreenGroup = Group(
 )
 RollingGroup = Group(
     "Rolling Rollout",
-    help="Use [primary]`--rolling`[/primary] for a capacity-preserving batch swap.",
+    help=(
+        "Use [primary]`--rolling`[/primary] to ramp the target one replica per rung "
+        "while the source shrinks to its remaining traffic share."
+    ),
     sort_key=3,
 )
 
@@ -234,7 +239,10 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
         bool,
         Parameter(
             name="--rolling",
-            help="Rolling strategy (capacity-preserving batch swap)",
+            help=(
+                "Rolling strategy. The target ramps up one replica per rung while the source "
+                "shrinks to what its remaining traffic share needs."
+            ),
             group=(StrategyGroup, RollingGroup, ModeGroup),
         ),
     ] = False,
@@ -266,6 +274,21 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
             help=(
                 "Wait between canary steps, e.g. 30s or 10m. Only valid with --canary. Omit to use the server default."
             ),
+        ),
+    ] = None,
+    max_surge: Annotated[
+        Optional[int],
+        Parameter(
+            name="--max-surge",
+            group=(CanaryGroup, ModeGroup),
+            help=(
+                "Maximum target replicas one canary step may add. Must be between 1 and 1000. "
+                "No canary step raises the target required replica count by more than this over "
+                "the previous step (the target's current count before the first). "
+                "Only valid with --canary; rolling and blue-green reject it. "
+                "Omit for no step-raise bound. Autoscaler growth is not counted."
+            ),
+            validator=Number(gte=1, lte=1000),
         ),
     ] = None,
     metric: Annotated[
@@ -372,6 +395,7 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
             group=ModeGroup,
             help=(
                 "Target replica floor at completion. Must be >= 1. "
+                "For rolling, the ladder climbs to this count one replica per rung. "
                 "Omit to default to the source replica count, or source+target combined after a cancel. "
                 "The target autoscaling max may be lifted to the landing ceiling."
             ),
@@ -421,6 +445,7 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
             metric_window=metric_window,
             final_source_replicas=final_source_replicas,
             final_target_replicas=final_target_replicas,
+            max_surge=max_surge,
             detach=detach,
             config=config,
         )
@@ -534,6 +559,7 @@ async def _create_and_start_rollout(
     metric_window: str | None,
     final_source_replicas: int | None,
     final_target_replicas: int | None,
+    max_surge: int | None,
     detach: bool,
     config: CLIConfigParameter,
 ) -> tuple[Rollout, list[str]]:
@@ -593,6 +619,7 @@ async def _create_and_start_rollout(
                 metrics=metrics_payload if metrics_payload is not None else omit,
                 final_source_replicas=final_source_replicas if final_source_replicas is not None else omit,
                 final_target_replicas=final_target_replicas if final_target_replicas is not None else omit,
+                max_surge=max_surge if max_surge is not None else omit,
             ),
         )
         created_rollout_id = rollout.id

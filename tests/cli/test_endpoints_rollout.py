@@ -1111,6 +1111,56 @@ class TestBetaEndpointsRollout:
         assert body["finalTargetReplicas"] == 4
 
     @pytest.mark.respx(base_url=base_url)
+    def test_create_passes_max_surge(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
+            return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
+        )
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+            return_value=httpx.Response(200, json=_rollout_body())
+        )
+
+        result = cli_runner.invoke(_rollout_args("dep_target", "--canary", "--max-surge", "2", "--json"))
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, create_route.calls[0]).request.content.decode())
+        assert body["maxSurge"] == 2
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_omits_max_surge_when_unset(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
+            return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
+        )
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+            return_value=httpx.Response(200, json=_rollout_body())
+        )
+
+        result = cli_runner.invoke(_rollout_args("dep_target", "--canary", "--json"))
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, create_route.calls[0]).request.content.decode())
+        assert "maxSurge" not in body
+
+    @pytest.mark.respx(base_url=base_url)
     def test_create_passes_final_source_replicas(
         self,
         respx_mock: MockRouter,
@@ -1415,6 +1465,26 @@ class TestBetaEndpointsRollout:
         result = cli_runner.invoke(_rollout_args("dep_target", "--steps", "10,100"))
         assert result.exit_code != 0
         assert "require --canary" in result.output.replace("\n", " ")
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rejects_max_surge_without_canary(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(_rollout_args("dep_target", "--rolling", "--max-surge", "2"))
+        assert result.exit_code != 0
+        assert "require --canary" in result.output.replace("\n", " ")
+
+    @pytest.mark.respx(base_url=base_url)
+    @pytest.mark.parametrize("value", ["0", "1001"])
+    def test_rejects_max_surge_out_of_range(self, cli_runner: CliRunner, value: str) -> None:
+        result = cli_runner.invoke(_rollout_args("dep_target", "--canary", "--max-surge", value))
+        assert result.exit_code != 0
+        assert "--max-surge" in result.output
+
+    def test_help_documents_max_surge(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["endpoints", "rollout", "--help"])
+        assert result.exit_code == 0, result.output
+        output = result.output.replace("\n", " ")
+        assert "--max-surge" in output
+        assert "one replica per rung" in output
 
     @pytest.mark.respx(base_url=base_url)
     def test_rejects_metric_without_canary(self, cli_runner: CliRunner) -> None:
