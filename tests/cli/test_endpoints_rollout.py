@@ -1188,6 +1188,56 @@ class TestBetaEndpointsRollout:
         assert body["finalSourceReplicas"] == 2
 
     @pytest.mark.respx(base_url=base_url)
+    def test_create_passes_max_unavailable(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
+            return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
+        )
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+            return_value=httpx.Response(200, json=_rollout_body())
+        )
+
+        result = cli_runner.invoke(_rollout_args("dep_target", "--blue-green", "--max-unavailable", "1", "--json"))
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, create_route.calls[0]).request.content.decode())
+        assert body["maxUnavailable"] == 1
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_omits_max_unavailable_by_default(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/v2/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        create_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts").mock(
+            return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_PENDING", currentStep=None))
+        )
+        respx_mock.post("/v2/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+            return_value=httpx.Response(200, json=_rollout_body())
+        )
+
+        result = cli_runner.invoke(_rollout_args("dep_target", "--blue-green", "--json"))
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, create_route.calls[0]).request.content.decode())
+        assert "maxUnavailable" not in body
+
+    @pytest.mark.respx(base_url=base_url)
     def test_create_detaches_shadow_target(
         self,
         respx_mock: MockRouter,
