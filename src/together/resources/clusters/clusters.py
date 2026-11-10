@@ -79,7 +79,7 @@ class ClustersResource(SyncAPIResource):
         billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
         gpu_type: Literal[
-            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_SXM"
+            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_NVL"
         ],
         num_gpus: int,
         nvidia_version_id: str,
@@ -219,7 +219,7 @@ class ClustersResource(SyncAPIResource):
         cluster_name: str,
         cuda_version: str,
         gpu_type: Literal[
-            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_SXM"
+            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_NVL"
         ],
         num_gpus: int,
         nvidia_driver_version: str,
@@ -360,7 +360,7 @@ class ClustersResource(SyncAPIResource):
         billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
         gpu_type: Literal[
-            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_SXM"
+            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_NVL"
         ],
         num_gpus: int,
         nvidia_version_id: str | Omit = omit,
@@ -687,7 +687,7 @@ class AsyncClustersResource(AsyncAPIResource):
         billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
         gpu_type: Literal[
-            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_SXM"
+            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_NVL"
         ],
         num_gpus: int,
         nvidia_version_id: str,
@@ -827,7 +827,7 @@ class AsyncClustersResource(AsyncAPIResource):
         cluster_name: str,
         cuda_version: str,
         gpu_type: Literal[
-            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_SXM"
+            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_NVL"
         ],
         num_gpus: int,
         nvidia_driver_version: str,
@@ -968,7 +968,7 @@ class AsyncClustersResource(AsyncAPIResource):
         billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
         gpu_type: Literal[
-            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_SXM"
+            "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_NVL"
         ],
         num_gpus: int,
         nvidia_version_id: str | Omit = omit,

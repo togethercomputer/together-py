@@ -55,7 +55,7 @@ class GPUClusterCreateRequestNvidiaVersion(TypedDict, total=False):
     """Name of the GPU cluster."""
 
     gpu_type: Required[
-        Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_SXM"]
+        Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_NVL"]
     ]
     """Type of GPU to use in the cluster"""
 
@@ -426,7 +426,7 @@ class GPUClusterCreateRequestLegacyNvidia(TypedDict, total=False):
     """
 
     gpu_type: Required[
-        Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_SXM"]
+        Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_NVL"]
     ]
     """Type of GPU to use in the cluster"""
 

@@ -510,7 +510,7 @@ class Cluster(BaseModel):
     """
 
     gpu_type: Literal[
-        "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_SXM"
+        "H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM", "GB200_NVL"
     ]
     """Type of GPU used by the cluster."""
 
