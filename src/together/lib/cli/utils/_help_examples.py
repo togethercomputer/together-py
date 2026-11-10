@@ -461,10 +461,6 @@ MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg models ls[/primary]
   [primary]tg models ml_yyyyyyyyyyyy[/primary]
 
-[dim]-[/dim] List internal models in your organization and inspect one (`get` falls back to the organization):
-  [primary]tg models org[/primary]
-  [primary]tg models get ml_yyyyyyyyyyyy[/primary]
-
 [dim]-[/dim] List configs for a model to be used with [primary]tg models deploy --config[/primary]:
   [primary]tg models configs ml_yyyyyyyyyyyy[/primary]
 
