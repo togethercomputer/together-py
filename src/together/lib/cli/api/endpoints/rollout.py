@@ -67,6 +67,7 @@ _CREATE_PARAMS = frozenset(
         "final_source_replicas",
         "final_target_replicas",
         "max_surge",
+        "max_unavailable",
         "detach",
         *_METRIC_PARAMS,
     }
@@ -402,6 +403,18 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
             validator=Number(gte=1),
         ),
     ] = None,
+    max_unavailable: Annotated[
+        Optional[int],
+        Parameter(
+            name="--max-unavailable",
+            group=ModeGroup,
+            help=(
+                "Source replicas that may be missing or retired ahead of their replacements at once. "
+                "Must be >= 0. Omit to default to 0, which waits for capacity and refuses a degraded source."
+            ),
+            validator=Number(gte=0),
+        ),
+    ] = None,
     detach: Annotated[
         bool,
         Parameter(
@@ -446,6 +459,7 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
             final_source_replicas=final_source_replicas,
             final_target_replicas=final_target_replicas,
             max_surge=max_surge,
+            max_unavailable=max_unavailable,
             detach=detach,
             config=config,
         )
@@ -560,6 +574,7 @@ async def _create_and_start_rollout(
     final_source_replicas: int | None,
     final_target_replicas: int | None,
     max_surge: int | None,
+    max_unavailable: int | None,
     detach: bool,
     config: CLIConfigParameter,
 ) -> tuple[Rollout, list[str]]:
@@ -620,6 +635,7 @@ async def _create_and_start_rollout(
                 final_source_replicas=final_source_replicas if final_source_replicas is not None else omit,
                 final_target_replicas=final_target_replicas if final_target_replicas is not None else omit,
                 max_surge=max_surge if max_surge is not None else omit,
+                max_unavailable=max_unavailable if max_unavailable is not None else omit,
             ),
         )
         created_rollout_id = rollout.id
