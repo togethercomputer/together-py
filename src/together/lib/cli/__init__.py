@@ -808,11 +808,6 @@ models_app.command(
 )
 models_app.command((f"{_CLI}.models.org:org"), help="List internal-visibility models in the caller's organization")
 models_app.command(
-    (f"{_CLI}.models.org_get:org_get"),
-    name="org-get",
-    help="Get an internal-visibility model in the caller's organization",
-)
-models_app.command(
     (f"{_CLI}.models.create:create"),
     alias="-c",
     help="Register a model (does not upload files)",
@@ -825,7 +820,11 @@ models_app.command(
     alias="list-revisions",
     help="List revisions for a model",
 )
-models_app.command((f"{_CLI}.models.retrieve:retrieve"), alias="get", help="Get a model by ID")
+models_app.command(
+    (f"{_CLI}.models.retrieve:retrieve"),
+    alias="get",
+    help="Get a model by ID, or an org-shared model if it is not in this project",
+)
 models_app.command(
     (f"{_CLI}.models.update:update"),
     help="Update a model (provided fields only)",
