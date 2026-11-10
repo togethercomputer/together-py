@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from typing import Any, TypeVar, Coroutine
 from typing_extensions import Annotated
 
@@ -47,15 +46,14 @@ async def retrieve(
 
 async def _load_model(config: CLIConfig, model_id: str) -> tuple[Model, ModelListFilesResponse | None]:
     try:
-        model, files = await asyncio.gather(
-            config.client.models.retrieve(model_id),
-            safe_fetch(config.client.models.list_files(id=model_id)),
-        )
-        return model, files
+        model = await config.client.models.retrieve(model_id)
     except NotFoundError as project_error:
         model = await _retrieve_org_model(config, model_id, project_error)
-        files = await safe_fetch(config.client.models.list_files(id=model_id, project_id=model.project_id))
-        return model, files
+
+    # Wait for the model so a failed project lookup never starts a file list, and an
+    # org fallback lists files from the project that actually owns the model.
+    files = await safe_fetch(config.client.models.list_files(id=model_id, project_id=model.project_id))
+    return model, files
 
 
 async def _retrieve_org_model(config: CLIConfig, model_id: str, project_error: NotFoundError) -> Model:

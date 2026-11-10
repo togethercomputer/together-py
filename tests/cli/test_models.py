@@ -418,7 +418,6 @@ class TestBetaModelsRetrieve:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         project = respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=_not_found())
-        respx_mock.get("/v2/projects/proj/models/ml_1/files").mock(return_value=_not_found())
         respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         org = respx_mock.get("/v2/organizations/org-1/models/ml_1").mock(
             return_value=httpx.Response(200, json=_model_body(projectId="other-proj"))
@@ -443,7 +442,6 @@ class TestBetaModelsRetrieve:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=_not_found())
-        respx_mock.get("/v2/projects/proj/models/ml_1/files").mock(return_value=_not_found())
         respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body(organization=None)))
 
         result = cli_runner.invoke(["models", "get", "ml_1", "--project", "proj", "--json"])
@@ -456,7 +454,6 @@ class TestBetaModelsRetrieve:
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=_not_found())
-        respx_mock.get("/v2/projects/proj/models/ml_1/files").mock(return_value=_not_found())
         respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         org = respx_mock.get("/v2/organizations/org-1/models/ml_1").mock(return_value=_not_found())
 
@@ -473,8 +470,6 @@ class TestBetaModelsRetrieve:
         respx_mock.get("/v2/projects/proj/models/ml_1").mock(
             return_value=httpx.Response(403, json={"error": {"message": "forbidden", "type": "permission_denied"}})
         )
-        respx_mock.get("/v2/projects/proj/models/ml_1/files").mock(return_value=_not_found())
-
         result = cli_runner.invoke(["models", "get", "ml_1", "--project", "proj", "--json"])
 
         assert result.exit_code != 0
