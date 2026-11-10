@@ -76,6 +76,9 @@ class Rollout(BaseModel):
     The maxSurge the rollout was created with. Absent when it was not set.
     """
 
+    max_unavailable: Optional[int] = FieldInfo(alias="maxUnavailable", default=None)
+    """The maxUnavailable the rollout was created with. Absent when it was not set."""
+
     pause_info: Optional[PauseInfo] = FieldInfo(alias="pauseInfo", default=None)
     """Pause metadata returned while a rollout is paused."""
 
