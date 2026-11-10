@@ -33,6 +33,7 @@ class RolloutCondition(BaseModel):
             "ROLLOUT_FAILURE_CATEGORY_POLICY_INFEASIBLE",
             "ROLLOUT_FAILURE_CATEGORY_UNDER_SERVED",
             "ROLLOUT_FAILURE_CATEGORY_ENTITLEMENT_LAPSED",
+            "ROLLOUT_FAILURE_CATEGORY_SURGE_BUDGET",
         ]
     ] = None
     """Category that classifies why the rollout stopped."""

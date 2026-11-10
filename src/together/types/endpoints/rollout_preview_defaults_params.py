@@ -46,18 +46,32 @@ class RolloutPreviewDefaultsParams(TypedDict, total=False):
     final_target_replicas: Annotated[int, PropertyInfo(alias="finalTargetReplicas")]
     """Optional target replica floor at completion.
 
-    Must be at least 1 when set; defaults to the source deployment's replica count
-    at create time, or to the source and target deployments' combined replica count
-    when both already stand in the endpoint traffic split after a cancel. The
-    completed target's autoscaling max lands at the landing ceiling, max(this value,
-    the source max, the target's own max); the rollout may lift the target max at
-    first wake, at the first step that needs it, or at completion unless an operator
+    For rolling, the ladder climbs to this count one replica per rung. Must be at
+    least 1 when set; defaults to the source deployment's replica count at create
+    time, or to the source and target deployments' combined replica count when both
+    already stand in the endpoint traffic split after a cancel. The completed
+    target's autoscaling max lands at the landing ceiling, max(this value, the
+    source max, the target's own max); the rollout may lift the target max at first
+    wake, at the first step that needs it, or at completion unless an operator
     changes max mid-run. The lifted ceiling remains after completion, and
     PreviewRolloutDefaults reports a coming lift as ROLLOUT_WILL_RAISE_TARGET_MAX. A
     pre-existing target whose own autoscaling min is higher keeps that floor,
     reported as FINAL_BELOW_INHERITED_MIN. A target that starts stopped lands
     exactly at this value; if the source min was higher, PreviewRolloutDefaults
     reports FINAL_BELOW_SOURCE_MIN.
+    """
+
+    max_surge: Annotated[int, PropertyInfo(alias="maxSurge")]
+    """Optional maximum target replicas one canary step may add.
+
+    No canary step raises the target required replica count by more than this over
+    the previous step (the target's current count before the first). Canary steps
+    are admitted only when every raise fits. A rejection names the step, the counts,
+    and the smallest maxSurge that admits the plan. Autoscaler growth on either
+    deployment is not counted against the bound. Must be between 1 and 1000 when
+    set. When unset, no step-raise bound applies. Available on the canary strategy
+    only for now; a rolling or blue-green rollout that sets it is rejected at create
+    and preview.
     """
 
     metrics: Iterable[MetricRuleParam]
@@ -67,7 +81,8 @@ class RolloutPreviewDefaultsParams(TypedDict, total=False):
     """
 
     rolling: RollingConfigParam
-    """
-    Rolling strategy configuration for small batches that ramp target replicas up
-    while shrinking source replicas to what their remaining traffic share needs.
+    """Rolling strategy configuration.
+
+    The target ramps up one replica per rung while the source shrinks to what its
+    remaining traffic share needs.
     """

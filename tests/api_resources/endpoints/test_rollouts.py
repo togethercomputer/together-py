@@ -64,6 +64,7 @@ class TestRollouts:
             },
             final_source_replicas=0,
             final_target_replicas=0,
+            max_surge=1,
             metrics=[
                 {
                     "name": "router_latency",
@@ -509,6 +510,7 @@ class TestRollouts:
             },
             final_source_replicas=0,
             final_target_replicas=0,
+            max_surge=1,
             metrics=[
                 {
                     "name": "router_latency",
@@ -822,6 +824,7 @@ class TestAsyncRollouts:
             },
             final_source_replicas=0,
             final_target_replicas=0,
+            max_surge=1,
             metrics=[
                 {
                     "name": "router_latency",
@@ -1267,6 +1270,7 @@ class TestAsyncRollouts:
             },
             final_source_replicas=0,
             final_target_replicas=0,
+            max_surge=1,
             metrics=[
                 {
                     "name": "router_latency",

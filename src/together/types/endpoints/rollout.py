@@ -70,6 +70,12 @@ class Rollout(BaseModel):
     etag: Optional[str] = None
     """Output only. Opaque version tag for optimistic concurrency control."""
 
+    max_surge: Optional[int] = FieldInfo(alias="maxSurge", default=None)
+    """Output only.
+
+    The maxSurge the rollout was created with. Absent when it was not set.
+    """
+
     pause_info: Optional[PauseInfo] = FieldInfo(alias="pauseInfo", default=None)
     """Pause metadata returned while a rollout is paused."""
 
