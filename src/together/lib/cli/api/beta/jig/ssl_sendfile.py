@@ -36,7 +36,7 @@ WORKERS = int(os.environ.get("WORKERS", min(len(os.sched_getaffinity(0)) * 2, 25
 PARTS_MULT = int(os.environ.get("PARTS", "4"))  # parts = PARTS_MULT * WORKERS
 SO_SNDBUFFORCE = 32
 
-noop = lambda *args: None
+noop = lambda *args: None #noqa
 debug = print if os.getenv("DEBUG") else noop
 trace = print if os.getenv("TRACE") else noop
 
@@ -199,7 +199,7 @@ class Connection:
         try:
             # forcing a specific buffer size requires sudo or CAP_NET_ADMIN
             sock.setsockopt(socket.SOL_SOCKET, SO_SNDBUFFORCE, want_sndbuf_kb * 1024)
-            print("Force set send buffer to", want_sndbuf_kb, "KB")
+            print("Force set send buffer to", want_sndbuf_kb, "KB") #noqa
         except PermissionError:
             # unlike SNDBUFFORCE, SNDBUF is capped to wmem_max (208KB default)
             # setting SNDBUFFORCE also disables autotuning of the send buffer
@@ -212,10 +212,10 @@ class Connection:
             msg = f"Set send buffer: Want {want_sndbuf_kb} KB, write memory max {wmem_max_kb} KB:"
             if wmem_max_kb >= want_sndbuf_kb:
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, want_sndbuf_kb * 1024)
-                print(msg, "OK")
+                print(msg, "OK") #noqa
             else:
                 # otherwise leave it alone: autotuning reaches tcp_wmem[2] by itself
-                print(msg, "can't raise send buffer")
+                print(msg, "can't raise send buffer") #noqa
         sock.setblocking(False)
 
         ssl = _SSL_new(_shared_ctx)
@@ -444,7 +444,7 @@ class Pool:
                 c.close()
                 if attempt == tries:
                     raise
-                print(f"retrying PUT {target} after err {repr(e)}")  # noqa: RUF010
+                print(f"retrying PUT {target} after err {repr(e)}")  # noqa
                 time.sleep(0.1 * attempt)
         raise RuntimeError("unreachable")
 

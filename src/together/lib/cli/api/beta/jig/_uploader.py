@@ -157,7 +157,6 @@ class Uploader:
                 snapshot_bytes = self.uploaded_bytes
 
             try:
-                print(f"file_size: {file_size} mp_thres: {self.multipart_threshold}")
                 if file_size >= self.multipart_threshold:
                     await self._upload_file_multipart(file_path, remote_path, file_size)
                 else:
@@ -195,7 +194,6 @@ class Uploader:
 
             try:
                 if SSL_SENDFILE:
-                    print("OH MY GOSH IT'S SSL_SENDFILE SIMPLE")
                     ssl_connection_pool = self.get_pool(urlparse(upload_url).hostname)
                     file_descriptor = os.open(path=file_path, flags=os.O_RDONLY)
 
@@ -288,7 +286,6 @@ class Uploader:
                     headers = part_info.get("headers", {})
 
                     if SSL_SENDFILE:
-                        print("OH MY GOSH IT'S SSL_SENDFILE MULTIPART")
                         file_descriptor = os.open(path=file_path, flags=os.O_RDONLY)
                         offset_size = get_part_offset_and_size(file_descriptor, part_urls, part_number)
                         offset = offset_size["offset"]
