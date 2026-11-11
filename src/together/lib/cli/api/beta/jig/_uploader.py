@@ -19,7 +19,7 @@ from rich import print as rich_print
 from together import Together
 from together.lib.utils import log_debug
 from together.lib.cli.utils._debug import is_enabled
-from together.lib.cli.api.beta.jig.python_docker_push.ssl_sendfile import Pool
+from together.lib.cli.api.beta.jig.ssl_sendfile import Pool
 
 # check for --debug flag
 DEBUG = is_enabled()
