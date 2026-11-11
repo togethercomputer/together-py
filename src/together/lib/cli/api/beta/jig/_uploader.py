@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import asyncio
+import functools
 import itertools
 from typing import Any
 from pathlib import Path
@@ -68,7 +69,7 @@ class Uploader:
         self.memory_semaphore: asyncio.Semaphore
         self.progress_lock: asyncio.Lock
         self.http_client: httpx.AsyncClient
-        # self.ssl_connection_pool = Pool(host=PLACEHOLDER CODE_WILL_NOT_WORK, token=PLACEHOLDER CODE_WILL_NOT_WORK)
+        self.get_pool = functools.cache(Pool)
 
     def update_progress(self) -> None:
         spinner = next(self.spinner_iter)
@@ -194,7 +195,8 @@ class Uploader:
 
             try:
                 if SSL_SENDFILE:
-                    ssl_connection_pool = Pool(host=urlparse(upload_url).hostname, token=self.client.auth_headers)
+                    print("OH MY GOSH IT'S SSL_SENDFILE SIMPLE")
+                    ssl_connection_pool = self.get_pool(urlparse(upload_url).hostname)
                     file_descriptor = os.open(path=file_path, flags=os.O_RDONLY)
 
                     ssl_connection_pool.put(upload_url, file_descriptor, file_size)
@@ -253,9 +255,6 @@ class Uploader:
                 rich_print(f"[red]Failed to abort multipart upload request: {repr(e)}[/red]", file=sys.stderr)
             raise
 
-
-
-
     async def _upload_parts(
         self,
         file_path: Path,
@@ -279,7 +278,6 @@ class Uploader:
 
             return { "offset": offset, "part_size": part_size }
 
-
         async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any]:
             err = None
             try:
@@ -290,6 +288,7 @@ class Uploader:
                     headers = part_info.get("headers", {})
 
                     if SSL_SENDFILE:
+                        print("OH MY GOSH IT'S SSL_SENDFILE MULTIPART")
                         file_descriptor = os.open(path=file_path, flags=os.O_RDONLY)
                         offset_size = get_part_offset_and_size(file_descriptor, part_urls, part_number)
                         offset = offset_size["offset"]
@@ -298,7 +297,9 @@ class Uploader:
                         parsed_url = urlparse(url)
                         query = parsed_url.query if parsed_url.query else ""
                         target = f"{parsed_url.path}?{query}"
-                        ssl_connection_pool = Pool(host=parsed_url.hostname, token="")
+
+                        ssl_connection_pool = self.get_pool(host=parsed_url.hostname)
+
                     else:
                         part_size = len(data)
 

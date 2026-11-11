@@ -181,7 +181,7 @@ class Connection:
     def __init__(
         self,
         host: str,
-        token: str,
+        token: str | None = None,
         port: int = 443,
         timeout: float = 30.0,
         session: int | None = None
@@ -399,7 +399,7 @@ class Connection:
 class Pool:
     """LIFO pool of warm kTLS connections to one origin."""
 
-    def __init__(self, host: str, token: str, port: int = 443) -> None:
+    def __init__(self, host: str, token: str | None = None, port: int = 443) -> None:
         self.host, self.port = host, port
         self._q: queue.LifoQueue[Connection] = queue.LifoQueue()
         self._session: int | None = None
