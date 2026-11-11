@@ -10,24 +10,24 @@ Usage: python3 ssl_sendfile.py --s3 [profile] <source_dir> s3://bucket/prefix
 
 from __future__ import annotations
 
-import asyncio
-import ctypes
-import ctypes.util
+import os
+import ssl as _stdlib_ssl
+import time
 import errno
 import fcntl
-import os
 import queue
+import ctypes
 import select
 import socket
-import ssl as _stdlib_ssl
 import struct
+import asyncio
 import threading
-import time
-from ctypes import CDLL, c_char_p, c_int, c_long, c_size_t, c_ssize_t, c_ulong, c_void_p
-from dataclasses import dataclass
-from pathlib import Path
+import ctypes.util
 from time import monotonic
+from ctypes import CDLL, c_int, c_long, c_ulong, c_char_p, c_size_t, c_void_p, c_ssize_t
 from typing import Any, Callable
+from pathlib import Path
+from dataclasses import dataclass
 
 # --- Config ---
 
