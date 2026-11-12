@@ -462,7 +462,7 @@ async def _run_launcher(
 
     async def run_command() -> None:
         try:
-            command, bound, _ignored, extra = app.parse_known_args(remaining)
+            command, bound, extra = app.parse_args(remaining, print_error=False, exit_on_error=False)
             # for arg_name, arg_type in command.__annotations__.items():
             #     if isinstance(arg_type, PromptParameter) and not config.non_interactive:
             #         value = await prompt(arg_name)

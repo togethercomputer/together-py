@@ -231,7 +231,7 @@ async def test_model_upload_failure_preserves_diagnostic(
             "upload",
             "ml_example",
             str(private_path),
-            "--non-interactive",
+            non_interactive=True,
             api_key="0000000000000000000000000000000000000000",
             project_id="project",
         )
@@ -267,7 +267,7 @@ async def test_model_download_validation_preserves_diagnostic(
             str(tmp_path),
             "--revision",
             "rev-b",
-            "--json",
+            output_json=True,
             api_key="0000000000000000000000000000000000000000",
             project_id="project",
         )
