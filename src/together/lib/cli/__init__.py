@@ -232,7 +232,9 @@ def _create_client(
 ) -> tuple[AsyncTogether, bool]:
     api_key = _resolve_cli_api_key(api_key)
     missing_api_key = False
-    check_url = base_url if base_url is not None else (None if ignore_base_url_env else os.environ.get("TOGETHER_BASE_URL"))
+    check_url = (
+        base_url if base_url is not None else (None if ignore_base_url_env else os.environ.get("TOGETHER_BASE_URL"))
+    )
     _reject_legacy_v1_base_url(check_url, "--base-url" if base_url is not None else "TOGETHER_BASE_URL")
     # A logged-in session is pinned to its issuer. Hide TOGETHER_BASE_URL from the
     # SDK when we are not passing an explicit URL, so production keeps the default

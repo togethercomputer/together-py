@@ -5,13 +5,13 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from together import InternalServerError, NotFoundError
+from together import NotFoundError, InternalServerError
+from together.lib.cli._track_cli import format_cli_error_for_telemetry
 from together.lib.cli.utils._api_error import (
     report_api_error,
     is_html_api_error,
     html_api_error_message,
 )
-from together.lib.cli._track_cli import format_cli_error_for_telemetry
 
 
 def _not_found(*, headers: dict[str, str] | None = None, text: str) -> NotFoundError:
