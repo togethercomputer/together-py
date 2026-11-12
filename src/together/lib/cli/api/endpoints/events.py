@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Literal, Optional, Annotated
+import re
+from typing import Literal, Optional, Annotated, AsyncIterator
 from datetime import datetime
+from contextlib import asynccontextmanager
 
+import httpx
 from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
 from together import omit
-from together._qs import RepeatedQuery
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -36,19 +38,55 @@ def _short_name(fully_qualified_name: str) -> str:
     return fully_qualified_name.rsplit("/", 1)[-1]
 
 
-def _event_types_query(types: str | None) -> dict[str, RepeatedQuery] | None:
-    """Send each event type as its own query value.
+# /projects/{project}/endpoints/{id}/events, with or without a /v2 prefix.
+_ENDPOINT_EVENTS_PATH = re.compile(r"/projects/[^/]+/endpoints/[^/]+/events$")
 
-    ``--types deployment.scaled,condition.set`` is the documented CLI form, but
-    the API rejects a comma-joined ``types`` value. The SDK comma-joins arrays,
-    so repeated keys are passed through ``extra_query`` instead of ``types``.
-    """
+
+def _event_type_values(types: str | None) -> list[str] | None:
     if not types:
         return None
-    values = tuple(part.strip() for part in types.split(",") if part.strip())
-    if not values:
-        return None
-    return {"types": RepeatedQuery(values)}
+    values = [part.strip() for part in types.split(",") if part.strip()]
+    return values or None
+
+
+def _repeat_endpoint_event_types(request: httpx.Request) -> None:
+    """Split a comma-joined ``types`` value into repeated query keys.
+
+    ``--types deployment.scaled,condition.set`` is the documented CLI form. The
+    events API rejects that comma-joined value, and the generated client
+    comma-joins every array. The shared query encoder stays unchanged; this
+    rewrites the one request after that encoder has run.
+    """
+    if _ENDPOINT_EVENTS_PATH.search(request.url.path) is None:
+        return
+
+    expanded: list[tuple[str, str]] = []
+    changed = False
+    for key, value in request.url.params.multi_items():
+        if key != "types":
+            expanded.append((key, value))
+            continue
+        parts = [part.strip() for part in value.split(",") if part.strip()]
+        if parts == [value]:
+            expanded.append((key, value))
+            continue
+        changed = True
+        expanded.extend(("types", part) for part in parts)
+    if changed:
+        request.url = request.url.copy_with(params=expanded)
+
+
+@asynccontextmanager
+async def _repeat_event_type_query(http_client: httpx.AsyncClient) -> AsyncIterator[None]:
+    async def _on_request(request: httpx.Request) -> None:
+        _repeat_endpoint_event_types(request)
+
+    hooks = http_client.event_hooks.setdefault("request", [])
+    hooks.append(_on_request)
+    try:
+        yield
+    finally:
+        hooks.remove(_on_request)
 
 
 def _format_event_datetime(value: datetime) -> str:
@@ -112,20 +150,21 @@ async def events(
     """List endpoint audit and lifecycle events."""
     endpoint = await show_loading_status("Resolving endpoint...", resolve_endpoint(config, id))
 
-    response = await show_loading_status(
-        "Loading endpoint events...",
-        config.client.endpoints.list_events(
-            endpoint.id,
-            after=after or omit,
-            deployment_ids=deployment_ids.split(",") if deployment_ids else omit,
-            limit=limit if limit is not None else omit,
-            min_level=LEVEL_MAP[min_level] if min_level else omit,
-            since=since if since is not None else omit,
-            subject_id=subject_id or omit,
-            extra_query=_event_types_query(types),
-            until=until if until is not None else omit,
-        ),
-    )
+    async with _repeat_event_type_query(config.client._client):
+        response = await show_loading_status(
+            "Loading endpoint events...",
+            config.client.endpoints.list_events(
+                endpoint.id,
+                after=after or omit,
+                deployment_ids=deployment_ids.split(",") if deployment_ids else omit,
+                limit=limit if limit is not None else omit,
+                min_level=LEVEL_MAP[min_level] if min_level else omit,
+                since=since if since is not None else omit,
+                subject_id=subject_id or omit,
+                types=_event_type_values(types) or omit,
+                until=until if until is not None else omit,
+            ),
+        )
 
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))
