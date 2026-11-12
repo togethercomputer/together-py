@@ -42,6 +42,11 @@ def _proxy_html_502(*, body: object) -> InternalServerError:
         ({"content-type": "text/html; charset=utf-8"}, "anything", True),
         ({"content-type": "application/json"}, '<!DOCTYPE html><html lang="en">', True),
         ({"content-type": "application/json"}, "<html><body>nope</body></html>", True),
+        ({"content-type": "application/json"}, "\ufeff<!DOCTYPE html><html><body>x</body></html>", True),
+        ({"content-type": "application/json"}, "<!-- nginx --><html><body>x</body></html>", True),
+        ({"content-type": "application/json"}, "<!-- a --><!-- b -->\n<html><body>x</body></html>", True),
+        ({"content-type": "application/json"}, '<?xml version="1.0"?><html><body>x</body></html>', True),
+        ({"content-type": "application/json"}, "<head><title>Error</title></head><body>x</body>", True),
         ({"content-type": "application/json"}, '{"error":"not found"}', False),
         ({}, "plain text error", False),
     ],
@@ -54,6 +59,26 @@ def test_is_html_api_error(headers: dict[str, str], body: str, expected: bool) -
 def test_is_html_api_error_octet_stream_non_str_body(body: object) -> None:
     err = _proxy_html_502(body=body)
     assert not str(err).lstrip().lower().startswith("<html")
+    assert is_html_api_error(err) is True
+
+
+@pytest.mark.parametrize(
+    "html",
+    [
+        "\ufeff<!DOCTYPE html><html><body>Bad Gateway</body></html>",
+        "<!-- nginx --><html><body>Bad Gateway</body></html>",
+        '<?xml version="1.0" encoding="UTF-8"?><html><body>Bad Gateway</body></html>',
+        "<head><title>502</title></head><body>Bad Gateway</body>",
+    ],
+)
+def test_is_html_api_error_octet_stream_noisy_prefix(html: str) -> None:
+    response = httpx.Response(
+        502,
+        headers={"content-type": "application/octet-stream"},
+        text=html,
+        request=httpx.Request("GET", "https://api.together.ai/v1/v3/whoami"),
+    )
+    err = InternalServerError(f"Error code: 502 - {html}", response=response, body={"proxy": True})
     assert is_html_api_error(err) is True
 
 

@@ -43,8 +43,24 @@ def _parse_rpc_error_envelope(body: object) -> _RPCError:
 
 
 def _looks_like_html(text: str) -> bool:
-    lowered = text.lstrip().lower()
-    return lowered.startswith("<!doctype html") or lowered.startswith("<html")
+    """True for HTML (or XHTML) payloads, including common leading noise.
+
+    Proxies often prefix pages with a BOM, ``<!-- nginx -->`` comments, or
+    ``<?xml ...?>`` / bare ``<head>`` before ``<!DOCTYPE html>`` / ``<html>``.
+    """
+    s = text.lstrip("\ufeff").lstrip().lower()
+    while s.startswith("<!--"):
+        end = s.find("-->")
+        if end < 0:
+            # Truncated comment is still HTML-shaped enough to hide.
+            return True
+        s = s[end + 3 :].lstrip("\ufeff").lstrip()
+    return (
+        s.startswith("<!doctype html")
+        or s.startswith("<html")
+        or s.startswith("<?xml")
+        or s.startswith("<head")
+    )
 
 
 def _error_text_without_status_prefix(e: APIError) -> str:
