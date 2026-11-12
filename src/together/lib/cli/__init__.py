@@ -232,10 +232,8 @@ def _create_client(
 ) -> tuple[AsyncTogether, bool]:
     api_key = _resolve_cli_api_key(api_key)
     missing_api_key = False
-    if base_url is not None:
-        _reject_legacy_v1_base_url(base_url, "--base-url")
-    elif not ignore_base_url_env:
-        _reject_legacy_v1_base_url(os.environ.get("TOGETHER_BASE_URL"), "TOGETHER_BASE_URL")
+    check_url = base_url if base_url is not None else (None if ignore_base_url_env else os.environ.get("TOGETHER_BASE_URL"))
+    _reject_legacy_v1_base_url(check_url, "--base-url" if base_url is not None else "TOGETHER_BASE_URL")
     # A logged-in session is pinned to its issuer. Hide TOGETHER_BASE_URL from the
     # SDK when we are not passing an explicit URL, so production keeps the default
     # (and its non-overridden v2 routing) instead of the env host.
@@ -301,6 +299,52 @@ def _create_client(
         sys.exit(1)
 
     return client, missing_api_key
+
+
+def _build_cli_session(
+    *,
+    api_key: Optional[str],
+    base_url: Optional[str],
+    timeout: Optional[int],
+    max_retries: Optional[int],
+    project_id: Optional[str],
+    require_api_key: bool,
+    debug: bool,
+    ignore_base_url_env: bool,
+    using_stored_token: bool,
+    parsed_command: str,
+    is_beta_command: bool,
+    non_interactive: bool,
+    output_json: bool,
+) -> tuple[AsyncTogether, CLIConfig]:
+    client, missing_api_key = _create_client(
+        api_key,
+        base_url,
+        timeout,
+        max_retries,
+        project_id,
+        require_api_key=require_api_key,
+        debug=debug,
+        ignore_base_url_env=ignore_base_url_env,
+    )
+    if debug:
+        log_debug_session(
+            command=parsed_command,
+            is_beta_command=is_beta_command,
+            base_url=str(client.base_url),
+            project_id=client.project_id,
+            api_key=None if missing_api_key else (client.api_key or None),
+            timeout=client.timeout,
+            max_retries=client.max_retries,
+        )
+    if using_stored_token:
+        _install_stored_token_auth(client)
+    return client, CLIConfig(
+        client=client,
+        non_interactive=non_interactive,
+        json=output_json,
+        project_id=project_id,
+    )
 
 
 global_options = Group(
@@ -447,44 +491,29 @@ async def _run_launcher(
     version_check = VersionCheck()
     command_succeeded = False
     retried_for_scope = False
-    client: AsyncTogether | None = None
-    config: CLIConfig | None = None
+    owned_client: AsyncTogether | None = None
     try:
-        # Inside the try so legacy-/v1 ValueError (and other setup failures) hit the
-        # normal Error: / telemetry / exit path instead of dumping a stack trace.
-        client, missing_api_key = _create_client(
-            api_key,
-            base_url,
-            timeout,
-            max_retries,
-            project_id,
+        # Setup stays in the try so legacy-/v1 ValueError hits the normal Error: /
+        # telemetry / exit path. `_build_cli_session` returns non-Optional locals for
+        # `run_command`; `owned_client` is only for `finally` after a setup failure.
+        client, config = _build_cli_session(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+            project_id=project_id,
             require_api_key=not no_auth_command,
             debug=bool(debug),
             ignore_base_url_env=pin_to_issuer and base_url is None,
-        )
-
-        if debug:
-            log_debug_session(
-                command=parsed_command,
-                is_beta_command=is_beta_command,
-                base_url=str(client.base_url),
-                project_id=client.project_id,
-                api_key=None if missing_api_key else (client.api_key or None),
-                timeout=client.timeout,
-                max_retries=client.max_retries,
-            )
-        if using_stored_token:
-            _install_stored_token_auth(client)
-
-        config = CLIConfig(
-            client=client,
+            using_stored_token=using_stored_token,
+            parsed_command=parsed_command,
+            is_beta_command=is_beta_command,
             non_interactive=non_interactive_mode,
-            json=resolved_json,
-            project_id=project_id,
+            output_json=resolved_json,
         )
+        owned_client = client
 
         async def run_command() -> None:
-            assert config is not None and client is not None
             try:
                 command, bound, _ignored, extra = app.parse_known_args(remaining)
                 # for arg_name, arg_type in command.__annotations__.items():
@@ -666,8 +695,8 @@ async def _run_launcher(
     finally:
         try:
             flush_pending_events()
-            if client is not None:
-                await client.close()
+            if owned_client is not None:
+                await owned_client.close()
         finally:
             inform_cli_extras_tip(non_interactive=non_interactive_mode)
             await version_check.inform(
