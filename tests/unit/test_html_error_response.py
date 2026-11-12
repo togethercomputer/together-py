@@ -5,12 +5,13 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from together import NotFoundError
+from together import InternalServerError, NotFoundError
 from together.lib.cli.utils._api_error import (
     report_api_error,
     is_html_api_error,
     html_api_error_message,
 )
+from together.lib.cli._track_cli import format_cli_error_for_telemetry
 
 
 def _not_found(*, headers: dict[str, str] | None = None, text: str) -> NotFoundError:
@@ -21,6 +22,18 @@ def _not_found(*, headers: dict[str, str] | None = None, text: str) -> NotFoundE
         request=httpx.Request("GET", "https://api.together.ai/v1/v3/whoami"),
     )
     return NotFoundError(text, response=response, body=text)
+
+
+def _proxy_html_502(*, body: object) -> InternalServerError:
+    """HTML 502 with a lying content-type and non-str SDK body (message has Error code prefix)."""
+    html = "<html><body>Bad Gateway</body></html>"
+    response = httpx.Response(
+        502,
+        headers={"content-type": "application/octet-stream"},
+        text=html,
+        request=httpx.Request("GET", "https://api.together.ai/v1/v3/whoami"),
+    )
+    return InternalServerError(f"Error code: 502 - {html}", response=response, body=body)
 
 
 @pytest.mark.parametrize(
@@ -35,6 +48,25 @@ def _not_found(*, headers: dict[str, str] | None = None, text: str) -> NotFoundE
 )
 def test_is_html_api_error(headers: dict[str, str], body: str, expected: bool) -> None:
     assert is_html_api_error(_not_found(headers=headers, text=body)) is expected
+
+
+@pytest.mark.parametrize("body", [{"proxy": True}, None, b"<html><body>Bad Gateway</body></html>"])
+def test_is_html_api_error_octet_stream_non_str_body(body: object) -> None:
+    err = _proxy_html_502(body=body)
+    assert not str(err).lstrip().lower().startswith("<html")
+    assert is_html_api_error(err) is True
+
+
+def test_is_html_api_error_strips_error_code_prefix_when_response_empty() -> None:
+    html = "<html><body>Bad Gateway</body></html>"
+    response = httpx.Response(
+        502,
+        headers={"content-type": "application/octet-stream"},
+        text="",
+        request=httpx.Request("GET", "https://api.together.ai/v1/v3/whoami"),
+    )
+    err = InternalServerError(f"Error code: 502 - {html}", response=response, body={"proxy": True})
+    assert is_html_api_error(err) is True
 
 
 def test_html_api_error_message_hides_body() -> None:
@@ -54,6 +86,23 @@ def test_report_api_error_does_not_print_html(capsys: pytest.CaptureFixture[str]
     assert "unexpected HTML response" in combined
     assert "<!DOCTYPE" not in combined
     assert "Page not found" not in combined
+
+
+def test_report_api_error_hides_proxy_octet_stream_html(capsys: pytest.CaptureFixture[str]) -> None:
+    report_api_error(_proxy_html_502(body={"proxy": True}), json=False)
+
+    captured = capsys.readouterr()
+    combined = captured.out + captured.err
+    assert "unexpected HTML response" in combined
+    assert "<html" not in combined
+    assert "Bad Gateway" not in combined
+
+
+def test_telemetry_hides_proxy_octet_stream_html() -> None:
+    out = format_cli_error_for_telemetry(_proxy_html_502(body={"proxy": True}))
+    assert out == "InternalServerError: Error code: 502 - received unexpected HTML response"
+    assert "<html" not in out
+    assert "Bad Gateway" not in out
 
 
 def test_report_api_error_json_uses_emit_json(capsys: pytest.CaptureFixture[str]) -> None:

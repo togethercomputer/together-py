@@ -47,15 +47,41 @@ def _looks_like_html(text: str) -> bool:
     return lowered.startswith("<!doctype html") or lowered.startswith("<html")
 
 
+def _error_text_without_status_prefix(e: APIError) -> str:
+    """Strip Stainless's ``Error code: N - `` prefix so HTML sniffing can see the body."""
+    text = e.message if isinstance(e.message, str) else str(e)
+    if isinstance(e, APIStatusError):
+        prefix = f"Error code: {e.status_code} - "
+        if text.startswith(prefix):
+            return text[len(prefix) :]
+    return text
+
+
 def is_html_api_error(e: APIError) -> bool:
-    """True when the API returned an HTML page instead of a JSON error envelope."""
+    """True when the API returned an HTML page instead of a JSON error envelope.
+
+    Content-type is unreliable (proxies often send ``application/octet-stream``).
+    ``e.body`` may be non-str after JSON parsing, and ``str(e)`` is often
+    ``Error code: N - ...``, so sniff the raw response text and the unprefixed message.
+    """
     if isinstance(e, APIStatusError):
         content_type = e.response.headers.get("content-type", "").lower()
         if "text/html" in content_type:
             return True
-    if isinstance(e.body, str) and _looks_like_html(e.body):
+        try:
+            if _looks_like_html(e.response.text):
+                return True
+        except Exception:
+            pass
+    if isinstance(e.body, (bytes, bytearray)):
+        try:
+            if _looks_like_html(e.body.decode("utf-8", errors="ignore")):
+                return True
+        except Exception:
+            pass
+    elif isinstance(e.body, str) and _looks_like_html(e.body):
         return True
-    return _looks_like_html(str(e))
+    return _looks_like_html(_error_text_without_status_prefix(e))
 
 
 def html_api_error_message(e: APIError) -> str:
