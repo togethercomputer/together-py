@@ -209,6 +209,7 @@ def test_format_empty_error_uses_exception_type(error: RuntimeError) -> None:
 
 def test_format_html_api_error_uses_type_and_status() -> None:
     import httpx
+
     from together import NotFoundError
 
     html = "<!DOCTYPE html><html><body><h1>Page not found</h1></body></html>"
@@ -227,6 +228,7 @@ def test_format_html_api_error_uses_type_and_status() -> None:
 
 def test_format_api_status_error_includes_type_and_status() -> None:
     import httpx
+
     from together import NotFoundError
 
     response = httpx.Response(

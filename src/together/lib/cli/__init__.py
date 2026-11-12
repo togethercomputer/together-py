@@ -17,8 +17,8 @@ from together._exceptions import APIError
 from together.lib.cli.auth import (
     TogetherAuth,
     StoredTokenAuth,
-    api_root_from_base_url,
     load_stored_base_url,
+    api_root_from_base_url,
     load_stored_credentials,
 )
 from together.lib.cli._track_cli import (

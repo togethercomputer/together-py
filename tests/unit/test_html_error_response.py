@@ -7,9 +7,9 @@ import pytest
 
 from together import NotFoundError
 from together.lib.cli.utils._api_error import (
-    html_api_error_message,
-    is_html_api_error,
     report_api_error,
+    is_html_api_error,
+    html_api_error_message,
 )
 
 
@@ -59,7 +59,7 @@ def test_report_api_error_does_not_print_html(capsys: pytest.CaptureFixture[str]
 def test_report_api_error_json_uses_emit_json(capsys: pytest.CaptureFixture[str]) -> None:
     import json
 
-    from together.lib.cli.utils._json_mode import json_was_emitted, use_json_mode
+    from together.lib.cli.utils._json_mode import use_json_mode, json_was_emitted
 
     use_json_mode(True)
     html = "<!DOCTYPE html><html><body><h1>Page not found</h1></body></html>"

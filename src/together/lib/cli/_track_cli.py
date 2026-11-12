@@ -278,7 +278,7 @@ def format_cli_error_for_telemetry(exc: BaseException, *, command: str = "") -> 
     # into every track_cli caller at module import time.
     from together import APIError
     from together._exceptions import APIStatusError
-    from together.lib.cli.utils._api_error import html_api_error_message, is_html_api_error
+    from together.lib.cli.utils._api_error import is_html_api_error, html_api_error_message
 
     if isinstance(exc, APIError):
         # Prefer type + status over raw bodies (esp. HTML 404 pages from wrong base URLs).
