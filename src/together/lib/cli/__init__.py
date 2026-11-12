@@ -210,7 +210,7 @@ def _reject_legacy_v1_base_url(base_url: Optional[str], source: str) -> None:
     try:
         root, had_legacy_v1 = api_root_from_base_url(base_url)
     except TogetherError:
-        # Non-absolute URLs: same gate as issuer_from_base_url; leave for later validation.
+        # Non-absolute URLs: same gate as api_root_from_base_url; leave for later validation.
         return
     if not had_legacy_v1:
         return

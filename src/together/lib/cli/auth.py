@@ -291,17 +291,6 @@ def api_root_from_base_url(base_url: str) -> tuple[str, bool]:
     return f"{parsed.scheme}://{parsed.netloc}{path}", had_legacy_v1
 
 
-def issuer_from_base_url(base_url: str) -> str:
-    """OIDC issuer for an API base URL.
-
-    The client base URL is the API root (no trailing `/v1`), so the issuer is normally the
-    base URL itself. A legacy trailing `/v1` is still stripped so old `--base-url` /
-    `TOGETHER_BASE_URL` values keep working.
-    """
-    root, _ = api_root_from_base_url(base_url)
-    return root
-
-
 def _str_or_none(value: Any) -> Optional[str]:
     return value if isinstance(value, str) and value else None
 

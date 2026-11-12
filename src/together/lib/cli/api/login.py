@@ -10,7 +10,7 @@ from rich.markup import escape as escape_rich_markup
 
 from together import TogetherError
 from together._utils._json import openapi_dumps
-from together.lib.cli.auth import DeviceCode, TogetherAuth, issuer_from_base_url, note_credentials_path
+from together.lib.cli.auth import DeviceCode, TogetherAuth, note_credentials_path
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._json_mode import plain_text
@@ -36,7 +36,7 @@ async def login(
     """Log in with a browser using the OIDC device authorization grant.
 
     The issuer is the API base URL (`--base-url` / `TOGETHER_BASE_URL`, default
-    https://api.together.ai). A legacy trailing `/v1` is stripped if present.
+    https://api.together.ai).
     """
 
     def prompt(code: DeviceCode) -> None:
@@ -53,7 +53,8 @@ async def login(
         console.print("[dim]Waiting for authorization...[/dim]")
 
     with TogetherAuth() as auth:
-        credentials = auth.login(issuer_from_base_url(str(config.client.base_url)), on_prompt=prompt)
+        # SDK base_url always has a trailing slash; issuer URLs are stored without one.
+        credentials = auth.login(str(config.client.base_url).rstrip("/"), on_prompt=prompt)
     _use_access_token(config.client, credentials.access_token)
 
     switched: str | None = None
