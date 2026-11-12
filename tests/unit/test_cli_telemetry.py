@@ -207,6 +207,43 @@ def test_format_empty_error_uses_exception_type(error: RuntimeError) -> None:
     assert format_cli_error_for_telemetry(error) == "RuntimeError"
 
 
+def test_format_html_api_error_uses_type_and_status() -> None:
+    import httpx
+
+    from together import NotFoundError
+
+    html = "<!DOCTYPE html><html><body><h1>Page not found</h1></body></html>"
+    response = httpx.Response(
+        404,
+        headers={"content-type": "text/html"},
+        text=html,
+        request=httpx.Request("GET", "https://api.together.ai/v1/v3/whoami"),
+    )
+    err = NotFoundError(html, response=response, body=html)
+
+    out = format_cli_error_for_telemetry(err)
+    assert out == "NotFoundError: Error code: 404 - received unexpected HTML response"
+    assert "<!DOCTYPE" not in out
+
+
+def test_format_api_status_error_includes_type_and_status() -> None:
+    import httpx
+
+    from together import NotFoundError
+
+    response = httpx.Response(
+        404,
+        headers={"content-type": "application/json"},
+        json={"error": {"message": "missing", "type": "not_found_error"}},
+        request=httpx.Request("GET", "https://api.together.ai/v1/v3/whoami"),
+    )
+    err = NotFoundError("Error code: 404 - missing", response=response, body=response.json())
+
+    out = format_cli_error_for_telemetry(err)
+    assert out.startswith("NotFoundError(404):")
+    assert "missing" in out
+
+
 def test_telemetry_env_opt_out_only_explicit_values(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TOGETHER_TELEMETRY_DISABLED", raising=False)
     assert is_tracking_enabled() is True

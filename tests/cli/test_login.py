@@ -390,22 +390,23 @@ def test_device_login_revokes_then_replaces_existing_credentials(creds_file: Pat
 
 
 @pytest.mark.parametrize(
-    ("base_url", "issuer"),
+    ("base_url", "root", "had_legacy_v1"),
     [
-        ("https://api.together.ai/v1", "https://api.together.ai"),
-        ("https://api.qa.together.ai/v1/", "https://api.qa.together.ai"),
-        ("https://api.together.ai", "https://api.together.ai"),
-        ("http://127.0.0.1:4010", "http://127.0.0.1:4010"),
-        ("https://gw.together.ai/prefix/v1", "https://gw.together.ai/prefix"),
+        ("https://api.together.ai/v1", "https://api.together.ai", True),
+        ("https://api.qa.together.ai/v1/", "https://api.qa.together.ai", True),
+        ("https://api.together.ai", "https://api.together.ai", False),
+        ("http://127.0.0.1:4010", "http://127.0.0.1:4010", False),
+        ("https://gw.together.ai/prefix/v1", "https://gw.together.ai/prefix", True),
+        ("https://api.together.ai/v1?x=1", "https://api.together.ai", True),
     ],
 )
-def test_issuer_from_base_url(base_url: str, issuer: str) -> None:
-    assert auth.issuer_from_base_url(base_url) == issuer
+def test_api_root_from_base_url(base_url: str, root: str, had_legacy_v1: bool) -> None:
+    assert auth.api_root_from_base_url(base_url) == (root, had_legacy_v1)
 
 
-def test_issuer_from_base_url_rejects_relative() -> None:
+def test_api_root_from_base_url_rejects_relative() -> None:
     with pytest.raises(TogetherError, match="absolute"):
-        auth.issuer_from_base_url("api.together.ai/v1")
+        auth.api_root_from_base_url("api.together.ai/v1")
 
 
 def _capture_login_issuer(monkeypatch: pytest.MonkeyPatch) -> list[str]:
@@ -424,18 +425,27 @@ def _capture_login_issuer(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 def test_login_uses_base_url_flag_as_issuer(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     cli_runner.env.pop("TOGETHER_API_KEY", None)
     issuers = _capture_login_issuer(monkeypatch)
-    result = cli_runner.invoke(["--base-url", "https://api.qa.together.ai/v1", "login", "--no-browser"])
+    result = cli_runner.invoke(["--base-url", "https://api.qa.together.ai", "login", "--no-browser"])
     assert result.exit_code == 0, result.output
     assert issuers == ["https://api.qa.together.ai"]
 
 
 def test_login_uses_base_url_env_as_issuer(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch) -> None:
     cli_runner.env.pop("TOGETHER_API_KEY", None)
-    cli_runner.env["TOGETHER_BASE_URL"] = "https://api.qa.together.ai/v1"
+    cli_runner.env["TOGETHER_BASE_URL"] = "https://api.qa.together.ai"
     issuers = _capture_login_issuer(monkeypatch)
     result = cli_runner.invoke(["login", "--no-browser"])
     assert result.exit_code == 0, result.output
     assert issuers == ["https://api.qa.together.ai"]
+
+
+def test_login_rejects_legacy_v1_base_url(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+    cli_runner.env.pop("TOGETHER_API_KEY", None)
+    issuers = _capture_login_issuer(monkeypatch)
+    result = cli_runner.invoke(["--base-url", "https://api.qa.together.ai/v1", "login", "--no-browser"])
+    assert result.exit_code == 1
+    assert issuers == []
+    assert "Set --base-url to https://api.qa.together.ai." in " ".join(result.output.split())
 
 
 def test_login_defaults_to_production_even_with_other_stored_credentials(
@@ -556,7 +566,7 @@ def test_login_debug_log_file_has_full_oauth_payloads(
     transport = httpx.MockTransport(handler)
     patch_httpx_client(monkeypatch, transport)
     cli_runner.env.pop("TOGETHER_API_KEY", None)
-    cli_runner.env["TOGETHER_BASE_URL"] = "https://api.together.ai/v1"
+    cli_runner.env["TOGETHER_BASE_URL"] = "https://api.together.ai"
     cli_runner.env["TOGETHER_CREDENTIALS_PATH"] = str(tmp_path / "credentials.json")
 
     result = cli_runner.invoke(["login", "--no-browser", "--debug"])
