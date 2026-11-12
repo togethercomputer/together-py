@@ -55,12 +55,7 @@ def _looks_like_html(text: str) -> bool:
             # Truncated comment is still HTML-shaped enough to hide.
             return True
         s = s[end + 3 :].lstrip("\ufeff").lstrip()
-    return (
-        s.startswith("<!doctype html")
-        or s.startswith("<html")
-        or s.startswith("<?xml")
-        or s.startswith("<head")
-    )
+    return s.startswith("<!doctype html") or s.startswith("<html") or s.startswith("<?xml") or s.startswith("<head")
 
 
 def _error_text_without_status_prefix(e: APIError) -> str:

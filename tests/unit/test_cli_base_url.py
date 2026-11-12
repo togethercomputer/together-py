@@ -67,6 +67,7 @@ def test_legacy_v1_base_url_exits_via_normal_error_handling(
     monkeypatch.setenv("TOGETHER_BASE_URL", "https://api.together.ai/v1")
     monkeypatch.setattr(cli, "load_stored_credentials", lambda: None)
     monkeypatch.setattr(cli, "flush_pending_events", lambda: None)
+
     def _noop_track(_event: object, _payload: dict[str, object]) -> None:
         return None
 
