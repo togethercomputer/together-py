@@ -10,6 +10,8 @@ from respx import MockRouter
 from respx.models import Call
 
 from tests.cli.utils import CliRunner
+from together.lib.cli.api.training._display import _compute_summary
+from together.types.post_training.model_resources import ComputeConfig, ModelResources
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -22,7 +24,7 @@ def _resource_body(resource_id: str = "res-1", **overrides: Any) -> dict[str, An
     body: dict[str, Any] = {
         "id": resource_id,
         "base_model": "Qwen/Qwen3-0.6B",
-        "compute_config": {"num_generator_replicas": 1, "gpu_type": "H100-80GB"},
+        "compute_config": {"num_generator_replicas": 1, "num_trainer_replicas": 1, "gpu_type": "H100-80GB"},
         "created_at": "2026-01-01T00:00:00Z",
         "created_by": "user-1",
         "lora_enabled": True,
@@ -173,6 +175,19 @@ class TestTrainingResources:
         assert "Qwen/Qwen3-0.6B" in result.output
         assert "ready" in result.output
         assert "tg training ls-resources --after res-1" in result.output
+
+    def test_compute_summary_labels_generator_only_and_trainer_only(self) -> None:
+        def _summary(generators: int, trainers: int) -> str:
+            compute = ComputeConfig.construct(
+                num_generator_replicas=generators,
+                num_trainer_replicas=trainers,
+                gpu_type="H100-80GB",
+            )
+            return _compute_summary(ModelResources.construct(compute_config=compute))
+
+        assert _summary(2, 0) == "2× H100-80GB (generator only)"
+        assert _summary(0, 1) == "trainer only"
+        assert _summary(2, 1) == "2× H100-80GB"
 
     @pytest.mark.respx(base_url=base_url)
     def test_ls_resources_empty(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
