@@ -49,7 +49,7 @@ def _looks_like_html(text: str) -> bool:
 
 def _error_text_without_status_prefix(e: APIError) -> str:
     """Strip Stainless's ``Error code: N - `` prefix so HTML sniffing can see the body."""
-    text = e.message if isinstance(e.message, str) else str(e)
+    text = e.message
     if isinstance(e, APIStatusError):
         prefix = f"Error code: {e.status_code} - "
         if text.startswith(prefix):
