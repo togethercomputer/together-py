@@ -296,12 +296,15 @@ async def test_existing_file_upload_preserves_diagnostic(
     async def raise_already_exists(*_args: Any, **_kwargs: Any) -> None:
         raise FileAlreadyExistsError("file-existing")
 
+    def check_file_ok(*_args: Any, **_kwargs: Any) -> dict[str, bool]:
+        return {"is_check_passed": True}
+
     file = tmp_path / "data.jsonl"
     file.write_text("{}\n")
     monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
     monkeypatch.setattr(
         "together.lib.cli.api.files.upload.check_file",
-        lambda *_args, **_kwargs: {"is_check_passed": True},
+        check_file_ok,
     )
     monkeypatch.setattr("together.resources.files.AsyncFilesResource.upload", raise_already_exists)
 
