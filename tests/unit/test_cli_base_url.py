@@ -16,6 +16,9 @@ from together import NotFoundError
     [
         ("https://staging.together.ai/v1/", None, "TOGETHER_BASE_URL", "https://staging.together.ai"),
         (None, "https://api.together.ai/v1", "--base-url", "https://api.together.ai"),
+        # Query/fragment must not fool a string endswith("/v1") check; share auth's urlparse path.
+        (None, "https://api.together.ai/v1?x=1", "--base-url", "https://api.together.ai"),
+        ("https://gw.together.ai/prefix/v1/", None, "TOGETHER_BASE_URL", "https://gw.together.ai/prefix"),
     ],
 )
 def test_create_client_rejects_legacy_v1_base_url(
@@ -34,6 +37,18 @@ def test_create_client_rejects_legacy_v1_base_url(
         cli._create_client(api_key=None, base_url=flag_url, timeout=None, max_retries=None, project_id=None)
 
     assert "without /v1" in str(exc_info.value)
+
+
+def test_create_client_ignores_relative_legacy_v1(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Relative URLs are rejected by api_root_from_base_url; don't invent a strip via string ops."""
+    monkeypatch.setenv("TOGETHER_API_KEY", "key")
+    monkeypatch.delenv("TOGETHER_BASE_URL", raising=False)
+
+    client, _ = cli._create_client(
+        api_key=None, base_url="api.together.ai/v1", timeout=None, max_retries=None, project_id=None
+    )
+
+    assert "v1" in str(client.base_url)
 
 
 def test_create_client_accepts_api_root(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -68,11 +83,19 @@ def test_legacy_v1_base_url_exits_via_normal_error_handling(
 def test_whoami_html_error_exits_without_traceback(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
+    from together.lib.cli._track_cli import CliTrackingEvents
+
     monkeypatch.setenv("TOGETHER_API_KEY", "key")
     monkeypatch.delenv("TOGETHER_BASE_URL", raising=False)
     monkeypatch.setattr(cli, "load_stored_credentials", lambda: None)
     monkeypatch.setattr(cli, "flush_pending_events", lambda: None)
-    monkeypatch.setattr(cli, "track_cli", lambda *a, **k: None)
+
+    tracked: list[tuple[object, dict[str, object]]] = []
+
+    def capture_track(event: object, payload: dict[str, object]) -> None:
+        tracked.append((event, payload))
+
+    monkeypatch.setattr(cli, "track_cli", capture_track)
 
     html = "<!DOCTYPE html><html><body><h1>Page not found</h1></body></html>"
     response = httpx.Response(
@@ -98,3 +121,7 @@ def test_whoami_html_error_exits_without_traceback(
     assert "unexpected HTML response" in combined
     assert "<!DOCTYPE" not in combined
     assert "Page not found" not in combined
+
+    failure = next(payload for event, payload in tracked if event is CliTrackingEvents.CommandFailed)
+    assert failure["error"] == "NotFoundError: Error code: 404 - received unexpected HTML response"
+    assert "SystemExit" not in str(failure["error"])

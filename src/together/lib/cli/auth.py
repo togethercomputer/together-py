@@ -275,6 +275,22 @@ def load_stored_base_url() -> Optional[str]:
     return base_url
 
 
+def api_root_from_base_url(base_url: str) -> tuple[str, bool]:
+    """Parse an absolute API base URL into ``(root, had_legacy_v1)``.
+
+    ``root`` is ``scheme://netloc`` plus path with a trailing ``/v1`` segment removed when
+    present. Query and fragment are dropped. Raises ``TogetherError`` for non-absolute URLs.
+    """
+    parsed = urllib.parse.urlparse(base_url)
+    if not parsed.scheme or not parsed.netloc:
+        raise TogetherError(f"Base URL must be an absolute http(s) URL, got {base_url!r}")
+    path = parsed.path.rstrip("/")
+    had_legacy_v1 = path.endswith("/v1")
+    if had_legacy_v1:
+        path = path[: -len("/v1")]
+    return f"{parsed.scheme}://{parsed.netloc}{path}", had_legacy_v1
+
+
 def issuer_from_base_url(base_url: str) -> str:
     """OIDC issuer for an API base URL.
 
@@ -282,13 +298,8 @@ def issuer_from_base_url(base_url: str) -> str:
     base URL itself. A legacy trailing `/v1` is still stripped so old `--base-url` /
     `TOGETHER_BASE_URL` values keep working.
     """
-    parsed = urllib.parse.urlparse(base_url)
-    if not parsed.scheme or not parsed.netloc:
-        raise TogetherError(f"Base URL must be an absolute http(s) URL, got {base_url!r}")
-    path = parsed.path.rstrip("/")
-    if path.endswith("/v1"):
-        path = path[: -len("/v1")]
-    return f"{parsed.scheme}://{parsed.netloc}{path}"
+    root, _ = api_root_from_base_url(base_url)
+    return root
 
 
 def _str_or_none(value: Any) -> Optional[str]:

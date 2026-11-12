@@ -274,7 +274,21 @@ def format_cli_error_for_telemetry(exc: BaseException, *, command: str = "") -> 
                 msg = f'Unknown option: "{option}"'
             return sanitize_cli_error_message(msg)
 
-    if isinstance(exc, CycloptsError):
+    # Import lazily: keep telemetry import-light and avoid pulling Rich/CLI console
+    # into every track_cli caller at module import time.
+    from together import APIError
+    from together._exceptions import APIStatusError
+    from together.lib.cli.utils._api_error import html_api_error_message, is_html_api_error
+
+    if isinstance(exc, APIError):
+        # Prefer type + status over raw bodies (esp. HTML 404 pages from wrong base URLs).
+        if is_html_api_error(exc):
+            message = f"{type(exc).__name__}: {html_api_error_message(exc)}"
+        elif isinstance(exc, APIStatusError):
+            message = f"{type(exc).__name__}({exc.status_code}): {exc}"
+        else:
+            message = f"{type(exc).__name__}: {exc}"
+    elif isinstance(exc, CycloptsError):
         message = _stringify_cyclopts_error(exc)
     else:
         message = str(exc)

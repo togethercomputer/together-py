@@ -10,13 +10,14 @@ from cyclopts import App, Group, Parameter, CycloptsError, MissingArgumentError
 from rich.markup import escape as escape_rich_markup
 from cyclopts.command_spec import CommandSpec
 
-from together import AsyncTogether
+from together import AsyncTogether, TogetherError
 from together._version import __version__
 from together.lib.utils import log_debug
 from together._exceptions import APIError
 from together.lib.cli.auth import (
     TogetherAuth,
     StoredTokenAuth,
+    api_root_from_base_url,
     load_stored_base_url,
     load_stored_credentials,
 )
@@ -204,9 +205,15 @@ _PLACEHOLDER_API_KEY = "0" * 40
 
 
 def _reject_legacy_v1_base_url(base_url: Optional[str], source: str) -> None:
-    if base_url is None or not base_url.rstrip("/").endswith("/v1"):
+    if base_url is None:
         return
-    root = base_url.rstrip("/")[: -len("/v1")]
+    try:
+        root, had_legacy_v1 = api_root_from_base_url(base_url)
+    except TogetherError:
+        # Non-absolute URLs: same gate as issuer_from_base_url; leave for later validation.
+        return
+    if not had_legacy_v1:
+        return
     raise ValueError(
         f"{source} is {base_url}. Since together 3.0 the base URL is the API root without /v1, "
         f"so requests to this URL will fail. Set {source} to {root}."
@@ -548,16 +555,14 @@ async def _run_launcher(
 
         # Skip the project-resolution whoami() for out-of-band-auth commands and for
         # `tg login` sessions. Device tokens are not API keys bound to a project.
-        # Catch APIError here so a bad base URL / HTML 404 exits cleanly (no stack trace)
-        # and still runs the finally block that closes the client.
+        # Report then re-raise so the outer Exception handler records CommandFailed with
+        # the real APIError (status/type), not a bare SystemExit(1).
         if not no_auth_command and not using_stored_token and client.project_id is None:
             try:
                 resolved_project_id = await _resolve_project_id(client)
             except APIError as e:
                 report_api_error(e, json=config.json)
-                if debug:
-                    raise
-                sys.exit(1)
+                raise
             if resolved_project_id is not None:
                 client.project_id = resolved_project_id
                 if debug:

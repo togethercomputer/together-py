@@ -390,22 +390,26 @@ def test_device_login_revokes_then_replaces_existing_credentials(creds_file: Pat
 
 
 @pytest.mark.parametrize(
-    ("base_url", "issuer"),
+    ("base_url", "issuer", "had_legacy_v1"),
     [
-        ("https://api.together.ai/v1", "https://api.together.ai"),
-        ("https://api.qa.together.ai/v1/", "https://api.qa.together.ai"),
-        ("https://api.together.ai", "https://api.together.ai"),
-        ("http://127.0.0.1:4010", "http://127.0.0.1:4010"),
-        ("https://gw.together.ai/prefix/v1", "https://gw.together.ai/prefix"),
+        ("https://api.together.ai/v1", "https://api.together.ai", True),
+        ("https://api.qa.together.ai/v1/", "https://api.qa.together.ai", True),
+        ("https://api.together.ai", "https://api.together.ai", False),
+        ("http://127.0.0.1:4010", "http://127.0.0.1:4010", False),
+        ("https://gw.together.ai/prefix/v1", "https://gw.together.ai/prefix", True),
+        ("https://api.together.ai/v1?x=1", "https://api.together.ai", True),
     ],
 )
-def test_issuer_from_base_url(base_url: str, issuer: str) -> None:
+def test_issuer_from_base_url(base_url: str, issuer: str, had_legacy_v1: bool) -> None:
     assert auth.issuer_from_base_url(base_url) == issuer
+    assert auth.api_root_from_base_url(base_url) == (issuer, had_legacy_v1)
 
 
 def test_issuer_from_base_url_rejects_relative() -> None:
     with pytest.raises(TogetherError, match="absolute"):
         auth.issuer_from_base_url("api.together.ai/v1")
+    with pytest.raises(TogetherError, match="absolute"):
+        auth.api_root_from_base_url("api.together.ai/v1")
 
 
 def _capture_login_issuer(monkeypatch: pytest.MonkeyPatch) -> list[str]:

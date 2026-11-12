@@ -54,3 +54,18 @@ def test_report_api_error_does_not_print_html(capsys: pytest.CaptureFixture[str]
     assert "unexpected HTML response" in combined
     assert "<!DOCTYPE" not in combined
     assert "Page not found" not in combined
+
+
+def test_report_api_error_json_uses_emit_json(capsys: pytest.CaptureFixture[str]) -> None:
+    import json
+
+    from together.lib.cli.utils._json_mode import json_was_emitted, use_json_mode
+
+    use_json_mode(True)
+    html = "<!DOCTYPE html><html><body><h1>Page not found</h1></body></html>"
+    report_api_error(_not_found(headers={"content-type": "text/html"}, text=html), json=True)
+
+    assert json_was_emitted() is True
+    payload = json.loads(capsys.readouterr().out)
+    assert payload == {"error": "Error code: 404 - received unexpected HTML response"}
+    use_json_mode(False)

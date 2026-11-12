@@ -7,8 +7,8 @@ from rich.markup import escape as escape_rich_markup
 
 from together import APIError
 from together._exceptions import APIStatusError
-from together._utils._json import openapi_dumps
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import emit_json
 
 
 class _ErrorContents(BaseModel):
@@ -86,11 +86,19 @@ def parse_api_error(e: APIError) -> tuple[str, dict[str, Any]]:
     return message, dump
 
 
+def _emit_error_message(error_msg: str, *, json: bool) -> None:
+    """Same ``{"error": ...}`` / ``Error:`` shape as launcher helpers like ``_print_missing_api_key``."""
+    if json:
+        emit_json({"error": error_msg})
+        return
+    console.print(f"[red]Error:[/red] {escape_rich_markup(error_msg)}")
+
+
 def try_handle_server_error_message(e: APIError, json: bool) -> None:
     message, dump = parse_api_error(e)
 
     if json:
-        console.print_json(openapi_dumps(dump).decode("utf-8"))
+        emit_json(dump)
         return
     console.print(f"[red]×[/red] [bold]Error[/bold]")
     console.print(f"  [white]{escape_rich_markup(message)}[/white]")
@@ -99,23 +107,14 @@ def try_handle_server_error_message(e: APIError, json: bool) -> None:
 def report_api_error(e: APIError, *, json: bool) -> None:
     """Print an API error for the CLI without re-raising (no stack trace)."""
     if is_html_api_error(e):
-        error_msg = html_api_error_message(e)
-        if json:
-            console.print_json(openapi_dumps({"error": error_msg}).decode("utf-8"))
-        else:
-            console.print(f"[red]Error:[/red] {escape_rich_markup(error_msg)}")
+        _emit_error_message(html_api_error_message(e), json=json)
         return
 
     try:
         try_handle_server_error_message(e, json)
     except Exception:
-        error_msg = ""
         if e.body is not None:
             error_msg = getattr(e.body, "message", str(e.body))
         else:
             error_msg = str(e)
-        if json:
-            console.print_json(openapi_dumps({"error": error_msg}).decode("utf-8"))
-        else:
-            console.print("Failed")
-            console.print(escape_rich_markup(str(error_msg)))
+        _emit_error_message(str(error_msg), json=json)
