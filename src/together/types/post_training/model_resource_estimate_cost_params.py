@@ -45,3 +45,11 @@ class ComputeConfig(TypedDict, total=False):
 
     num_generator_replicas: int
     """Number of generator replicas. 0 runs the trainer only, with no generator."""
+
+    num_trainer_replicas: int
+    """Number of trainers: 0 or 1.
+
+    Omit to use 1. Each trainer can use multiple GPUs. With 0, at least one
+    generator replica is required, optimizer_config is not allowed, and sessions
+    must resume from an inference checkpoint for sampling only.
+    """

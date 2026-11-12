@@ -79,13 +79,15 @@ class SessionsResource(SyncAPIResource):
               or true restores them; false loads weights only with a fresh optimizer and
               step 0. Not valid for inference checkpoints, which have no optimizer state.
 
-          lora_config: LoRA adapter configuration for the session
+          lora_config: LoRA adapter configuration for the session. Omit for generator-only resources,
+              which use the checkpoint's LoRA settings.
 
           metadata: Optional auxiliary metadata to associate with the training session
 
           resume_from_checkpoint_id: Checkpoint ID to resume from. LoRA training checkpoints may resume on another
               model resource with compatible base-model weights. Full-weight training
-              checkpoints require the original base model.
+              checkpoints require the original base model. Required for generator-only
+              resources, which accept inference checkpoints only.
 
           extra_headers: Send extra headers
 
@@ -353,13 +355,15 @@ class AsyncSessionsResource(AsyncAPIResource):
               or true restores them; false loads weights only with a fresh optimizer and
               step 0. Not valid for inference checkpoints, which have no optimizer state.
 
-          lora_config: LoRA adapter configuration for the session
+          lora_config: LoRA adapter configuration for the session. Omit for generator-only resources,
+              which use the checkpoint's LoRA settings.
 
           metadata: Optional auxiliary metadata to associate with the training session
 
           resume_from_checkpoint_id: Checkpoint ID to resume from. LoRA training checkpoints may resume on another
               model resource with compatible base-model weights. Full-weight training
-              checkpoints require the original base model.
+              checkpoints require the original base model. Required for generator-only
+              resources, which accept inference checkpoints only.
 
           extra_headers: Send extra headers
 

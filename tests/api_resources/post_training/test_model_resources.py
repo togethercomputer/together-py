@@ -36,6 +36,7 @@ class TestModelResources:
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
+                "num_trainer_replicas": 0,
             },
             inactive_timeout=3600,
             lora_enabled=True,
@@ -158,6 +159,7 @@ class TestModelResources:
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
+                "num_trainer_replicas": 0,
             },
             inactive_timeout=3600,
             lora_enabled=True,
@@ -301,6 +303,7 @@ class TestAsyncModelResources:
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
+                "num_trainer_replicas": 0,
             },
             inactive_timeout=3600,
             lora_enabled=True,
@@ -423,6 +426,7 @@ class TestAsyncModelResources:
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
+                "num_trainer_replicas": 0,
             },
             inactive_timeout=3600,
             lora_enabled=True,

@@ -21,6 +21,12 @@ class ComputeConfig(BaseModel):
     0 means the resource runs the trainer only, with no generator.
     """
 
+    num_trainer_replicas: int
+    """Number of trainers: 0 for sampling only, or 1 for training.
+
+    Each trainer can use multiple GPUs.
+    """
+
     gpu_type: Optional[Literal["H100-80GB", "B200-SXM"]] = None
     """GPU type selected for this resource."""
 
@@ -64,7 +70,7 @@ class ModelResources(BaseModel):
     """Whether the resource hosts LoRA sessions or a full-weight session"""
 
     optimizer_config: OptimizerConfig
-    """Optimizer configuration for this resource."""
+    """Optimizer configuration for this resource. Unused for generator-only resources."""
 
     status: ModelResourcesStatus
     """Lifecycle status of the model resource"""

@@ -25,7 +25,10 @@ class SessionCreateParams(TypedDict, total=False):
     """
 
     lora_config: LoraConfigParam
-    """LoRA adapter configuration for the session"""
+    """LoRA adapter configuration for the session.
+
+    Omit for generator-only resources, which use the checkpoint's LoRA settings.
+    """
 
     metadata: SessionMetadataParam
     """Optional auxiliary metadata to associate with the training session"""
@@ -35,5 +38,6 @@ class SessionCreateParams(TypedDict, total=False):
 
     LoRA training checkpoints may resume on another model resource with compatible
     base-model weights. Full-weight training checkpoints require the original base
-    model.
+    model. Required for generator-only resources, which accept inference checkpoints
+    only.
     """
