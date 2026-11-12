@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from rich.markup import escape as escape_rich_markup
 
 from together import APIError
+from together._exceptions import APIStatusError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._console import console
 
@@ -41,6 +42,29 @@ def _parse_rpc_error_envelope(body: object) -> _RPCError:
     return _RPCError.parse_obj(body)  # type: ignore
 
 
+def _looks_like_html(text: str) -> bool:
+    lowered = text.lstrip().lower()
+    return lowered.startswith("<!doctype html") or lowered.startswith("<html")
+
+
+def is_html_api_error(e: APIError) -> bool:
+    """True when the API returned an HTML page instead of a JSON error envelope."""
+    if isinstance(e, APIStatusError):
+        content_type = e.response.headers.get("content-type", "").lower()
+        if "text/html" in content_type:
+            return True
+    if isinstance(e.body, str) and _looks_like_html(e.body):
+        return True
+    return _looks_like_html(str(e))
+
+
+def html_api_error_message(e: APIError) -> str:
+    status = e.status_code if isinstance(e, APIStatusError) else None
+    if status is not None:
+        return f"Error code: {status} - received unexpected HTML response"
+    return "received unexpected HTML response"
+
+
 def parse_api_error(e: APIError) -> tuple[str, dict[str, Any]]:
     # If the error is from the API and uses the standard error envelope, print the message
     message = ""
@@ -70,3 +94,28 @@ def try_handle_server_error_message(e: APIError, json: bool) -> None:
         return
     console.print(f"[red]×[/red] [bold]Error[/bold]")
     console.print(f"  [white]{escape_rich_markup(message)}[/white]")
+
+
+def report_api_error(e: APIError, *, json: bool) -> None:
+    """Print an API error for the CLI without re-raising (no stack trace)."""
+    if is_html_api_error(e):
+        error_msg = html_api_error_message(e)
+        if json:
+            console.print_json(openapi_dumps({"error": error_msg}).decode("utf-8"))
+        else:
+            console.print(f"[red]Error:[/red] {escape_rich_markup(error_msg)}")
+        return
+
+    try:
+        try_handle_server_error_message(e, json)
+    except Exception:
+        error_msg = ""
+        if e.body is not None:
+            error_msg = getattr(e.body, "message", str(e.body))
+        else:
+            error_msg = str(e)
+        if json:
+            console.print_json(openapi_dumps({"error": error_msg}).decode("utf-8"))
+        else:
+            console.print("Failed")
+            console.print(escape_rich_markup(str(error_msg)))

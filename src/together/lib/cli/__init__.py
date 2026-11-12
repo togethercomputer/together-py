@@ -14,7 +14,6 @@ from together import AsyncTogether
 from together._version import __version__
 from together.lib.utils import log_debug
 from together._exceptions import APIError
-from together._utils._json import openapi_dumps
 from together.lib.cli.auth import (
     TogetherAuth,
     StoredTokenAuth,
@@ -38,8 +37,8 @@ from together.lib.cli.utils._debug import (
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._whoami import project_of
-from together.lib.cli.utils._console import CliBrokenPipeError, console, error_console
-from together.lib.cli.utils._api_error import try_handle_server_error_message
+from together.lib.cli.utils._console import CliBrokenPipeError, console
+from together.lib.cli.utils._api_error import report_api_error
 from together.lib.cli.utils._json_mode import emit_json, is_json_mode, use_json_mode, resolve_output_json
 from together.lib.cli.utils._cli_extras import inform_cli_extras_tip
 from together.lib.cli.utils._completion import _is_agent_or_ci, install_completion
@@ -204,14 +203,13 @@ def _apply_project_scope(client: AsyncTogether, config: CLIConfig, switched: Pro
 _PLACEHOLDER_API_KEY = "0" * 40
 
 
-def _warn_legacy_v1_base_url(base_url: Optional[str], source: str) -> None:
+def _reject_legacy_v1_base_url(base_url: Optional[str], source: str) -> None:
     if base_url is None or not base_url.rstrip("/").endswith("/v1"):
         return
     root = base_url.rstrip("/")[: -len("/v1")]
-    error_console.print(
-        f"[yellow]Warning:[/yellow] {source} is {escape_rich_markup(base_url)}. Since together 3.0 the "
-        f"base URL is the API root without /v1, so requests to this URL will fail. Set {source} to "
-        f"{escape_rich_markup(root)}."
+    raise ValueError(
+        f"{source} is {base_url}. Since together 3.0 the base URL is the API root without /v1, "
+        f"so requests to this URL will fail. Set {source} to {root}."
     )
 
 
@@ -228,9 +226,9 @@ def _create_client(
     api_key = _resolve_cli_api_key(api_key)
     missing_api_key = False
     if base_url is not None:
-        _warn_legacy_v1_base_url(base_url, "--base-url")
+        _reject_legacy_v1_base_url(base_url, "--base-url")
     elif not ignore_base_url_env:
-        _warn_legacy_v1_base_url(os.environ.get("TOGETHER_BASE_URL"), "TOGETHER_BASE_URL")
+        _reject_legacy_v1_base_url(os.environ.get("TOGETHER_BASE_URL"), "TOGETHER_BASE_URL")
     # A logged-in session is pinned to its issuer. Hide TOGETHER_BASE_URL from the
     # SDK when we are not passing an explicit URL, so production keeps the default
     # (and its non-overridden v2 routing) instead of the env host.
@@ -426,47 +424,7 @@ async def _run_launcher(
         stored = load_stored_credentials()
         project_id = stored.project_id if stored is not None else None
 
-    client, missing_api_key = _create_client(
-        api_key,
-        base_url,
-        timeout,
-        max_retries,
-        project_id,
-        require_api_key=not no_auth_command,
-        debug=bool(debug),
-        ignore_base_url_env=pin_to_issuer and base_url is None,
-    )
-
-    if debug:
-        log_debug_session(
-            command=parsed_command,
-            is_beta_command=is_beta_command,
-            base_url=str(client.base_url),
-            project_id=client.project_id,
-            api_key=None if missing_api_key else (client.api_key or None),
-            timeout=client.timeout,
-            max_retries=client.max_retries,
-        )
-    if using_stored_token:
-        _install_stored_token_auth(client)
-
-    # Skip the project-resolution whoami() for out-of-band-auth commands and for
-    # `tg login` sessions. Device tokens are not API keys bound to a project.
-    if not no_auth_command and not using_stored_token and client.project_id is None:
-        resolved_project_id = await _resolve_project_id(client)
-        if resolved_project_id is not None:
-            client.project_id = resolved_project_id
-            if debug:
-                log_debug_note(f"resolved project {resolved_project_id}")
-
     non_interactive_mode = bool(non_interactive) or resolved_json or not _session_is_interactive()
-
-    config = CLIConfig(
-        client=client,
-        non_interactive=non_interactive_mode,
-        json=resolved_json,
-        project_id=project_id,
-    )
 
     if output_json:
         explicit_args.append("json")
@@ -475,87 +433,6 @@ async def _run_launcher(
     if debug:
         explicit_args.append("debug")
 
-    async def run_command() -> None:
-        try:
-            command, bound, _ignored, extra = app.parse_known_args(remaining)
-            # for arg_name, arg_type in command.__annotations__.items():
-            #     if isinstance(arg_type, PromptParameter) and not config.non_interactive:
-            #         value = await prompt(arg_name)
-            #         remaining.append(arg_name)
-            #         remaining.append(value)
-
-            kwargs = dict(bound.kwargs)
-            if "config" in extra:
-                kwargs["config"] = config
-            result = command(*bound.args, **kwargs)
-            if inspect.iscoroutine(result):
-                await result
-
-        except MissingArgumentError as e:
-            if config.non_interactive:
-                raise e
-            # auto prompt for missing arguments
-            if e.argument is None:
-                raise e
-
-            annotation = e.argument.field_info.annotation
-            prompt: PromptParameter | None = None
-
-            if get_origin(annotation) is Annotated:
-                args = get_args(annotation)
-                metadata = args[1:]
-                for m in metadata:
-                    if isinstance(m, PromptParameter):
-                        prompt = m
-
-            value: str | bool | None = None
-            if prompt is not None:
-                try:
-                    await prompt.preprompt(config)
-                    value = await prompt.prompt(e.argument.name)
-                except Exception:
-                    # If the users does not install the cli extra target, they will not get questionary installed
-                    # In this case we want to re-raise the MissingArgumentError
-                    raise e from e
-
-                console.print("")  # Push a blank line for nicer output
-                if value is True or value is False:
-                    remaining.append(e.argument.name)
-                else:
-                    remaining.append(e.argument.name)
-                    remaining.append(value)
-                await run_command()
-            else:
-                # TODO: Better design this
-                console.print("Missing required argument", e.argument.name)
-                raise CliDiagnosticExit(f"Missing required argument: {e.argument.name}") from None
-        except APIError as e:
-            stored = load_stored_credentials() if using_stored_token else None
-            if not retried_for_scope:
-                await explain_project_scope(
-                    e,
-                    command=parsed_command,
-                    using_stored_token=using_stored_token,
-                    token_project=stored.project_id if stored is not None else None,
-                    client_project=client.project_id,
-                    non_interactive=config.non_interactive,
-                    client=client,
-                )
-            try:
-                try_handle_server_error_message(e, config.json)
-            except Exception:
-                error_msg = ""
-                if e.body is not None:
-                    error_msg = getattr(e.body, "message", str(e.body))
-                else:
-                    error_msg = str(e)
-                if config.json:
-                    console.print_json(openapi_dumps({"error": error_msg}).decode("utf-8"))
-                else:
-                    console.print(f"Failed")
-                    console.print(escape_rich_markup(str(error_msg)))
-            raise e
-
     track_cli(
         CliTrackingEvents.CommandStarted,
         {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
@@ -563,7 +440,129 @@ async def _run_launcher(
     version_check = VersionCheck()
     command_succeeded = False
     retried_for_scope = False
+    client: AsyncTogether | None = None
+    config: CLIConfig | None = None
     try:
+        # Inside the try so legacy-/v1 ValueError (and other setup failures) hit the
+        # normal Error: / telemetry / exit path instead of dumping a stack trace.
+        client, missing_api_key = _create_client(
+            api_key,
+            base_url,
+            timeout,
+            max_retries,
+            project_id,
+            require_api_key=not no_auth_command,
+            debug=bool(debug),
+            ignore_base_url_env=pin_to_issuer and base_url is None,
+        )
+
+        if debug:
+            log_debug_session(
+                command=parsed_command,
+                is_beta_command=is_beta_command,
+                base_url=str(client.base_url),
+                project_id=client.project_id,
+                api_key=None if missing_api_key else (client.api_key or None),
+                timeout=client.timeout,
+                max_retries=client.max_retries,
+            )
+        if using_stored_token:
+            _install_stored_token_auth(client)
+
+        config = CLIConfig(
+            client=client,
+            non_interactive=non_interactive_mode,
+            json=resolved_json,
+            project_id=project_id,
+        )
+
+        async def run_command() -> None:
+            assert config is not None and client is not None
+            try:
+                command, bound, _ignored, extra = app.parse_known_args(remaining)
+                # for arg_name, arg_type in command.__annotations__.items():
+                #     if isinstance(arg_type, PromptParameter) and not config.non_interactive:
+                #         value = await prompt(arg_name)
+                #         remaining.append(arg_name)
+                #         remaining.append(value)
+
+                kwargs = dict(bound.kwargs)
+                if "config" in extra:
+                    kwargs["config"] = config
+                result = command(*bound.args, **kwargs)
+                if inspect.iscoroutine(result):
+                    await result
+
+            except MissingArgumentError as e:
+                if config.non_interactive:
+                    raise e
+                # auto prompt for missing arguments
+                if e.argument is None:
+                    raise e
+
+                annotation = e.argument.field_info.annotation
+                prompt: PromptParameter | None = None
+
+                if get_origin(annotation) is Annotated:
+                    args = get_args(annotation)
+                    metadata = args[1:]
+                    for m in metadata:
+                        if isinstance(m, PromptParameter):
+                            prompt = m
+
+                value: str | bool | None = None
+                if prompt is not None:
+                    try:
+                        await prompt.preprompt(config)
+                        value = await prompt.prompt(e.argument.name)
+                    except Exception:
+                        # If the users does not install the cli extra target, they will not get questionary installed
+                        # In this case we want to re-raise the MissingArgumentError
+                        raise e from e
+
+                    console.print("")  # Push a blank line for nicer output
+                    if value is True or value is False:
+                        remaining.append(e.argument.name)
+                    else:
+                        remaining.append(e.argument.name)
+                        remaining.append(value)
+                    await run_command()
+                else:
+                    # TODO: Better design this
+                    console.print("Missing required argument", e.argument.name)
+                    raise CliDiagnosticExit(f"Missing required argument: {e.argument.name}") from None
+            except APIError as e:
+                stored = load_stored_credentials() if using_stored_token else None
+                if not retried_for_scope:
+                    await explain_project_scope(
+                        e,
+                        command=parsed_command,
+                        using_stored_token=using_stored_token,
+                        token_project=stored.project_id if stored is not None else None,
+                        client_project=client.project_id,
+                        non_interactive=config.non_interactive,
+                        client=client,
+                    )
+                report_api_error(e, json=config.json)
+                raise e
+
+        # Skip the project-resolution whoami() for out-of-band-auth commands and for
+        # `tg login` sessions. Device tokens are not API keys bound to a project.
+        # Catch APIError here so a bad base URL / HTML 404 exits cleanly (no stack trace)
+        # and still runs the finally block that closes the client.
+        if not no_auth_command and not using_stored_token and client.project_id is None:
+            try:
+                resolved_project_id = await _resolve_project_id(client)
+            except APIError as e:
+                report_api_error(e, json=config.json)
+                if debug:
+                    raise
+                sys.exit(1)
+            if resolved_project_id is not None:
+                client.project_id = resolved_project_id
+                if debug:
+                    log_debug_note(f"resolved project {resolved_project_id}")
+
         while True:
             try:
                 await run_command()
@@ -646,14 +645,14 @@ async def _run_launcher(
             raise e
         elif isinstance(e, CycloptsError):
             e.verbose = True if debug else False
-            if config.json:
+            if resolved_json:
                 emit_json({"error": str(e)})
             else:
                 console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
         elif not isinstance(e, APIError):
             # API Errors are handled better inside the run_command() function
             # We don't want to raise them here as that will print a stack trace which we do not want.
-            if config.json:
+            if resolved_json:
                 emit_json({"error": str(e)})
             else:
                 console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
@@ -662,11 +661,12 @@ async def _run_launcher(
     finally:
         try:
             flush_pending_events()
-            await client.close()
+            if client is not None:
+                await client.close()
         finally:
-            inform_cli_extras_tip(non_interactive=config.non_interactive)
+            inform_cli_extras_tip(non_interactive=non_interactive_mode)
             await version_check.inform(
-                non_interactive=config.non_interactive,
+                non_interactive=non_interactive_mode,
                 allow_prompt=command_succeeded,
             )
             use_json_mode(False)
