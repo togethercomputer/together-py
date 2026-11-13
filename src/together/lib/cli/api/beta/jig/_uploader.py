@@ -194,7 +194,7 @@ class Uploader:
 
             try:
                 if SSL_SENDFILE:
-                    ssl_connection_pool = self.get_pool(urlparse(upload_url).hostname)
+                    ssl_connection_pool = self.get_pool(urlparse(upload_url).hostname) # pyright: ignore
                     file_descriptor = os.open(path=file_path, flags=os.O_RDONLY)
 
                     ssl_connection_pool.put(upload_url, file_descriptor, file_size)
@@ -268,7 +268,7 @@ class Uploader:
         ``MAX_IN_MEMORY_CHUNKS * chunk_size`` instead of growing with file size.
         """
 
-        def get_part_offset_and_size(fd, part_urls, part_number):
+        def get_part_offset_and_size(fd: int, part_urls: list[dict[str, Any]], part_number: int) -> dict[str, Any]:
             file_size = os.fstat(fd).st_size
             chunk = -(-file_size // len(part_urls))
             offset = (part_number - 1) * chunk
@@ -276,13 +276,13 @@ class Uploader:
 
             return { "offset": offset, "part_size": part_size }
 
-        async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any]:
+        async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any] | None:
             err = None
             try:
                 async with self.semaphore:
-                    part_number = part_info["part_number"]
-                    url = part_info["url"]
-                    method = part_info["method"]
+                    part_number: int = part_info["part_number"]
+                    url: str = part_info["url"]
+                    method: str = part_info["method"]
                     headers = part_info.get("headers", {})
 
                     if SSL_SENDFILE:
@@ -299,8 +299,6 @@ class Uploader:
 
                     else:
                         part_size = len(data)
-
-                    
 
                 for attempt in range(MAX_UPLOAD_RETRIES):
                     try:
