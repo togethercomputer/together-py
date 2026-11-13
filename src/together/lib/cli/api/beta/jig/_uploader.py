@@ -34,6 +34,8 @@ READ_AHEAD_CHUNKS = int(os.getenv("TOGETHER_UPLOAD_READ_AHEAD", "10"))
 MAX_IN_MEMORY_CHUNKS = UPLOAD_CONCURRENCY_LIMIT + READ_AHEAD_CHUNKS
 SSL_SENDFILE = (sys.platform == "linux" or sys.platform == "linux2")
 
+# pyright: reportPossiblyUnbound=false
+
 
 # --- File upload ---
 
@@ -276,7 +278,7 @@ class Uploader:
 
             return { "offset": offset, "part_size": part_size }
 
-        async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any] | None:
+        async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any]:
             err = None
             try:
                 async with self.semaphore:

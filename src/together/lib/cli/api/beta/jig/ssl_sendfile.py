@@ -38,7 +38,7 @@ WORKERS = int(os.environ.get("WORKERS", min(len(os.sched_getaffinity(0)) * 2, 25
 PARTS_MULT = int(os.environ.get("PARTS", "4"))  # parts = PARTS_MULT * WORKERS
 SO_SNDBUFFORCE = 32
 
-noop = lambda *args: None # noqa
+noop = lambda *args: None # pyright: noqa
 debug = print if os.getenv("DEBUG") else noop # pyright: ignore
 trace = print if os.getenv("TRACE") else noop # pyright: ignore
 
@@ -95,7 +95,7 @@ _SSL_CIPHER_get_name = _fn(_libssl, "SSL_CIPHER_get_name", [c_void_p], c_char_p)
 
 
 def _ssl_errors() -> str:
-    msgs = []
+    msgs: list[str] = []
     while code := _ERR_get():
         buf = ctypes.create_string_buffer(256)
         _ERR_str(code, buf, 256)
@@ -434,7 +434,7 @@ class Pool:
         if c.alive:
             self._q.put(c)
 
-    def put(self, target: str, fd: int, size: int, offset: int = 0, tries: int = 1, req_headers: dict[str, Any] | None = None) -> str:
+    def put(self, target: str, fd: int, size: int, offset: int = 0, tries: int = 1, req_headers: dict[str, Any] | None = None) -> list[Any]:
         """PUT via kTLS + SSL_sendfile with retries. Returns status code."""
         for attempt in range(1, tries + 1):
             c = self._acquire()
