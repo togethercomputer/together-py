@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+from .rollouts import (
+    RolloutsResource,
+    AsyncRolloutsResource,
+    RolloutsResourceWithRawResponse,
+    AsyncRolloutsResourceWithRawResponse,
+    RolloutsResourceWithStreamingResponse,
+    AsyncRolloutsResourceWithStreamingResponse,
+)
 from .sessions import (
     SessionsResource,
     AsyncSessionsResource,
@@ -82,6 +90,10 @@ class PostTrainingResource(SyncAPIResource):
         return SupportedModelsResource(self._client)
 
     @cached_property
+    def rollouts(self) -> RolloutsResource:
+        return RolloutsResource(self._client)
+
+    @cached_property
     def with_raw_response(self) -> PostTrainingResourceWithRawResponse:
         """
         This property can be used as a prefix for any HTTP method call to return
@@ -125,6 +137,10 @@ class AsyncPostTrainingResource(AsyncAPIResource):
     @cached_property
     def supported_models(self) -> AsyncSupportedModelsResource:
         return AsyncSupportedModelsResource(self._client)
+
+    @cached_property
+    def rollouts(self) -> AsyncRolloutsResource:
+        return AsyncRolloutsResource(self._client)
 
     @cached_property
     def with_raw_response(self) -> AsyncPostTrainingResourceWithRawResponse:
@@ -174,6 +190,10 @@ class PostTrainingResourceWithRawResponse:
     def supported_models(self) -> SupportedModelsResourceWithRawResponse:
         return SupportedModelsResourceWithRawResponse(self._post_training.supported_models)
 
+    @cached_property
+    def rollouts(self) -> RolloutsResourceWithRawResponse:
+        return RolloutsResourceWithRawResponse(self._post_training.rollouts)
+
 
 class AsyncPostTrainingResourceWithRawResponse:
     def __init__(self, post_training: AsyncPostTrainingResource) -> None:
@@ -202,6 +222,10 @@ class AsyncPostTrainingResourceWithRawResponse:
     @cached_property
     def supported_models(self) -> AsyncSupportedModelsResourceWithRawResponse:
         return AsyncSupportedModelsResourceWithRawResponse(self._post_training.supported_models)
+
+    @cached_property
+    def rollouts(self) -> AsyncRolloutsResourceWithRawResponse:
+        return AsyncRolloutsResourceWithRawResponse(self._post_training.rollouts)
 
 
 class PostTrainingResourceWithStreamingResponse:
@@ -232,6 +256,10 @@ class PostTrainingResourceWithStreamingResponse:
     def supported_models(self) -> SupportedModelsResourceWithStreamingResponse:
         return SupportedModelsResourceWithStreamingResponse(self._post_training.supported_models)
 
+    @cached_property
+    def rollouts(self) -> RolloutsResourceWithStreamingResponse:
+        return RolloutsResourceWithStreamingResponse(self._post_training.rollouts)
+
 
 class AsyncPostTrainingResourceWithStreamingResponse:
     def __init__(self, post_training: AsyncPostTrainingResource) -> None:
@@ -260,3 +288,7 @@ class AsyncPostTrainingResourceWithStreamingResponse:
     @cached_property
     def supported_models(self) -> AsyncSupportedModelsResourceWithStreamingResponse:
         return AsyncSupportedModelsResourceWithStreamingResponse(self._post_training.supported_models)
+
+    @cached_property
+    def rollouts(self) -> AsyncRolloutsResourceWithStreamingResponse:
+        return AsyncRolloutsResourceWithStreamingResponse(self._post_training.rollouts)

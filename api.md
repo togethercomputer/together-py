@@ -305,6 +305,18 @@ Methods:
 
 - <code title="get /v1/rl/supported-models">client.post_training.supported_models.<a href="./src/together/resources/post_training/supported_models.py">get</a>() -> <a href="./src/together/types/post_training/rl_supported_models.py">RlSupportedModels</a></code>
 
+## Rollouts
+
+Types:
+
+```python
+from together.types.post_training import EstimateRolloutResponse
+```
+
+Methods:
+
+- <code title="post /v1/rl/rollouts/estimate">client.post_training.rollouts.<a href="./src/together/resources/post_training/rollouts.py">estimate</a>(\*\*<a href="src/together/types/post_training/rollout_estimate_params.py">params</a>) -> <a href="./src/together/types/post_training/estimate_rollout_response.py">EstimateRolloutResponse</a></code>
+
 # Clusters
 
 Types:

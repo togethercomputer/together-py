@@ -75,9 +75,11 @@ from .forward_backward_result import ForwardBackwardResult as ForwardBackwardRes
 from .model_input_chunk_param import ModelInputChunk as ModelInputChunk
 from .model_registry_artifact import ModelRegistryArtifact as ModelRegistryArtifact
 from .operation_sample_params import OperationSampleParams as OperationSampleParams
+from .rollout_estimate_params import RolloutEstimateParams as RolloutEstimateParams
 from .encoded_text_chunk_param import EncodedTextChunk as EncodedTextChunk
 from .checkpoints_list_response import CheckpointsListResponse as CheckpointsListResponse
 from .cross_entropy_loss_params import CrossEntropyLossParams as CrossEntropyLossParams
+from .estimate_rollout_response import EstimateRolloutResponse as EstimateRolloutResponse
 from .checkpoint_download_params import CheckpointDownloadParams as CheckpointDownloadParams
 from .forward_backward_operation import ForwardBackwardOperation as ForwardBackwardOperation
 from .grpo_loss_aggregation_type import GrpoLossAggregationType as GrpoLossAggregationType

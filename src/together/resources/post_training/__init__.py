@@ -1,5 +1,13 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
+from .rollouts import (
+    RolloutsResource,
+    AsyncRolloutsResource,
+    RolloutsResourceWithRawResponse,
+    AsyncRolloutsResourceWithRawResponse,
+    RolloutsResourceWithStreamingResponse,
+    AsyncRolloutsResourceWithStreamingResponse,
+)
 from .sessions import (
     SessionsResource,
     AsyncSessionsResource,
@@ -94,6 +102,12 @@ __all__ = [
     "AsyncSupportedModelsResourceWithRawResponse",
     "SupportedModelsResourceWithStreamingResponse",
     "AsyncSupportedModelsResourceWithStreamingResponse",
+    "RolloutsResource",
+    "AsyncRolloutsResource",
+    "RolloutsResourceWithRawResponse",
+    "AsyncRolloutsResourceWithRawResponse",
+    "RolloutsResourceWithStreamingResponse",
+    "AsyncRolloutsResourceWithStreamingResponse",
     "PostTrainingResource",
     "AsyncPostTrainingResource",
     "PostTrainingResourceWithRawResponse",
