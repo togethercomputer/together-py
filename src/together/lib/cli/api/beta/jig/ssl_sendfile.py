@@ -29,6 +29,8 @@ from typing import Any, Callable
 from pathlib import Path
 from dataclasses import dataclass
 
+# pyright: reportConstantRedefinition=false
+
 # --- Config ---
 
 CHUNK_MIN = 5 * 1024 * 1024  # S3 minimum part size
@@ -36,9 +38,9 @@ WORKERS = int(os.environ.get("WORKERS", min(len(os.sched_getaffinity(0)) * 2, 25
 PARTS_MULT = int(os.environ.get("PARTS", "4"))  # parts = PARTS_MULT * WORKERS
 SO_SNDBUFFORCE = 32
 
-noop = lambda *args: None #noqa
-debug = print if os.getenv("DEBUG") else noop
-trace = print if os.getenv("TRACE") else noop
+noop = lambda *args: None # pyright: ignore
+debug = print if os.getenv("DEBUG") else noop # pyright: ignore
+trace = print if os.getenv("TRACE") else noop # pyright: ignore
 
 # --- OpenSSL ctypes ---
 
@@ -376,7 +378,7 @@ class Connection:
 
         return status, headers, body
 
-    def put(self, target: str, fd: int, size: int, offset=0, req_headers=None) -> list[Any]:
+    def put(self, target: str, fd: int, size: int, offset:int = 0, req_headers: dict[str, Any] | None = None) -> list[Any]:
         extra = "".join(f"{k}: {v}\r\n" for k, v in (req_headers or {}).items())
         
         if self.token:
@@ -432,7 +434,7 @@ class Pool:
         if c.alive:
             self._q.put(c)
 
-    def put(self, target: str, fd: int, size: int, offset = 0, tries = 1, req_headers=None) -> str:
+    def put(self, target: str, fd: int, size: int, offset: int = 0, tries: int = 1, req_headers: dict[str, Any] | None = None) -> str:
         """PUT via kTLS + SSL_sendfile with retries. Returns status code."""
         for attempt in range(1, tries + 1):
             c = self._acquire()
