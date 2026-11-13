@@ -335,7 +335,7 @@ def test_async_close_releases_a_session_built_on_the_blocking_path() -> None:
         ),
         close=AsyncMock(),
     )
-    session = SessionClient("sess", _client=cast(Any, client))
+    session = SessionClient("sess", "res", _client=cast(Any, client))
     session.run(asyncio.sleep(0))
     lifecycle = _teardown._Lifecycle(session)
 
@@ -383,7 +383,7 @@ def test_exit_hook_releases_an_await_built_client() -> None:
     )
 
     async def build() -> SessionClient:
-        return SessionClient("sess", _client=cast(Any, client))
+        return SessionClient("sess", "res", _client=cast(Any, client))
 
     session = asyncio.run(build())
     lifecycle = _teardown._Lifecycle(session)

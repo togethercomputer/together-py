@@ -175,7 +175,7 @@ async def test_rl_wrappers_generate_retry_keys(
         )
     )
     rl_client = AsyncTogether(api_key="test-key", base_url=BASE_URL)
-    session = SessionClient("session-id", _client=rl_client)
+    session = SessionClient("session-id", "res", _client=rl_client)
     try:
         resource = session if owner == "session" else getattr(session, owner)
         for _ in range(2):

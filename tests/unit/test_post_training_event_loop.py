@@ -12,6 +12,7 @@ import logging
 import threading
 import traceback
 from typing import Any, cast
+from functools import partial
 from collections.abc import Callable
 from concurrent.futures import Future, CancelledError
 
@@ -40,7 +41,7 @@ _PROMPT = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(token
 
 
 def _make_session() -> SessionClient:
-    return SessionClient("sess", _client=cast(Any, FakeClient()))
+    return SessionClient("sess", "res", _client=cast(Any, FakeClient()))
 
 
 def _live_loop_threads() -> list[threading.Thread]:
@@ -644,7 +645,7 @@ def test_detach_then_stop_warns_that_the_remote_is_still_running(
 ) -> None:
     """The remote stop is skipped, so it must not be skipped silently."""
     client = FakeClient()
-    session = SessionClient("sess", _client=cast(Any, client))
+    session = SessionClient("sess", "res", _client=cast(Any, client))
     session.detach()
 
     with caplog.at_level(logging.WARNING, logger="together"):
@@ -670,7 +671,10 @@ def test_repeat_teardown_is_quiet(first: str, second: str, caplog: pytest.LogCap
 @pytest.mark.parametrize("flavor", ["sync", "async"])
 @pytest.mark.parametrize(
     ("build_handle", "remote_name"),
-    [(SessionClient, "sessions"), (ModelResourcesClient, "model_resources")],
+    [
+        (partial(SessionClient, "handle", "res"), "sessions"),
+        (partial(ModelResourcesClient, "handle"), "model_resources"),
+    ],
     ids=["session", "model_resources"],
 )
 def test_context_manager_exit_after_a_detach_is_quiet(
@@ -686,7 +690,7 @@ def test_context_manager_exit_after_a_detach_is_quiet(
     exit method; test_async_context_manager_stops owns the direction that does stop.
     """
     client = FakeClient()
-    handle = build_handle("handle", _client=cast(Any, client))
+    handle = build_handle(_client=cast(Any, client))
 
     async def in_async_with() -> None:
         async with handle:
@@ -702,6 +706,68 @@ def test_context_manager_exit_after_a_detach_is_quiet(
     assert handle._loop.closed
     assert caplog.text == ""
     assert getattr(client.post_training, remote_name).last_stop is None
+
+
+_ATTACHED_ID = "attached-1"
+_ATTACHED_HANDLES = pytest.mark.parametrize(
+    ("attach", "remote_name"),
+    [
+        (partial(SessionClient.attach, session_id=_ATTACHED_ID), "sessions"),
+        (partial(ModelResourcesClient.attach, model_resources_id=_ATTACHED_ID), "model_resources"),
+    ],
+    ids=["session", "model_resources"],
+)
+
+
+def _patch_together(monkeypatch: pytest.MonkeyPatch) -> FakeClient:
+    client = FakeClient()
+
+    def fake_together(**_kwargs: Any) -> FakeClient:
+        return client
+
+    monkeypatch.setattr(session_client_module, "AsyncTogether", fake_together)
+    monkeypatch.setattr(model_resources_client_module, "AsyncTogether", fake_together)
+    return client
+
+
+@pytest.mark.parametrize("flavor", ["sync", "async"])
+@_ATTACHED_HANDLES
+def test_context_manager_exit_detaches_an_attached_handle(
+    monkeypatch: pytest.MonkeyPatch,
+    attach: Callable[[], Any],
+    remote_name: str,
+    flavor: str,
+) -> None:
+    """attach() binds to a remote the caller did not create, so exit must leave it running."""
+    client = _patch_together(monkeypatch)
+    handle = attach()
+
+    async def in_async_with() -> None:
+        async with handle:
+            pass
+
+    if flavor == "sync":
+        with handle:
+            pass
+    else:
+        asyncio.run(in_async_with())
+
+    assert getattr(client.post_training, remote_name).last_stop is None
+    assert client.closed
+
+
+@_ATTACHED_HANDLES
+def test_stop_still_stops_an_attached_handle(
+    monkeypatch: pytest.MonkeyPatch,
+    attach: Callable[[], Any],
+    remote_name: str,
+) -> None:
+    client = _patch_together(monkeypatch)
+
+    with attach() as handle:
+        handle.stop()
+
+    assert getattr(client.post_training, remote_name).last_stop == _ATTACHED_ID
 
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="fork is Unix-only")

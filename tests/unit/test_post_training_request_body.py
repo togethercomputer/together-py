@@ -105,7 +105,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = SessionClient("sess", _client=async_client)
+        trainer = SessionClient("sess", "res", _client=async_client)
         generator = trainer.generator
         model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
         sampling = SamplingParams(
@@ -163,7 +163,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = SessionClient("sess", _client=async_client)
+        trainer = SessionClient("sess", "res", _client=async_client)
         samples = [
             Sample(
                 model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3, 4]))]),
@@ -233,7 +233,7 @@ class TestRLRequestBody:
             )
         )
 
-        session = SessionClient("sess", _client=async_client)
+        session = SessionClient("sess", "res", _client=async_client)
         samples = [
             Sample(
                 model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3, 4]))]),
@@ -278,7 +278,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = SessionClient("sess", _client=async_client)
+        trainer = SessionClient("sess", "res", _client=async_client)
 
         adam = AdamParams(
             beta1=0.9,
@@ -314,7 +314,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = SessionClient("sess", _client=async_client)
+        trainer = SessionClient("sess", "res", _client=async_client)
         muon = MuonParams(
             learning_rate=0.02,
             momentum=0.95,
@@ -351,7 +351,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = SessionClient("sess", _client=async_client)
+        trainer = SessionClient("sess", "res", _client=async_client)
         result = await trainer.trainer.weights_sync_async(
             weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
         )
@@ -379,7 +379,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = SessionClient("sess", _client=async_client)
+        trainer = SessionClient("sess", "res", _client=async_client)
         await trainer.create_training_checkpoint_async()
 
         call = cast(Any, respx_mock.calls[0])
@@ -403,7 +403,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = SessionClient("sess", _client=async_client)
+        trainer = SessionClient("sess", "res", _client=async_client)
         await trainer.create_inference_checkpoint_async()
 
         call = cast(Any, respx_mock.calls[0])

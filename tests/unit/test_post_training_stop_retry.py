@@ -33,7 +33,7 @@ async def test_stop_retries_transport_failure(resource_kind: str, synchronous: b
         max_retries=0,
         http_client=httpx.AsyncClient(transport=httpx.MockTransport(respond)),
     )
-    handle = SessionClient("resource", client) if session else ModelResourcesClient("resource", client)
+    handle = SessionClient("resource", "res", client) if session else ModelResourcesClient("resource", client)
     try:
         with pytest.raises(InternalServerError):
             if synchronous:

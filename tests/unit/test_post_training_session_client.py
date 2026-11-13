@@ -53,7 +53,7 @@ from together.types.post_training.sample_operation import SampleOperation
 def _make_session(client: FakeClient | None = None) -> SessionClient:
     if client is None:
         client = FakeClient()
-    return SessionClient("sess", _client=cast(Any, client))
+    return SessionClient("sess", "res", _client=cast(Any, client))
 
 
 def _sample_payload(sample: Sample) -> dict[str, Any]:
@@ -95,7 +95,7 @@ def test_lora_config_has_clean_public_name() -> None:
 
 
 def test_trainer_only_session_rejects_generator_access() -> None:
-    session = SessionClient("sess", _client=cast(Any, FakeClient()), _has_generator=False)
+    session = SessionClient("sess", "res", _client=cast(Any, FakeClient()), _has_generator=False)
 
     assert session.has_generator is False
     with pytest.raises(RuntimeError, match="does not have generator capability"):
@@ -462,6 +462,7 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
     )
 
     assert trainer._session_id == "sess-1"
+    assert trainer.model_resources_id == "res-1"
     assert isinstance(trainer.generator, Generator)
     assert create_client.call_args.kwargs["max_retries"] == 7
     fake_client.post_training.sessions.retrieve.assert_awaited_once_with("sess-1")
@@ -516,7 +517,7 @@ async def test_create_async_closes_client_on_terminal_status(monkeypatch: pytest
 async def test_wait_for_creation_raises_on_terminal_status(status: str) -> None:
     client = MagicMock()
     client.post_training.sessions.retrieve = AsyncMock(return_value=SimpleNamespace(status=status))
-    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", "res", _client=cast(Any, client))
 
     with pytest.raises(RuntimeError, match=status):
         await trainer._wait_for_creation_async(timeout=1.0, interval=0.0)
@@ -527,7 +528,7 @@ async def test_wait_for_creation_times_out() -> None:
     client.post_training.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_CREATING")
     )
-    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", "res", _client=cast(Any, client))
 
     with pytest.raises(TimeoutError):
         await trainer._wait_for_creation_async(timeout=0.0, interval=0.0)
@@ -544,7 +545,7 @@ async def test_stop_async_closes_client() -> None:
     client.post_training.sessions.stop = AsyncMock(return_value=output)
     client.post_training.sessions.retrieve = AsyncMock()
     client.close = AsyncMock()
-    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", "res", _client=cast(Any, client))
 
     result = await trainer.stop_async()
 
@@ -564,7 +565,7 @@ async def test_stop_async_waits_until_session_is_inactive(monkeypatch: pytest.Mo
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED")
     )
     client.close = AsyncMock()
-    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", "res", _client=cast(Any, client))
 
     result = await trainer.stop_async()
 
@@ -586,7 +587,7 @@ async def test_stop_async_treats_missing_session_as_inactive(monkeypatch: pytest
     client.post_training.sessions.stop = AsyncMock(return_value=output)
     client.post_training.sessions.retrieve = AsyncMock(side_effect=not_found)
     client.close = AsyncMock()
-    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", "res", _client=cast(Any, client))
 
     result = await trainer.stop_async()
 
@@ -603,7 +604,7 @@ async def test_stop_async_warns_on_timeout_and_closes_client(monkeypatch: pytest
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
     )
     client.close = AsyncMock()
-    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", "res", _client=cast(Any, client))
 
     with pytest.warns(UserWarning, match="model_resources.stop\\(force=True\\)"):
         result = await trainer.stop_async()
@@ -620,7 +621,7 @@ async def test_stop_async_does_not_swallow_keyboard_interrupt(monkeypatch: pytes
     )
     client.post_training.sessions.retrieve = AsyncMock(side_effect=KeyboardInterrupt)
     client.close = AsyncMock()
-    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", "res", _client=cast(Any, client))
 
     with pytest.raises(KeyboardInterrupt):
         await trainer._stop_remote()
@@ -634,7 +635,7 @@ def test_stop_marks_the_handle_closed() -> None:
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED")
     )
     client.close = AsyncMock()
-    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", "res", _client=cast(Any, client))
     trainer.stop()
 
     assert trainer._loop.closed
@@ -661,6 +662,7 @@ async def test_attach_async_binds_existing_session(monkeypatch: pytest.MonkeyPat
     trainer = await SessionClient.attach_async(session_id="sess-1")
 
     assert trainer._session_id == "sess-1"
+    assert trainer.model_resources_id == "res-1"
     assert isinstance(trainer.generator, Generator)
     assert create_client.call_args.kwargs["max_retries"] == 7
     fake_client.post_training.sessions.retrieve.assert_awaited_once_with("sess-1")
@@ -704,7 +706,7 @@ async def test_detach_async_closes_client_without_stopping() -> None:
     client = MagicMock()
     client.post_training.sessions.stop = AsyncMock()
     client.close = AsyncMock()
-    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", "res", _client=cast(Any, client))
 
     await trainer.detach_async()
 
@@ -716,7 +718,7 @@ def test_detach_marks_the_handle_closed_without_stopping() -> None:
     client = MagicMock()
     client.post_training.sessions.stop = AsyncMock()
     client.close = AsyncMock()
-    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", "res", _client=cast(Any, client))
     trainer.detach()
 
     assert trainer._loop.closed

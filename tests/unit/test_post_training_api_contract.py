@@ -112,7 +112,7 @@ async def test_routing_key_round_trip(
 ) -> None:
     transport = _RLTransport()
     client = AsyncTogether(api_key="test-key", http_client=httpx.AsyncClient(transport=httpx.MockTransport(transport)))
-    session = SessionClient("session", _client=client)
+    session = SessionClient("session", "res", _client=client)
     prompt = ModelInput(chunks=[{"encoded_text": {"tokens": list(range(20))}}])
     sample_kwargs: dict[str, Any] = {
         "prompts" if batch else "prompt": [prompt] if batch else prompt,

@@ -50,7 +50,7 @@ def _session_with_operations(**operations: Any) -> SessionClient:
         post_training=SimpleNamespace(operations=SimpleNamespace(**operations)),
         close=AsyncMock(),
     )
-    return SessionClient("sess", _client=cast(Any, client))
+    return SessionClient("sess", "res", _client=cast(Any, client))
 
 
 def _training_client(session: SessionClient) -> tinker_compat.TrainingClient:

@@ -19,7 +19,7 @@ from together.types.post_training.sample_operation import SampleOperation
 
 def _session() -> SessionClient:
     client = SimpleNamespace(close=AsyncMock())
-    return SessionClient("sess", _client=cast(Any, client))
+    return SessionClient("sess", "res", _client=cast(Any, client))
 
 
 def _operation(op_id: str = "op-1") -> SampleOperation:

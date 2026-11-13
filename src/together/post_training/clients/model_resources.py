@@ -45,6 +45,7 @@ _PROVISIONING_TIMEOUT = httpx.Timeout(timeout=300, connect=300)
 class ModelResourcesClient:
     _model_resources_id: str
     _client: AsyncTogether
+    _owns_resource: bool = True
 
     _loop: LoopGate = field(init=False, default_factory=LoopGate, repr=False)
 
@@ -63,8 +64,12 @@ class ModelResourcesClient:
     ) -> None:
         # A handle released with detach() is already torn down; stopping it here would report
         # a stranded remote for a stop the caller never asked for.
-        if not self._loop.closed:
+        if self._loop.closed:
+            return
+        if self._owns_resource:
             self.stop()
+        else:
+            self.detach()
 
     async def __aenter__(self) -> ModelResourcesClient:
         return self
@@ -75,8 +80,12 @@ class ModelResourcesClient:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        if not self._loop.closed:
+        if self._loop.closed:
+            return
+        if self._owns_resource:
             await self.stop_async()
+        else:
+            await self.detach_async()
 
     def run(self, coro: Coroutine[Any, Any, _T]) -> _T:
         return self._loop.run(coro)
@@ -152,8 +161,9 @@ class ModelResourcesClient:
         """Bind a fully-capable handle to an existing resource.
 
         Unlike :meth:`create`, this provisions no GPUs and does not wait for
-        READY — it only confirms the resource exists. Releasing the handle with
-        :meth:`detach` leaves the remote resource running.
+        READY — it only confirms the resource exists. Exiting a ``with`` block
+        releases the handle with :meth:`detach` and leaves the remote resource
+        running; call :meth:`stop` to stop it.
         """
         return run_untracked(
             cls.attach_async(
@@ -178,7 +188,7 @@ class ModelResourcesClient:
             except BaseException:
                 await client.close()
                 raise
-            return cls(model_resources_id, client)
+            return cls(model_resources_id, client, _owns_resource=False)
 
         return await run_untracked_async(attach_on_process_loop())
 

@@ -306,7 +306,7 @@ def test_gradient_data_keeps_its_proto_dtype(np: Any) -> None:
 def test_forward_backward_submits_serializable_arrays(monkeypatch: pytest.MonkeyPatch, np: Any) -> None:
     patch_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
     client = FakeClient()
-    session = SessionClient("sess", _client=cast(Any, client))
+    session = SessionClient("sess", "res", _client=cast(Any, client))
 
     session.trainer.forward_backward(
         samples=[
@@ -338,7 +338,7 @@ def test_forward_backward_submits_serializable_arrays(monkeypatch: pytest.Monkey
 
 def test_integer_advantages_array_fails_validation(monkeypatch: pytest.MonkeyPatch, np: Any) -> None:
     patch_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
-    session = SessionClient("sess", _client=cast(Any, FakeClient()))
+    session = SessionClient("sess", "res", _client=cast(Any, FakeClient()))
 
     with pytest.raises(ValueError, match=r"advantages'\]\.dtype"):
         session.trainer.forward_backward(
@@ -359,7 +359,7 @@ def test_integer_advantages_array_fails_validation(monkeypatch: pytest.MonkeyPat
 def test_custom_forward_backward_serializes_gradient_arrays(monkeypatch: pytest.MonkeyPatch, np: Any) -> None:
     patch_wait(monkeypatch, SimpleNamespace(logprobs=[]))
     client = FakeClient()
-    session = SessionClient("sess", _client=cast(Any, client))
+    session = SessionClient("sess", "res", _client=cast(Any, client))
 
     session.trainer.custom_forward_backward(
         samples=[_sample({"target_tokens": np.array([1, 2], dtype=np.int64)})],
@@ -374,7 +374,7 @@ def test_custom_forward_backward_serializes_gradient_arrays(monkeypatch: pytest.
 def test_sample_batch_serializes_array_prompts(monkeypatch: pytest.MonkeyPatch, np: Any) -> None:
     patch_wait(monkeypatch, SimpleNamespace(results=[SampleResult(policy_segments=[], sequences=[])]))
     client = FakeClient()
-    session = SessionClient("sess", _client=cast(Any, client))
+    session = SessionClient("sess", "res", _client=cast(Any, client))
 
     session.generator.sample_batch(prompts=[_model_input(np.array([7, 8], dtype=np.int32))])
 

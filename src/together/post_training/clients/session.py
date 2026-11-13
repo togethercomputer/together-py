@@ -67,8 +67,10 @@ _CLIENT_LIMITS = httpx.Limits(max_connections=_RL_MAX_CONNECTIONS, max_keepalive
 @dataclass
 class SessionClient:
     _session_id: str
+    _model_resources_id: str
     _client: AsyncTogether
     _has_generator: bool = True
+    _owns_session: bool = True
 
     _loop: LoopGate = field(init=False, default_factory=LoopGate, repr=False)
     _trainer: Trainer | None = field(
@@ -86,6 +88,10 @@ class SessionClient:
     @property
     def session_id(self) -> str:
         return self._session_id
+
+    @property
+    def model_resources_id(self) -> str:
+        return self._model_resources_id
 
     @property
     def trainer(self) -> Trainer:
@@ -123,8 +129,12 @@ class SessionClient:
     ) -> None:
         # A handle released with detach() is already torn down; stopping it here would report
         # a stranded remote for a stop the caller never asked for.
-        if not self._loop.closed:
+        if self._loop.closed:
+            return
+        if self._owns_session:
             self.stop()
+        else:
+            self.detach()
 
     def run(self, coro: Coroutine[Any, Any, _T]) -> _T:
         return self._loop.run(coro)
@@ -170,7 +180,11 @@ class SessionClient:
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
     ) -> SessionClient:
-        """Bind a fully-capable handle to an existing training session."""
+        """Bind a fully-capable handle to an existing training session.
+
+        Exiting a ``with`` block releases the handle with :meth:`detach` and leaves the
+        remote session running; call :meth:`stop` to stop it.
+        """
         return run_untracked(
             cls.attach_async(
                 session_id=session_id,
@@ -203,8 +217,10 @@ class SessionClient:
                 raise
             return cls(
                 session_id,
+                session.resources_id,
                 client,
                 _has_generator=model_resources.compute_config.num_generator_replicas > 0,
+                _owns_session=False,
             )
 
         return await run_untracked_async(attach_on_process_loop())
@@ -256,8 +272,12 @@ class SessionClient:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        if not self._loop.closed:
+        if self._loop.closed:
+            return
+        if self._owns_session:
             await self.stop_async()
+        else:
+            await self.detach_async()
 
     async def _submit_and_wait(
         self,
@@ -342,6 +362,7 @@ class SessionClient:
 
                 output = cls(
                     session_id,
+                    model_resources_id,
                     client,
                     _has_generator=model_resources.compute_config.num_generator_replicas > 0,
                 )
