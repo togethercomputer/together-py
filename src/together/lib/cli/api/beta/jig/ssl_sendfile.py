@@ -38,7 +38,7 @@ WORKERS = int(os.environ.get("WORKERS", min(len(os.sched_getaffinity(0)) * 2, 25
 PARTS_MULT = int(os.environ.get("PARTS", "4"))  # parts = PARTS_MULT * WORKERS
 SO_SNDBUFFORCE = 32
 
-noop = lambda *args: None # pyright: ignore
+noop = lambda *args: None # noqa
 debug = print if os.getenv("DEBUG") else noop # pyright: ignore
 trace = print if os.getenv("TRACE") else noop # pyright: ignore
 
