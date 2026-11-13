@@ -1,5 +1,40 @@
 # Changelog
 
+## [3.2.0](https://github.com/togethercomputer/together-py/compare/v3.1.1...v3.2.0) (2026-11-13)
+
+
+### Features
+
+* **cli:** add --max-surge to endpoint rollouts ([#676](https://github.com/togethercomputer/together-py/issues/676)) ([f3e407b](https://github.com/togethercomputer/together-py/commit/f3e407b01ce3ce4fc4b4978443f18e87a347324c))
+* **cli:** add --max-unavailable to tg endpoints rollout ([#677](https://github.com/togethercomputer/together-py/issues/677)) ([322fcb8](https://github.com/togethercomputer/together-py/commit/322fcb83566a2676c914274503ac54947cb500e0))
+* **cli:** add retrieve for model configs ([#671](https://github.com/togethercomputer/together-py/issues/671)) ([4691be0](https://github.com/togethercomputer/together-py/commit/4691be03fb9c49ccb8d97c3b7f4ee5dfe03d27c4))
+* **cli:** fall back to an org lookup from `tg models get` ([#673](https://github.com/togethercomputer/together-py/issues/673)) ([7438cdf](https://github.com/togethercomputer/together-py/commit/7438cdf867e0e90ad68257294b9e391e5c8425f2))
+* **cli:** show post-training checkpoint artifact revisions ([#641](https://github.com/togethercomputer/together-py/issues/641)) ([f40e124](https://github.com/togethercomputer/together-py/commit/f40e124399fe651150a0216289fcfa3cc0d473b4))
+* **models:** add created_at sort and model timestamps ([88196b3](https://github.com/togethercomputer/together-py/commit/88196b3a367badeb308efcbdbab50395049f133d))
+* **models:** add organization model retrieve endpoint to SDK ([6238cf9](https://github.com/togethercomputer/together-py/commit/6238cf9c61b6137573048ffe7be3e165365915fe))
+* **rl:** add num_trainer_replicas for generator-only model resources ([8bd9d0b](https://github.com/togethercomputer/together-py/commit/8bd9d0b5b1458fdb873be0de6628a32b2ee5c669))
+* **rl:** add rollout time and price estimate ([2a1bd50](https://github.com/togethercomputer/together-py/commit/2a1bd504b712caedeaa88e9a2cc1a84f6fb1c257))
+* **rollout:** bound a step's target raise with maxSurge ([f90c787](https://github.com/togethercomputer/together-py/commit/f90c7875daa7075027856b095b720af4e5178602))
+* **rollout:** document maxUnavailable serving allowance ([5ff4d67](https://github.com/togethercomputer/together-py/commit/5ff4d67b26ab9f5a46bb4c04a37e0c9b0c5c0330))
+
+
+### Bug Fixes
+
+* **cli:** add GB200_NVL to clusters create GPU types ([#675](https://github.com/togethercomputer/together-py/issues/675)) ([2daed93](https://github.com/togethercomputer/together-py/commit/2daed93c06fb2363a3776fd47a2e0a845c5869a5))
+* **cli:** classify status 130 as user abort ([#544](https://github.com/togethercomputer/together-py/issues/544)) ([3ebf2f2](https://github.com/togethercomputer/together-py/commit/3ebf2f2c6da75c2b01d4ff65111e32150aff23e0))
+* **cli:** create clusters with an inline shared volume ([#648](https://github.com/togethercomputer/together-py/issues/648)) ([3ee2778](https://github.com/togethercomputer/together-py/commit/3ee27782cc3bbd1f315a92c4da0acb784c625a3f))
+* **cli:** error and fail when the base URL still ends in the legacy /v1 ([#665](https://github.com/togethercomputer/together-py/issues/665)) ([8bff204](https://github.com/togethercomputer/together-py/commit/8bff204fca0e9399cfe6473b299b5c62b3918cac))
+* **cli:** preserve existing-file upload diagnostic ([#638](https://github.com/togethercomputer/together-py/issues/638)) ([10a703c](https://github.com/togethercomputer/together-py/commit/10a703c26672ce648a1154c0c718764154a99c4b))
+* **cli:** send endpoint event types as repeated query params ([#646](https://github.com/togethercomputer/together-py/issues/646)) ([e8498ea](https://github.com/togethercomputer/together-py/commit/e8498ea0af2c5db98d491b6fea5e45cd5e87f42b))
+* **cli:** use generated jig secret ttl parameters ([#659](https://github.com/togethercomputer/together-py/issues/659)) ([3972fd0](https://github.com/togethercomputer/together-py/commit/3972fd0847308e3fa01304f52a35f8179dbef498))
+* **clusters:** rename GB200_SXM GPU type to GB200_NVL ([b904e20](https://github.com/togethercomputer/together-py/commit/b904e202033189f8bfed566d3dd92610c65a6d2a))
+* **rl:** Only close model resources we create ([#202](https://github.com/togethercomputer/together-py/issues/202)) ([cc9c07c](https://github.com/togethercomputer/together-py/commit/cc9c07c384010b803dc3a3b9a766d67f28288fdc))
+
+
+### Documentation
+
+* **cli:** drop stale expert-module LoRA note ([#668](https://github.com/togethercomputer/together-py/issues/668)) ([40d357a](https://github.com/togethercomputer/together-py/commit/40d357a66cc375c48e7320c94d531792ef3824f0))
+
 ## [3.1.1](https://github.com/togethercomputer/together-py/compare/v3.1.0...v3.1.1) (2026-11-04)
 
 
