@@ -140,8 +140,23 @@ def _parse_ttl(ttl: str) -> int:
     return int(match.group(1)) * 86400
 
 
-def _format_timestamp(timestamp: dt) -> str:
-    return timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+def _coerce_timestamp(value: dt | str | None) -> dt | None:
+    """Normalize an SDK datetime or an ISO-8601 string."""
+    if isinstance(value, dt):
+        return value
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return dt.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _format_timestamp(value: dt | str) -> str:
+    parsed = _coerce_timestamp(value)
+    if parsed is None:
+        return str(value)
+    return parsed.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 # matches the server's grace period, during which owners are warned before a secret is deleted
@@ -152,8 +167,12 @@ def _warn_expiring_secrets(deployment: Deployment) -> None:
     """Warn about secrets the deployment references that are deleted within the warning window."""
     soon = dt.now(timezone.utc) + _SECRET_EXPIRY_WARNING_WINDOW
     for var in deployment.environment_variables or []:
-        expires_at = var.value_from_secret_expires_at
-        if expires_at and expires_at <= soon:
+        expires_at = _coerce_timestamp(var.value_from_secret_expires_at)
+        if expires_at is None:
+            continue
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at <= soon:
             console.print(
                 f"\N{WARNING SIGN} Secret {var.name} used by this deployment will expire and be permanently "
                 f"deleted at {_format_timestamp(expires_at)}. Renew it with: "
@@ -687,7 +706,7 @@ class Jig:
         """Set secret for the deployment (create or update) and return when it expires"""
         self.sync_secrets_from_deployment()
         scoped_name = f"{self.name}-{name}"
-        ttl: int | Omit = ttl_seconds or omit
+        ttl: int | Omit = ttl_seconds if ttl_seconds is not None else omit
 
         try:
             secret = self.api.secrets.update(

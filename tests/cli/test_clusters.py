@@ -1274,7 +1274,7 @@ class TestClustersCreate:
     @pytest.mark.respx(base_url=base_url)
     def test_create_posts_inline_shared_volume(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         created = _cluster_body("new-id", "with-volume")
-        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        route = respx_mock.post("/v1/compute/clusters").mock(return_value=httpx.Response(200, json=created))
         result = cli_runner.invoke(
             [
                 "clusters",
