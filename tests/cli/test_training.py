@@ -298,7 +298,7 @@ class TestTrainingCheckpoints:
     def test_ls_checkpoints_table_shows_registry_artifact_revision(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/rl/checkpoints").mock(
+        respx_mock.get("/v1/rl/checkpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={
