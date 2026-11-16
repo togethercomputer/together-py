@@ -9,7 +9,7 @@ from pydantic import Field as FieldInfo
 from .._models import BaseModel
 from .supported_model_deployment_profile import SupportedModelDeploymentProfile
 
-__all__ = ["SupportedModel", "Pricing"]
+__all__ = ["SupportedModel", "Pricing", "UnitPrice"]
 
 
 class Pricing(BaseModel):
@@ -23,6 +23,25 @@ class Pricing(BaseModel):
 
     output: Optional[float] = None
     """Price in USD per one million output tokens."""
+
+
+class UnitPrice(BaseModel):
+    """Serverless display price in USD per one non-token unit on one request tier."""
+
+    price_usd: float = FieldInfo(alias="priceUsd")
+    """Price in USD per one unit."""
+
+    tier: Literal["PRICING_TIER_STANDARD", "PRICING_TIER_BATCH", "PRICING_TIER_REALTIME"]
+    """
+    Request tier the price applies to, such as synchronous HTTP, batch, or streaming
+    realtime sessions.
+    """
+
+    unit: Literal["PRICING_UNIT_AUDIO_MINUTE", "PRICING_UNIT_MILLION_CHARACTERS"]
+    """
+    Billing unit, either one minute of input audio (speech-to-text) or one million
+    input characters (text-to-speech).
+    """
 
 
 class SupportedModel(BaseModel):
@@ -128,3 +147,11 @@ class SupportedModel(BaseModel):
 
     tags: Optional[List[str]] = None
     """Searchable catalog tags for the model."""
+
+    unit_prices: Optional[List[UnitPrice]] = FieldInfo(alias="unitPrices", default=None)
+    """
+    Serverless prices for usage not measured in tokens, such as minutes of
+    transcribed audio or characters of synthesized speech, ordered by unit then
+    tier. Empty when none are curated; a model priced the same on every tier lists
+    only `PRICING_TIER_STANDARD`.
+    """
