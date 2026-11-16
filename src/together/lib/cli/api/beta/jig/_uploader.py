@@ -34,7 +34,7 @@ READ_AHEAD_CHUNKS = int(os.getenv("TOGETHER_UPLOAD_READ_AHEAD", "10"))
 MAX_IN_MEMORY_CHUNKS = UPLOAD_CONCURRENCY_LIMIT + READ_AHEAD_CHUNKS
 SSL_SENDFILE = (sys.platform == "linux" or sys.platform == "linux2")
 
-# pyright: reportPossiblyUnbound=false
+# pyright: reportPossiblyUnboundVariable=false
 
 
 # --- File upload ---
@@ -323,9 +323,11 @@ class Uploader:
                         if attempt < MAX_UPLOAD_RETRIES - 1:
                             await asyncio.sleep(1 * (attempt + 1))
 
-                    raise RuntimeError(f"Failed to upload part {part_number}: {err}")
+                raise RuntimeError(f"Failed to upload part {part_number}: {err}")
             finally:
                 self.memory_semaphore.release()
+                if SSL_SENDFILE and type(file_descriptor) == int:
+                    os.close(file_descriptor)
 
         tasks: list[asyncio.Task[dict[str, Any]]] = []
         with open(file_path, "rb") as f:
