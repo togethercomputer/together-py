@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional, Annotated, cast, get_args
+from typing import Optional, Annotated, Literal, cast, get_args
 from pathlib import Path
+from typing_extensions import TypeAlias
 
 from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
@@ -17,10 +18,14 @@ from together.lib.cli.utils._json_mode import emit_json, is_json_mode, exit_with
 from together.lib.cli.components.check_progress import CheckProgressTracker, should_show_check_progress
 from together.lib.cli.components.upload_progress import upload_file_with_progress
 
+# Evals service is discontinued; keep `eval` off the CLI upload surface even though
+# the generated SDK FilePurpose Literal still includes it for API compatibility.
+CLIFilePurpose: TypeAlias = Literal["fine-tune", "calibration", "batch-api"]
+
 
 async def upload(
     file: Annotated[Path, Parameter(required=True, help="The file to upload")],
-    purpose: Annotated[Optional[FilePurpose], Parameter(help="The purpose of the file")] = "fine-tune",
+    purpose: Annotated[Optional[CLIFilePurpose], Parameter(help="The purpose of the file")] = "fine-tune",
     no_check: Annotated[Optional[bool], Parameter(negative=(), help="Skip checking the file for issues")] = False,
     *,
     config: CLIConfigParameter,
@@ -45,9 +50,9 @@ async def upload(
     try:
         purpose = cast(FilePurpose, purpose)
     except ValueError:
-        allowed = ", ".join(str(item) for item in get_args(FilePurpose))
+        allowed = ", ".join(str(item) for item in get_args(CLIFilePurpose))
         exit_with_message(
-            f"[red]Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}[/red]",
+            f"[red]Invalid purpose '{purpose}'. Must be one of: {get_args(CLIFilePurpose)}[/red]",
             error=f"Invalid purpose '{purpose}'. Must be one of: {allowed}",
             diagnostic="Invalid file purpose",
         )
