@@ -10,7 +10,5 @@ __all__ = ["EvalCreateResponse"]
 
 class EvalCreateResponse(BaseModel):
     status: Optional[Literal["pending"]] = None
-    """Initial status of the job"""
 
     workflow_id: Optional[str] = None
-    """The ID of the created evaluation job"""

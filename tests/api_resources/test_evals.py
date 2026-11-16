@@ -16,6 +16,8 @@ from together.types import (
     EvalStatusResponse,
 )
 
+# pyright: reportDeprecated=false
+
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
 
@@ -25,61 +27,66 @@ class TestEvals:
     @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     def test_method_create(self, client: Together) -> None:
-        eval = client.evals.create(
-            parameters={
-                "input_data_file_path": "file-1234-aefd",
-                "judge": {
-                    "model": "Qwen/Qwen3.5-9B",
-                    "model_source": "serverless",
-                    "system_template": "Imagine you are a helpful assistant",
+        with pytest.warns(DeprecationWarning):
+            eval = client.evals.create(
+                parameters={
+                    "input_data_file_path": "input_data_file_path",
+                    "judge": {
+                        "model": "model",
+                        "model_source": "serverless",
+                        "system_template": "system_template",
+                    },
+                    "labels": ["string", "string"],
+                    "pass_labels": ["string"],
                 },
-                "labels": ["yes", "no"],
-                "pass_labels": ["yes"],
-            },
-            type="classify",
-        )
+                type="classify",
+            )
+
         assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
     @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
-        eval = client.evals.create(
-            parameters={
-                "input_data_file_path": "file-1234-aefd",
-                "judge": {
-                    "model": "Qwen/Qwen3.5-9B",
-                    "model_source": "serverless",
-                    "system_template": "Imagine you are a helpful assistant",
-                    "external_api_token": "external_api_token",
-                    "external_base_url": "external_base_url",
-                    "max_tokens": 8192,
-                    "num_workers": 5,
-                    "temperature": 0,
+        with pytest.warns(DeprecationWarning):
+            eval = client.evals.create(
+                parameters={
+                    "input_data_file_path": "input_data_file_path",
+                    "judge": {
+                        "model": "model",
+                        "model_source": "serverless",
+                        "system_template": "system_template",
+                        "external_api_token": "external_api_token",
+                        "external_base_url": "external_base_url",
+                        "max_tokens": 1,
+                        "num_workers": 1,
+                        "temperature": 0,
+                    },
+                    "labels": ["string", "string"],
+                    "pass_labels": ["string"],
+                    "model_to_evaluate": "string",
                 },
-                "labels": ["yes", "no"],
-                "pass_labels": ["yes"],
-                "model_to_evaluate": "string",
-            },
-            type="classify",
-        )
+                type="classify",
+            )
+
         assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
     @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
-        response = client.evals.with_raw_response.create(
-            parameters={
-                "input_data_file_path": "file-1234-aefd",
-                "judge": {
-                    "model": "Qwen/Qwen3.5-9B",
-                    "model_source": "serverless",
-                    "system_template": "Imagine you are a helpful assistant",
+        with pytest.warns(DeprecationWarning):
+            response = client.evals.with_raw_response.create(
+                parameters={
+                    "input_data_file_path": "input_data_file_path",
+                    "judge": {
+                        "model": "model",
+                        "model_source": "serverless",
+                        "system_template": "system_template",
+                    },
+                    "labels": ["string", "string"],
+                    "pass_labels": ["string"],
                 },
-                "labels": ["yes", "no"],
-                "pass_labels": ["yes"],
-            },
-            type="classify",
-        )
+                type="classify",
+            )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -89,39 +96,43 @@ class TestEvals:
     @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
-        with client.evals.with_streaming_response.create(
-            parameters={
-                "input_data_file_path": "file-1234-aefd",
-                "judge": {
-                    "model": "Qwen/Qwen3.5-9B",
-                    "model_source": "serverless",
-                    "system_template": "Imagine you are a helpful assistant",
+        with pytest.warns(DeprecationWarning):
+            with client.evals.with_streaming_response.create(
+                parameters={
+                    "input_data_file_path": "input_data_file_path",
+                    "judge": {
+                        "model": "model",
+                        "model_source": "serverless",
+                        "system_template": "system_template",
+                    },
+                    "labels": ["string", "string"],
+                    "pass_labels": ["string"],
                 },
-                "labels": ["yes", "no"],
-                "pass_labels": ["yes"],
-            },
-            type="classify",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+                type="classify",
+            ) as response:
+                assert not response.is_closed
+                assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            eval = response.parse()
-            assert_matches_type(EvalCreateResponse, eval, path=["response"])
+                eval = response.parse()
+                assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
     def test_method_retrieve(self, client: Together) -> None:
-        eval = client.evals.retrieve(
-            "id",
-        )
+        with pytest.warns(DeprecationWarning):
+            eval = client.evals.retrieve(
+                "id",
+            )
+
         assert_matches_type(EvaluationJob, eval, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
-        response = client.evals.with_raw_response.retrieve(
-            "id",
-        )
+        with pytest.warns(DeprecationWarning):
+            response = client.evals.with_raw_response.retrieve(
+                "id",
+            )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -130,40 +141,47 @@ class TestEvals:
 
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
-        with client.evals.with_streaming_response.retrieve(
-            "id",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        with pytest.warns(DeprecationWarning):
+            with client.evals.with_streaming_response.retrieve(
+                "id",
+            ) as response:
+                assert not response.is_closed
+                assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            eval = response.parse()
-            assert_matches_type(EvaluationJob, eval, path=["response"])
+                eval = response.parse()
+                assert_matches_type(EvaluationJob, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
     def test_path_params_retrieve(self, client: Together) -> None:
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
-            client.evals.with_raw_response.retrieve(
-                "",
-            )
+        with pytest.warns(DeprecationWarning):
+            with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+                client.evals.with_raw_response.retrieve(
+                    "",
+                )
 
     @parametrize
     def test_method_list(self, client: Together) -> None:
-        eval = client.evals.list()
+        with pytest.warns(DeprecationWarning):
+            eval = client.evals.list()
+
         assert_matches_type(EvalListResponse, eval, path=["response"])
 
     @parametrize
     def test_method_list_with_all_params(self, client: Together) -> None:
-        eval = client.evals.list(
-            limit=0,
-            status="status",
-        )
+        with pytest.warns(DeprecationWarning):
+            eval = client.evals.list(
+                limit=0,
+                status="status",
+            )
+
         assert_matches_type(EvalListResponse, eval, path=["response"])
 
     @parametrize
     def test_raw_response_list(self, client: Together) -> None:
-        response = client.evals.with_raw_response.list()
+        with pytest.warns(DeprecationWarning):
+            response = client.evals.with_raw_response.list()
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -172,27 +190,31 @@ class TestEvals:
 
     @parametrize
     def test_streaming_response_list(self, client: Together) -> None:
-        with client.evals.with_streaming_response.list() as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        with pytest.warns(DeprecationWarning):
+            with client.evals.with_streaming_response.list() as response:
+                assert not response.is_closed
+                assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            eval = response.parse()
-            assert_matches_type(EvalListResponse, eval, path=["response"])
+                eval = response.parse()
+                assert_matches_type(EvalListResponse, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
     def test_method_status(self, client: Together) -> None:
-        eval = client.evals.status(
-            "id",
-        )
+        with pytest.warns(DeprecationWarning):
+            eval = client.evals.status(
+                "id",
+            )
+
         assert_matches_type(EvalStatusResponse, eval, path=["response"])
 
     @parametrize
     def test_raw_response_status(self, client: Together) -> None:
-        response = client.evals.with_raw_response.status(
-            "id",
-        )
+        with pytest.warns(DeprecationWarning):
+            response = client.evals.with_raw_response.status(
+                "id",
+            )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -201,23 +223,25 @@ class TestEvals:
 
     @parametrize
     def test_streaming_response_status(self, client: Together) -> None:
-        with client.evals.with_streaming_response.status(
-            "id",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        with pytest.warns(DeprecationWarning):
+            with client.evals.with_streaming_response.status(
+                "id",
+            ) as response:
+                assert not response.is_closed
+                assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            eval = response.parse()
-            assert_matches_type(EvalStatusResponse, eval, path=["response"])
+                eval = response.parse()
+                assert_matches_type(EvalStatusResponse, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
     def test_path_params_status(self, client: Together) -> None:
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
-            client.evals.with_raw_response.status(
-                "",
-            )
+        with pytest.warns(DeprecationWarning):
+            with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+                client.evals.with_raw_response.status(
+                    "",
+                )
 
 
 class TestAsyncEvals:
@@ -228,61 +252,66 @@ class TestAsyncEvals:
     @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     async def test_method_create(self, async_client: AsyncTogether) -> None:
-        eval = await async_client.evals.create(
-            parameters={
-                "input_data_file_path": "file-1234-aefd",
-                "judge": {
-                    "model": "Qwen/Qwen3.5-9B",
-                    "model_source": "serverless",
-                    "system_template": "Imagine you are a helpful assistant",
+        with pytest.warns(DeprecationWarning):
+            eval = await async_client.evals.create(
+                parameters={
+                    "input_data_file_path": "input_data_file_path",
+                    "judge": {
+                        "model": "model",
+                        "model_source": "serverless",
+                        "system_template": "system_template",
+                    },
+                    "labels": ["string", "string"],
+                    "pass_labels": ["string"],
                 },
-                "labels": ["yes", "no"],
-                "pass_labels": ["yes"],
-            },
-            type="classify",
-        )
+                type="classify",
+            )
+
         assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
     @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
-        eval = await async_client.evals.create(
-            parameters={
-                "input_data_file_path": "file-1234-aefd",
-                "judge": {
-                    "model": "Qwen/Qwen3.5-9B",
-                    "model_source": "serverless",
-                    "system_template": "Imagine you are a helpful assistant",
-                    "external_api_token": "external_api_token",
-                    "external_base_url": "external_base_url",
-                    "max_tokens": 8192,
-                    "num_workers": 5,
-                    "temperature": 0,
+        with pytest.warns(DeprecationWarning):
+            eval = await async_client.evals.create(
+                parameters={
+                    "input_data_file_path": "input_data_file_path",
+                    "judge": {
+                        "model": "model",
+                        "model_source": "serverless",
+                        "system_template": "system_template",
+                        "external_api_token": "external_api_token",
+                        "external_base_url": "external_base_url",
+                        "max_tokens": 1,
+                        "num_workers": 1,
+                        "temperature": 0,
+                    },
+                    "labels": ["string", "string"],
+                    "pass_labels": ["string"],
+                    "model_to_evaluate": "string",
                 },
-                "labels": ["yes", "no"],
-                "pass_labels": ["yes"],
-                "model_to_evaluate": "string",
-            },
-            type="classify",
-        )
+                type="classify",
+            )
+
         assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
     @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
-        response = await async_client.evals.with_raw_response.create(
-            parameters={
-                "input_data_file_path": "file-1234-aefd",
-                "judge": {
-                    "model": "Qwen/Qwen3.5-9B",
-                    "model_source": "serverless",
-                    "system_template": "Imagine you are a helpful assistant",
+        with pytest.warns(DeprecationWarning):
+            response = await async_client.evals.with_raw_response.create(
+                parameters={
+                    "input_data_file_path": "input_data_file_path",
+                    "judge": {
+                        "model": "model",
+                        "model_source": "serverless",
+                        "system_template": "system_template",
+                    },
+                    "labels": ["string", "string"],
+                    "pass_labels": ["string"],
                 },
-                "labels": ["yes", "no"],
-                "pass_labels": ["yes"],
-            },
-            type="classify",
-        )
+                type="classify",
+            )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -292,39 +321,43 @@ class TestAsyncEvals:
     @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
-        async with async_client.evals.with_streaming_response.create(
-            parameters={
-                "input_data_file_path": "file-1234-aefd",
-                "judge": {
-                    "model": "Qwen/Qwen3.5-9B",
-                    "model_source": "serverless",
-                    "system_template": "Imagine you are a helpful assistant",
+        with pytest.warns(DeprecationWarning):
+            async with async_client.evals.with_streaming_response.create(
+                parameters={
+                    "input_data_file_path": "input_data_file_path",
+                    "judge": {
+                        "model": "model",
+                        "model_source": "serverless",
+                        "system_template": "system_template",
+                    },
+                    "labels": ["string", "string"],
+                    "pass_labels": ["string"],
                 },
-                "labels": ["yes", "no"],
-                "pass_labels": ["yes"],
-            },
-            type="classify",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+                type="classify",
+            ) as response:
+                assert not response.is_closed
+                assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            eval = await response.parse()
-            assert_matches_type(EvalCreateResponse, eval, path=["response"])
+                eval = await response.parse()
+                assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
     async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
-        eval = await async_client.evals.retrieve(
-            "id",
-        )
+        with pytest.warns(DeprecationWarning):
+            eval = await async_client.evals.retrieve(
+                "id",
+            )
+
         assert_matches_type(EvaluationJob, eval, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
-        response = await async_client.evals.with_raw_response.retrieve(
-            "id",
-        )
+        with pytest.warns(DeprecationWarning):
+            response = await async_client.evals.with_raw_response.retrieve(
+                "id",
+            )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -333,40 +366,47 @@ class TestAsyncEvals:
 
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
-        async with async_client.evals.with_streaming_response.retrieve(
-            "id",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        with pytest.warns(DeprecationWarning):
+            async with async_client.evals.with_streaming_response.retrieve(
+                "id",
+            ) as response:
+                assert not response.is_closed
+                assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            eval = await response.parse()
-            assert_matches_type(EvaluationJob, eval, path=["response"])
+                eval = await response.parse()
+                assert_matches_type(EvaluationJob, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
     async def test_path_params_retrieve(self, async_client: AsyncTogether) -> None:
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
-            await async_client.evals.with_raw_response.retrieve(
-                "",
-            )
+        with pytest.warns(DeprecationWarning):
+            with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+                await async_client.evals.with_raw_response.retrieve(
+                    "",
+                )
 
     @parametrize
     async def test_method_list(self, async_client: AsyncTogether) -> None:
-        eval = await async_client.evals.list()
+        with pytest.warns(DeprecationWarning):
+            eval = await async_client.evals.list()
+
         assert_matches_type(EvalListResponse, eval, path=["response"])
 
     @parametrize
     async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
-        eval = await async_client.evals.list(
-            limit=0,
-            status="status",
-        )
+        with pytest.warns(DeprecationWarning):
+            eval = await async_client.evals.list(
+                limit=0,
+                status="status",
+            )
+
         assert_matches_type(EvalListResponse, eval, path=["response"])
 
     @parametrize
     async def test_raw_response_list(self, async_client: AsyncTogether) -> None:
-        response = await async_client.evals.with_raw_response.list()
+        with pytest.warns(DeprecationWarning):
+            response = await async_client.evals.with_raw_response.list()
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -375,27 +415,31 @@ class TestAsyncEvals:
 
     @parametrize
     async def test_streaming_response_list(self, async_client: AsyncTogether) -> None:
-        async with async_client.evals.with_streaming_response.list() as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        with pytest.warns(DeprecationWarning):
+            async with async_client.evals.with_streaming_response.list() as response:
+                assert not response.is_closed
+                assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            eval = await response.parse()
-            assert_matches_type(EvalListResponse, eval, path=["response"])
+                eval = await response.parse()
+                assert_matches_type(EvalListResponse, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
     async def test_method_status(self, async_client: AsyncTogether) -> None:
-        eval = await async_client.evals.status(
-            "id",
-        )
+        with pytest.warns(DeprecationWarning):
+            eval = await async_client.evals.status(
+                "id",
+            )
+
         assert_matches_type(EvalStatusResponse, eval, path=["response"])
 
     @parametrize
     async def test_raw_response_status(self, async_client: AsyncTogether) -> None:
-        response = await async_client.evals.with_raw_response.status(
-            "id",
-        )
+        with pytest.warns(DeprecationWarning):
+            response = await async_client.evals.with_raw_response.status(
+                "id",
+            )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -404,20 +448,22 @@ class TestAsyncEvals:
 
     @parametrize
     async def test_streaming_response_status(self, async_client: AsyncTogether) -> None:
-        async with async_client.evals.with_streaming_response.status(
-            "id",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        with pytest.warns(DeprecationWarning):
+            async with async_client.evals.with_streaming_response.status(
+                "id",
+            ) as response:
+                assert not response.is_closed
+                assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            eval = await response.parse()
-            assert_matches_type(EvalStatusResponse, eval, path=["response"])
+                eval = await response.parse()
+                assert_matches_type(EvalStatusResponse, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
     async def test_path_params_status(self, async_client: AsyncTogether) -> None:
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
-            await async_client.evals.with_raw_response.status(
-                "",
-            )
+        with pytest.warns(DeprecationWarning):
+            with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+                await async_client.evals.with_raw_response.status(
+                    "",
+                )

@@ -9,7 +9,5 @@ __all__ = ["EvalListParams"]
 
 class EvalListParams(TypedDict, total=False):
     limit: int
-    """Limit the number of results"""
 
     status: str
-    """Filter evaluation jobs by status"""

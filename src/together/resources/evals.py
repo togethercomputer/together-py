@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import typing_extensions
 from typing_extensions import Literal
 
 import httpx
@@ -46,6 +47,7 @@ class EvalsResource(SyncAPIResource):
         """
         return EvalsResourceWithStreamingResponse(self)
 
+    @typing_extensions.deprecated("deprecated")
     def create(
         self,
         *,
@@ -59,13 +61,7 @@ class EvalsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalCreateResponse:
         """
-        Create an evaluation job
-
         Args:
-          parameters: Type-specific parameters for the evaluation
-
-          type: The type of evaluation to perform
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -89,6 +85,7 @@ class EvalsResource(SyncAPIResource):
             cast_to=EvalCreateResponse,
         )
 
+    @typing_extensions.deprecated("deprecated")
     def retrieve(
         self,
         id: str,
@@ -101,11 +98,7 @@ class EvalsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvaluationJob:
         """
-        Get evaluation job details
-
         Args:
-          id: The ID of the evaluation job to retrieve
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -124,6 +117,7 @@ class EvalsResource(SyncAPIResource):
             cast_to=EvaluationJob,
         )
 
+    @typing_extensions.deprecated("deprecated")
     def list(
         self,
         *,
@@ -137,13 +131,7 @@ class EvalsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalListResponse:
         """
-        Get all evaluation jobs
-
         Args:
-          limit: Limit the number of results
-
-          status: Filter evaluation jobs by status
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -170,6 +158,7 @@ class EvalsResource(SyncAPIResource):
             cast_to=EvalListResponse,
         )
 
+    @typing_extensions.deprecated("deprecated")
     def status(
         self,
         id: str,
@@ -182,11 +171,7 @@ class EvalsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalStatusResponse:
         """
-        Get evaluation job status and results
-
         Args:
-          id: The ID of the evaluation job to get the status of
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -226,6 +211,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         """
         return AsyncEvalsResourceWithStreamingResponse(self)
 
+    @typing_extensions.deprecated("deprecated")
     async def create(
         self,
         *,
@@ -239,13 +225,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalCreateResponse:
         """
-        Create an evaluation job
-
         Args:
-          parameters: Type-specific parameters for the evaluation
-
-          type: The type of evaluation to perform
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -269,6 +249,7 @@ class AsyncEvalsResource(AsyncAPIResource):
             cast_to=EvalCreateResponse,
         )
 
+    @typing_extensions.deprecated("deprecated")
     async def retrieve(
         self,
         id: str,
@@ -281,11 +262,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvaluationJob:
         """
-        Get evaluation job details
-
         Args:
-          id: The ID of the evaluation job to retrieve
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -304,6 +281,7 @@ class AsyncEvalsResource(AsyncAPIResource):
             cast_to=EvaluationJob,
         )
 
+    @typing_extensions.deprecated("deprecated")
     async def list(
         self,
         *,
@@ -317,13 +295,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalListResponse:
         """
-        Get all evaluation jobs
-
         Args:
-          limit: Limit the number of results
-
-          status: Filter evaluation jobs by status
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -350,6 +322,7 @@ class AsyncEvalsResource(AsyncAPIResource):
             cast_to=EvalListResponse,
         )
 
+    @typing_extensions.deprecated("deprecated")
     async def status(
         self,
         id: str,
@@ -362,11 +335,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalStatusResponse:
         """
-        Get evaluation job status and results
-
         Args:
-          id: The ID of the evaluation job to get the status of
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -390,17 +359,25 @@ class EvalsResourceWithRawResponse:
     def __init__(self, evals: EvalsResource) -> None:
         self._evals = evals
 
-        self.create = to_raw_response_wrapper(
-            evals.create,
+        self.create = (  # pyright: ignore[reportDeprecated]
+            to_raw_response_wrapper(
+                evals.create,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.retrieve = to_raw_response_wrapper(
-            evals.retrieve,
+        self.retrieve = (  # pyright: ignore[reportDeprecated]
+            to_raw_response_wrapper(
+                evals.retrieve,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.list = to_raw_response_wrapper(
-            evals.list,
+        self.list = (  # pyright: ignore[reportDeprecated]
+            to_raw_response_wrapper(
+                evals.list,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.status = to_raw_response_wrapper(
-            evals.status,
+        self.status = (  # pyright: ignore[reportDeprecated]
+            to_raw_response_wrapper(
+                evals.status,  # pyright: ignore[reportDeprecated],
+            )
         )
 
 
@@ -408,17 +385,25 @@ class AsyncEvalsResourceWithRawResponse:
     def __init__(self, evals: AsyncEvalsResource) -> None:
         self._evals = evals
 
-        self.create = async_to_raw_response_wrapper(
-            evals.create,
+        self.create = (  # pyright: ignore[reportDeprecated]
+            async_to_raw_response_wrapper(
+                evals.create,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.retrieve = async_to_raw_response_wrapper(
-            evals.retrieve,
+        self.retrieve = (  # pyright: ignore[reportDeprecated]
+            async_to_raw_response_wrapper(
+                evals.retrieve,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.list = async_to_raw_response_wrapper(
-            evals.list,
+        self.list = (  # pyright: ignore[reportDeprecated]
+            async_to_raw_response_wrapper(
+                evals.list,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.status = async_to_raw_response_wrapper(
-            evals.status,
+        self.status = (  # pyright: ignore[reportDeprecated]
+            async_to_raw_response_wrapper(
+                evals.status,  # pyright: ignore[reportDeprecated],
+            )
         )
 
 
@@ -426,17 +411,25 @@ class EvalsResourceWithStreamingResponse:
     def __init__(self, evals: EvalsResource) -> None:
         self._evals = evals
 
-        self.create = to_streamed_response_wrapper(
-            evals.create,
+        self.create = (  # pyright: ignore[reportDeprecated]
+            to_streamed_response_wrapper(
+                evals.create,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.retrieve = to_streamed_response_wrapper(
-            evals.retrieve,
+        self.retrieve = (  # pyright: ignore[reportDeprecated]
+            to_streamed_response_wrapper(
+                evals.retrieve,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.list = to_streamed_response_wrapper(
-            evals.list,
+        self.list = (  # pyright: ignore[reportDeprecated]
+            to_streamed_response_wrapper(
+                evals.list,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.status = to_streamed_response_wrapper(
-            evals.status,
+        self.status = (  # pyright: ignore[reportDeprecated]
+            to_streamed_response_wrapper(
+                evals.status,  # pyright: ignore[reportDeprecated],
+            )
         )
 
 
@@ -444,15 +437,23 @@ class AsyncEvalsResourceWithStreamingResponse:
     def __init__(self, evals: AsyncEvalsResource) -> None:
         self._evals = evals
 
-        self.create = async_to_streamed_response_wrapper(
-            evals.create,
+        self.create = (  # pyright: ignore[reportDeprecated]
+            async_to_streamed_response_wrapper(
+                evals.create,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.retrieve = async_to_streamed_response_wrapper(
-            evals.retrieve,
+        self.retrieve = (  # pyright: ignore[reportDeprecated]
+            async_to_streamed_response_wrapper(
+                evals.retrieve,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.list = async_to_streamed_response_wrapper(
-            evals.list,
+        self.list = (  # pyright: ignore[reportDeprecated]
+            async_to_streamed_response_wrapper(
+                evals.list,  # pyright: ignore[reportDeprecated],
+            )
         )
-        self.status = async_to_streamed_response_wrapper(
-            evals.status,
+        self.status = (  # pyright: ignore[reportDeprecated]
+            async_to_streamed_response_wrapper(
+                evals.status,  # pyright: ignore[reportDeprecated],
+            )
         )
