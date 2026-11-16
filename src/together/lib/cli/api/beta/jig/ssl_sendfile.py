@@ -58,7 +58,7 @@ def _fn(
 ) -> Callable[..., Any]:
     f = getattr(lib, name)
     f.argtypes, f.restype = argtypes, restype
-    return f
+    return f # type: ignore
 
 
 _ERR_get = _fn(_libcrypto, "ERR_get_error", [], c_ulong)
@@ -168,7 +168,7 @@ def _make_ssl_ctx() -> int:
         assert _CTX_ciphers(
             ctx, b"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"
         ), _ssl_errors()
-    return ctx
+    return ctx # type: ignore
 
 
 _shared_ctx = _make_ssl_ctx()
@@ -306,7 +306,7 @@ class Connection:
         while True:
             ret = _SSL_read(ssl, buf, n)
             if ret > 0:
-                trace(f"read: {buf.raw[:ret]}")
+                trace(f"read: {buf.raw!r}")
                 return buf.raw[:ret]
             err = _SSL_get_error(ssl, ret)
             if err in (ERR_ZERO, ERR_SYSCALL):
@@ -391,7 +391,7 @@ class Connection:
         self._sendfile(fd, offset, size)
         status, headers, body = self._read_response()
         if not (200 <= status < 300):
-            raise Exception(f"Unexpected HTTP status code {status} for https://{target}, size {size}: {headers} {body}")  # noqa: TRY002
+            raise Exception(f"Unexpected HTTP status code {status} for https://{target}, size {size}: {headers} {body!r}")  # noqa: TRY002
         return [status, headers, body]
 
 
