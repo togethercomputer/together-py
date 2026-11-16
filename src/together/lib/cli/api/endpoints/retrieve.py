@@ -230,14 +230,17 @@ async def render_deployments(endpoint: Endpoint, *, config: CLIConfigParameter) 
                 for deployment in deployments
             )
         ),
-        asyncio.gather(*(_load_adapter_names(config, endpoint.id, deployment.id) for deployment in deployments)),
+        asyncio.gather(*(_load_adapters(config, endpoint.id, deployment.id) for deployment in deployments)),
     )
     for i, (deployment, model, adapters) in enumerate(zip(deployments, model_names, adapter_names)):
         name = deployment.name.split("/")[-1]
 
         replicas = f"{deployment.ready_replicas or 0} / {deployment.desired_replicas or 0}"
         estimated_traffic = format_estimated_traffic(deployment.estimated_effective_traffic_share)
-        adapter_lines = "".join(f"\n[dim]  Adapter: {escape_rich_markup(adapter)}[/dim]" for adapter in adapters)
+        adapter_lines = "".join(
+            f"\n[dim]  Adapter: {escape_rich_markup(adapter_name)}[/dim] {format_adapter_serving_state(serving_state)}"
+            for adapter_name, serving_state in adapters
+        )
 
         deployments_table.add_row(
             f"Name: {name}\n[dim]  ID: {deployment.id}[/dim]{adapter_lines}",
@@ -250,20 +253,21 @@ async def render_deployments(endpoint: Endpoint, *, config: CLIConfigParameter) 
     console.print(Padding(deployments_table, (0, 0)))
 
 
-async def _load_adapter_names(config: CLIConfigParameter, endpoint_id: str, deployment_id: str) -> list[str]:
-    """Display names of adapters attached to a deployment; empty when they cannot be listed."""
+async def _load_adapters(
+    config: CLIConfigParameter, endpoint_id: str, deployment_id: str
+) -> list[tuple[str, str | None]]:
+    """(display name, serving state) of adapters attached to a deployment; empty when they cannot be listed."""
     try:
         adapters = [adapter async for adapter in config.client.endpoints.adapters.list(endpoint_id, deployment_id)]
     except APIError:
         return []
-    return list(
-        await asyncio.gather(
-            *(
-                resolve_model_display_name(config, adapter.adapter_model, fallback=adapter.adapter_model_id)
-                for adapter in adapters
-            )
+    names = await asyncio.gather(
+        *(
+            resolve_model_display_name(config, adapter.adapter_model, fallback=adapter.adapter_model_id)
+            for adapter in adapters
         )
     )
+    return [(name, adapter.serving_state) for name, adapter in zip(names, adapters)]
 
 
 traffic_split_colors = [
@@ -588,6 +592,20 @@ _DEPLOYMENT_STATE_LABELS = {
 
 def format_deployment_state(state: str) -> str:
     return _DEPLOYMENT_STATE_LABELS.get(state, state)
+
+
+_ADAPTER_SERVING_STATE_LABELS = {
+    "ADAPTER_SERVING_STATE_INACTIVE": "[dim]Inactive[/dim]",
+    "ADAPTER_SERVING_STATE_LOADING": "[blue]Loading[/blue]",
+    "ADAPTER_SERVING_STATE_READY": "[green]Ready[/green]",
+    "ADAPTER_SERVING_STATE_FAILED": "[red]Failed[/red]",
+}
+
+
+def format_adapter_serving_state(state: str | None) -> str:
+    if state is None:
+        return ""
+    return _ADAPTER_SERVING_STATE_LABELS.get(state, state)
 
 
 def format_estimated_traffic(share: float | None) -> str:
