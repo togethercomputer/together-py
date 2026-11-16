@@ -220,6 +220,8 @@ class DeployConfig:
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
     model_mounts: list[ModelMount] = field(default_factory=list[ModelMount])
     image: Optional[str] = None
+    placement_group: Optional[str] = None
+    regions: Optional[list[str]] = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
@@ -997,6 +999,11 @@ class Jig:
 
         if self.config.deploy.health_check_path:
             deploy_data["health_check_path"] = self.config.deploy.health_check_path
+        # None means "not configured" and is omitted so update leaves the server value alone; "" and [] clear it.
+        if self.config.deploy.placement_group is not None:
+            deploy_data["placement_group"] = self.config.deploy.placement_group
+        if self.config.deploy.regions is not None:
+            deploy_data["regions"] = self.config.deploy.regions
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
@@ -1249,6 +1256,10 @@ Configuration:""")
             lines.append(f"  Args: {d.args}")
         if d.port != 8000:
             lines.append(f"  Port: {d.port}")
+        if d.placement_group:
+            lines.append(f"  Placement Group: {d.placement_group}")
+        if d.regions:
+            lines.append(f"  Regions: {', '.join(d.regions)}")
         if d.health_check_path:
             lines.append(f"  Health Check Path: {d.health_check_path}")
 
