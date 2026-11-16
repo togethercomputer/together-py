@@ -1044,6 +1044,7 @@ evals_app.command((f"{_CLI}.evals.create:create"), alias="-c")
 evals_app.command((f"{_CLI}.evals.list:list"), alias="ls")
 evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), alias="get")
 evals_app.command((f"{_CLI}.evals.status:status"))
+evals_app.default(evals_app["retrieve"].default_command)
 
 ## Batches API commands
 batches_app = app.command(App(name="batches", help="Submit and manage batch jobs", help_epilogue=BATCHES_HELP_EXAMPLES))
