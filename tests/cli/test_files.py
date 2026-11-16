@@ -273,13 +273,13 @@ class TestFilesUpload:
         failed = [call.args[1] for call in track_cli.call_args_list if call.args[0] is CliTrackingEvents.CommandFailed]
         assert failed[0]["error"] == "File validation failed"
 
-    def test_upload_eval_jsonl_trailing_blank_passes_check(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+    def test_upload_jsonl_trailing_blank_passes_check(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         f = tmp_path / "data.jsonl"
         f.write_text('{"text": "hello"}\n{"text": "world"}\n\n')
-        uploaded = _file_response(id="uploaded-id", purpose="eval")
+        uploaded = _file_response(id="uploaded-id", purpose="fine-tune")
         with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
             upload_mock.return_value = uploaded
-            result = cli_runner.invoke(["files", "upload", str(f), "--purpose", "eval"])
+            result = cli_runner.invoke(["files", "upload", str(f), "--purpose", "fine-tune"])
         assert result.exit_code == 0
         upload_mock.assert_called_once()
         assert "uploaded-id" in result.output

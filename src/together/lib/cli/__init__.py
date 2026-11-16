@@ -45,7 +45,6 @@ from together.lib.cli.utils._cli_extras import inform_cli_extras_tip
 from together.lib.cli.utils._completion import _is_agent_or_ci, install_completion
 from together.lib.cli.utils._help_examples import (
     JIG_HELP_EXAMPLES,
-    EVALS_HELP_EXAMPLES,
     FILES_HELP_EXAMPLES,
     MODELS_HELP_EXAMPLES,
     BATCHES_HELP_EXAMPLES,
@@ -66,7 +65,6 @@ from together.lib.cli.utils._help_examples import (
     ENDPOINTS_AB_HELP_EXAMPLES,
     ENDPOINTS_LS_HELP_EXAMPLES,
     ENDPOINTS_RM_HELP_EXAMPLES,
-    EVALS_CREATE_HELP_EXAMPLES,
     FILES_UPLOAD_HELP_EXAMPLES,
     TRAINING_FP4_HELP_EXAMPLES,
     ENDPOINTS_GET_HELP_EXAMPLES,
@@ -722,7 +720,7 @@ _CLI = "together.lib.cli.api"
 files_app = app.command(App(name="files", help="Upload and manage files", help_epilogue=FILES_HELP_EXAMPLES))
 files_app.command(
     f"{_CLI}.files.upload:upload",
-    help="Upload a file for fine-tuning, evals, or inference",
+    help="Upload a file for fine-tuning, calibration, or batch API",
     help_epilogue=FILES_UPLOAD_HELP_EXAMPLES,
 )
 files_app.command(f"{_CLI}.files.list:list", alias="ls", help="List your files")
@@ -1038,14 +1036,15 @@ endpoints_app.command(
     sort_key=9999,
 )
 
-## Evals API commands
-evals_app = app.command(App(name="evals", help="Run and manage model evaluations", help_epilogue=EVALS_HELP_EXAMPLES))
-evals_app.command(
-    (f"{_CLI}.evals.create:create"), alias="-c", help="Create a new eval job", help_epilogue=EVALS_CREATE_HELP_EXAMPLES
-)
-evals_app.command((f"{_CLI}.evals.list:list"), alias="ls", help="List eval jobs")
-evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), alias="get", help="Get eval job details")
-evals_app.command((f"{_CLI}.evals.status:status"), help="Get an eval job's status")
+## Evals API commands (discontinued — kept registered but hidden)
+evals_root_app = App(name="evals", help="Service discontinued")
+evals_root_app.show = False
+evals_app = app.command(evals_root_app)
+evals_app.command((f"{_CLI}.evals.create:create"), alias="-c")
+evals_app.command((f"{_CLI}.evals.list:list"), alias="ls")
+evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), alias="get")
+evals_app.command((f"{_CLI}.evals.status:status"))
+evals_app.default(evals_app["retrieve"].default_command)
 
 ## Batches API commands
 batches_app = app.command(App(name="batches", help="Submit and manage batch jobs", help_epilogue=BATCHES_HELP_EXAMPLES))
