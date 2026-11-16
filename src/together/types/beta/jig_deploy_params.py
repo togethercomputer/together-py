@@ -110,10 +110,25 @@ class JigDeployParams(TypedDict, total=False):
     At most one mount is supported, and it cannot be used with volumes.
     """
 
+    placement_group: str
+    """
+    PlacementGroup co-locates deployments that share this value onto one cluster, so
+    in-cluster traffic between them stays local. A member that cannot co-locate
+    stays pending. Leave empty for no group
+    """
+
     port: int
     """
     Port is the container port your application listens on (e.g., 8080 for web
     servers). Required if your application serves traffic
+    """
+
+    regions: SequenceNotStr[str]
+    """Regions confines the deployment to clusters in these regions.
+
+    Each entry is an exact region or a prefix family like "us-east" that matches
+    every "us-east-\\**". A deployment that cannot place in any of them stays pending.
+    Empty means any region
     """
 
     storage: int

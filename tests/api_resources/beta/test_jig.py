@@ -104,7 +104,9 @@ class TestJig:
                 }
             ],
             name="x",
+            placement_group="placement_group",
             port=1,
+            regions=["string"],
             storage=400,
             termination_grace_period_seconds=0,
             volumes=[
@@ -217,7 +219,9 @@ class TestJig:
                     "revision_id": "rv_8kQ2mN4pL7xR9tV1wY3zA",
                 }
             ],
+            placement_group="placement_group",
             port=1,
+            regions=["string"],
             storage=400,
             termination_grace_period_seconds=0,
             volumes=[
@@ -568,7 +572,9 @@ class TestAsyncJig:
                 }
             ],
             name="x",
+            placement_group="placement_group",
             port=1,
+            regions=["string"],
             storage=400,
             termination_grace_period_seconds=0,
             volumes=[
@@ -681,7 +687,9 @@ class TestAsyncJig:
                     "revision_id": "rv_8kQ2mN4pL7xR9tV1wY3zA",
                 }
             ],
+            placement_group="placement_group",
             port=1,
+            regions=["string"],
             storage=400,
             termination_grace_period_seconds=0,
             volumes=[

@@ -145,7 +145,9 @@ class JigResource(SyncAPIResource):
         min_replicas: int | Omit = omit,
         model_mounts: Iterable[jig_update_params.ModelMount] | Omit = omit,
         name: str | Omit = omit,
+        placement_group: str | Omit = omit,
         port: int | Omit = omit,
+        regions: SequenceNotStr[str] | Omit = omit,
         storage: int | Omit = omit,
         termination_grace_period_seconds: int | Omit = omit,
         volumes: Iterable[jig_update_params.Volume] | Omit = omit,
@@ -204,8 +206,16 @@ class JigResource(SyncAPIResource):
           name: Name is the new unique identifier for your deployment. Must contain only
               alphanumeric characters, underscores, or hyphens (1-100 characters)
 
+          placement_group: PlacementGroup co-locates deployments that share this value onto one cluster. A
+              member that cannot co-locate stays pending. Send an empty string to clear the
+              group; omit to leave it unchanged
+
           port: Port is the container port your application listens on (e.g., 8080 for web
               servers)
+
+          regions: Regions confines the deployment to clusters in these regions (exact region or a
+              prefix family like "us-east"). Send an empty array to clear the region pin; omit
+              to leave it unchanged
 
           storage: Storage is the amount of ephemeral disk storage to allocate per container
               instance (e.g., 10 = 10GiB)
@@ -246,7 +256,9 @@ class JigResource(SyncAPIResource):
                     "min_replicas": min_replicas,
                     "model_mounts": model_mounts,
                     "name": name,
+                    "placement_group": placement_group,
                     "port": port,
+                    "regions": regions,
                     "storage": storage,
                     "termination_grace_period_seconds": termination_grace_period_seconds,
                     "volumes": volumes,
@@ -297,7 +309,9 @@ class JigResource(SyncAPIResource):
         memory: float | Omit = omit,
         min_replicas: int | Omit = omit,
         model_mounts: Iterable[jig_deploy_params.ModelMount] | Omit = omit,
+        placement_group: str | Omit = omit,
         port: int | Omit = omit,
+        regions: SequenceNotStr[str] | Omit = omit,
         storage: int | Omit = omit,
         termination_grace_period_seconds: int | Omit = omit,
         volumes: Iterable[jig_deploy_params.Volume] | Omit = omit,
@@ -360,8 +374,17 @@ class JigResource(SyncAPIResource):
           model_mounts: Model weights to preload from Together's model registry into the container. At
               most one mount is supported, and it cannot be used with volumes.
 
+          placement_group: PlacementGroup co-locates deployments that share this value onto one cluster, so
+              in-cluster traffic between them stays local. A member that cannot co-locate
+              stays pending. Leave empty for no group
+
           port: Port is the container port your application listens on (e.g., 8080 for web
               servers). Required if your application serves traffic
+
+          regions: Regions confines the deployment to clusters in these regions. Each entry is an
+              exact region or a prefix family like "us-east" that matches every "us-east-\\**".
+              A deployment that cannot place in any of them stays pending. Empty means any
+              region
 
           storage: Storage is the amount of ephemeral disk storage to allocate per container
               instance (e.g., 10 = 10GiB)
@@ -400,7 +423,9 @@ class JigResource(SyncAPIResource):
                     "memory": memory,
                     "min_replicas": min_replicas,
                     "model_mounts": model_mounts,
+                    "placement_group": placement_group,
                     "port": port,
+                    "regions": regions,
                     "storage": storage,
                     "termination_grace_period_seconds": termination_grace_period_seconds,
                     "volumes": volumes,
@@ -738,7 +763,9 @@ class AsyncJigResource(AsyncAPIResource):
         min_replicas: int | Omit = omit,
         model_mounts: Iterable[jig_update_params.ModelMount] | Omit = omit,
         name: str | Omit = omit,
+        placement_group: str | Omit = omit,
         port: int | Omit = omit,
+        regions: SequenceNotStr[str] | Omit = omit,
         storage: int | Omit = omit,
         termination_grace_period_seconds: int | Omit = omit,
         volumes: Iterable[jig_update_params.Volume] | Omit = omit,
@@ -797,8 +824,16 @@ class AsyncJigResource(AsyncAPIResource):
           name: Name is the new unique identifier for your deployment. Must contain only
               alphanumeric characters, underscores, or hyphens (1-100 characters)
 
+          placement_group: PlacementGroup co-locates deployments that share this value onto one cluster. A
+              member that cannot co-locate stays pending. Send an empty string to clear the
+              group; omit to leave it unchanged
+
           port: Port is the container port your application listens on (e.g., 8080 for web
               servers)
+
+          regions: Regions confines the deployment to clusters in these regions (exact region or a
+              prefix family like "us-east"). Send an empty array to clear the region pin; omit
+              to leave it unchanged
 
           storage: Storage is the amount of ephemeral disk storage to allocate per container
               instance (e.g., 10 = 10GiB)
@@ -839,7 +874,9 @@ class AsyncJigResource(AsyncAPIResource):
                     "min_replicas": min_replicas,
                     "model_mounts": model_mounts,
                     "name": name,
+                    "placement_group": placement_group,
                     "port": port,
+                    "regions": regions,
                     "storage": storage,
                     "termination_grace_period_seconds": termination_grace_period_seconds,
                     "volumes": volumes,
@@ -890,7 +927,9 @@ class AsyncJigResource(AsyncAPIResource):
         memory: float | Omit = omit,
         min_replicas: int | Omit = omit,
         model_mounts: Iterable[jig_deploy_params.ModelMount] | Omit = omit,
+        placement_group: str | Omit = omit,
         port: int | Omit = omit,
+        regions: SequenceNotStr[str] | Omit = omit,
         storage: int | Omit = omit,
         termination_grace_period_seconds: int | Omit = omit,
         volumes: Iterable[jig_deploy_params.Volume] | Omit = omit,
@@ -953,8 +992,17 @@ class AsyncJigResource(AsyncAPIResource):
           model_mounts: Model weights to preload from Together's model registry into the container. At
               most one mount is supported, and it cannot be used with volumes.
 
+          placement_group: PlacementGroup co-locates deployments that share this value onto one cluster, so
+              in-cluster traffic between them stays local. A member that cannot co-locate
+              stays pending. Leave empty for no group
+
           port: Port is the container port your application listens on (e.g., 8080 for web
               servers). Required if your application serves traffic
+
+          regions: Regions confines the deployment to clusters in these regions. Each entry is an
+              exact region or a prefix family like "us-east" that matches every "us-east-\\**".
+              A deployment that cannot place in any of them stays pending. Empty means any
+              region
 
           storage: Storage is the amount of ephemeral disk storage to allocate per container
               instance (e.g., 10 = 10GiB)
@@ -993,7 +1041,9 @@ class AsyncJigResource(AsyncAPIResource):
                     "memory": memory,
                     "min_replicas": min_replicas,
                     "model_mounts": model_mounts,
+                    "placement_group": placement_group,
                     "port": port,
+                    "regions": regions,
                     "storage": storage,
                     "termination_grace_period_seconds": termination_grace_period_seconds,
                     "volumes": volumes,

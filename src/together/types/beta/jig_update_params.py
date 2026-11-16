@@ -97,10 +97,24 @@ class JigUpdateParams(TypedDict, total=False):
     characters)
     """
 
+    placement_group: str
+    """PlacementGroup co-locates deployments that share this value onto one cluster.
+
+    A member that cannot co-locate stays pending. Send an empty string to clear the
+    group; omit to leave it unchanged
+    """
+
     port: int
     """
     Port is the container port your application listens on (e.g., 8080 for web
     servers)
+    """
+
+    regions: SequenceNotStr[str]
+    """
+    Regions confines the deployment to clusters in these regions (exact region or a
+    prefix family like "us-east"). Send an empty array to clear the region pin; omit
+    to leave it unchanged
     """
 
     storage: int

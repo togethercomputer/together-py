@@ -180,5 +180,17 @@ class DeploymentRevision(BaseModel):
     autoscaling: Optional[Autoscaling] = None
     """Autoscaling configuration captured for this revision."""
 
+    placement_group: Optional[str] = None
+    """Placement group this revision co-locates into.
+
+    Empty when the revision is not in a group.
+    """
+
+    regions: Optional[List[str]] = None
+    """
+    Regions this revision is confined to (exact region or a prefix family like
+    "us-east"). Empty means any region.
+    """
+
     termination_grace_period_seconds: Optional[int] = None
     """Seconds to wait for graceful shutdown before forcefully terminating a replica."""

@@ -257,11 +257,23 @@ class Deployment(BaseModel):
     object: Optional[Literal["deployment"]] = None
     """The object type, which is always `deployment`."""
 
+    placement_group: Optional[str] = None
+    """PlacementGroup co-locates deployments that share this value onto one cluster.
+
+    Empty when the deployment is not in a group
+    """
+
     port: Optional[int] = None
     """Port is the container port that the deployment exposes"""
 
     ready_replicas: Optional[int] = None
     """ReadyReplicas is the current number of replicas that are in the Ready state"""
+
+    regions: Optional[List[str]] = None
+    """
+    Regions confines the deployment to clusters in these regions (exact region or a
+    prefix family like "us-east"). Empty means any region
+    """
 
     replica_events: Optional[Dict[str, ReplicaEvents]] = None
     """ReplicaEvents is a mapping of replica names or IDs to their status events"""
