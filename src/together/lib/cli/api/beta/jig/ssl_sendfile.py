@@ -1,4 +1,3 @@
-
 # /// script
 # requires-python = ">=3.14"
 # ///
@@ -38,9 +37,9 @@ WORKERS = int(os.environ.get("WORKERS", min(len(os.sched_getaffinity(0)) * 2, 25
 PARTS_MULT = int(os.environ.get("PARTS", "4"))  # parts = PARTS_MULT * WORKERS
 SO_SNDBUFFORCE = 32
 
-noop = lambda *args: None # pyright: ignore # noqa
-debug = print if os.getenv("DEBUG") else noop # pyright: ignore # noqa
-trace = print if os.getenv("TRACE") else noop # pyright: ignore # noqa
+noop = lambda *args: None  # pyright: ignore # noqa
+debug = print if os.getenv("DEBUG") else noop  # pyright: ignore # noqa
+trace = print if os.getenv("TRACE") else noop  # pyright: ignore # noqa
 
 # --- OpenSSL ctypes ---
 
@@ -53,12 +52,10 @@ KTLS_SEND_CTRL = 73  # BIO_CTRL_GET_KTLS_SEND
 
 
 # def _fn[*Ts, R](lib: CDLL, name: str, argtypes: tuple[*Ts], restype: R = c_int) -> Callable[[*Ts], R]:
-def _fn(
-    lib: CDLL, name: str, argtypes: list[Any], restype: Any = c_int
-) -> Callable[..., Any]:
+def _fn(lib: CDLL, name: str, argtypes: list[Any], restype: Any = c_int) -> Callable[..., Any]:
     f = getattr(lib, name)
     f.argtypes, f.restype = argtypes, restype
-    return f # type: ignore
+    return f  # type: ignore
 
 
 _ERR_get = _fn(_libcrypto, "ERR_get_error", [], c_ulong)
@@ -83,9 +80,7 @@ _SSL_verify = _fn(_libssl, "SSL_get_verify_result", [c_void_p], c_long)
 _SSL_write = _fn(_libssl, "SSL_write", [c_void_p, c_void_p, c_int])
 _SSL_read = _fn(_libssl, "SSL_read", [c_void_p, c_void_p, c_int])
 _SSL_wbio = _fn(_libssl, "SSL_get_wbio", [c_void_p], c_void_p)
-_SSL_sendfile = _fn(
-    _libssl, "SSL_sendfile", [c_void_p, c_int, off_t, c_size_t, c_int], c_ssize_t
-)
+_SSL_sendfile = _fn(_libssl, "SSL_sendfile", [c_void_p, c_int, off_t, c_size_t, c_int], c_ssize_t)
 _SSL_shutdown = _fn(_libssl, "SSL_shutdown", [c_void_p])
 _SSL_get1_session = _fn(_libssl, "SSL_get1_session", [c_void_p], c_void_p)
 _SSL_set_session = _fn(_libssl, "SSL_set_session", [c_void_p, c_void_p])
@@ -132,13 +127,15 @@ def _sock_diag(sock: socket.socket) -> str:
         pass
     try:
         # struct tcp_info: 8 u8 then 24 u32, through tcpi_total_retrans
-        f = struct.unpack(
-            "=8B24I", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 104)[:104]
-        )
+        f = struct.unpack("=8B24I", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 104)[:104])
         out += [
-            f"tcp={_TCP_STATES.get(f[0], f[0])}", f"cwnd={f[26]}",
-            f"unacked={f[12]}", f"lost={f[14]}", f"retrans={f[15]}/{f[31]}",
-            f"rtt={f[23] / 1000:.1f}ms", f"rto={f[8] / 1000:.0f}ms",
+            f"tcp={_TCP_STATES.get(f[0], f[0])}",
+            f"cwnd={f[26]}",
+            f"unacked={f[12]}",
+            f"lost={f[14]}",
+            f"retrans={f[15]}/{f[31]}",
+            f"rtt={f[23] / 1000:.1f}ms",
+            f"rto={f[8] / 1000:.0f}ms",
             f"since_peer_data={f[19]}ms",
         ]
     except (OSError, struct.error):
@@ -162,13 +159,9 @@ def _make_ssl_ctx() -> int:
     _CTX_opts(ctx, 1 << 3)  # SSL_OP_ENABLE_KTLS
     if not os.getenv("NO_TLS12"):
         # TLS 1.2 + AES-128-GCM: hardware TLS offload on ConnectX-5/6
-        _CTX_ctrl(
-            ctx, 124, 0x0303, None
-        )  # SSL_CTRL_SET_MAX_PROTO_VERSION, TLS1_2_VERSION
-        assert _CTX_ciphers(
-            ctx, b"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"
-        ), _ssl_errors()
-    return ctx # type: ignore
+        _CTX_ctrl(ctx, 124, 0x0303, None)  # SSL_CTRL_SET_MAX_PROTO_VERSION, TLS1_2_VERSION
+        assert _CTX_ciphers(ctx, b"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"), _ssl_errors()
+    return ctx  # type: ignore
 
 
 _shared_ctx = _make_ssl_ctx()
@@ -181,12 +174,7 @@ class Connection:
     """Persistent HTTPS/1.1 connection with kTLS for SSL_sendfile."""
 
     def __init__(
-        self,
-        host: str,
-        token: str | None = None,
-        port: int = 443,
-        timeout: float = 30.0,
-        session: int | None = None
+        self, host: str, token: str | None = None, port: int = 443, timeout: float = 30.0, session: int | None = None
     ) -> None:
         self.host = host
         self.timeout = timeout
@@ -201,7 +189,7 @@ class Connection:
         try:
             # forcing a specific buffer size requires sudo or CAP_NET_ADMIN
             sock.setsockopt(socket.SOL_SOCKET, SO_SNDBUFFORCE, want_sndbuf_kb * 1024)
-            print("Force set send buffer to", want_sndbuf_kb, "KB") #noqa
+            print("Force set send buffer to", want_sndbuf_kb, "KB")  # noqa
         except PermissionError:
             # unlike SNDBUFFORCE, SNDBUF is capped to wmem_max (208KB default)
             # setting SNDBUFFORCE also disables autotuning of the send buffer
@@ -214,10 +202,10 @@ class Connection:
             msg = f"Set send buffer: Want {want_sndbuf_kb} KB, write memory max {wmem_max_kb} KB:"
             if wmem_max_kb >= want_sndbuf_kb:
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, want_sndbuf_kb * 1024)
-                print(msg, "OK") #noqa
+                print(msg, "OK")  # noqa
             else:
                 # otherwise leave it alone: autotuning reaches tcp_wmem[2] by itself
-                print(msg, "can't raise send buffer") #noqa
+                print(msg, "can't raise send buffer")  # noqa
         sock.setblocking(False)
 
         ssl = _SSL_new(_shared_ctx)
@@ -257,9 +245,7 @@ class Connection:
             ktls = wbio and _BIO_ctrl(wbio, KTLS_SEND_CTRL, 0, None) > 0
             c = _SSL_get_current_cipher(ssl)
             cipher = _SSL_CIPHER_get_name(c).decode() if c else "unknown"
-            version = (
-                _SSL_get_version(ssl).decode() if _SSL_get_version(ssl) else "unknown"
-            )
+            version = _SSL_get_version(ssl).decode() if _SSL_get_version(ssl) else "unknown"
             if not ktls:
                 raise RuntimeError(
                     f"kTLS not available for {host} (negotiated {version} {cipher}). "
@@ -330,11 +316,15 @@ class Connection:
                 continue
             err = _SSL_get_error(ssl, ret)
             if err == WANT_READ:
-                debug(f"sendfile: WANT_READ: fd={fd}, ret={ret}, sent={sent}, size={size}, calls={calls}, wait={self.timeout}")
+                debug(
+                    f"sendfile: WANT_READ: fd={fd}, ret={ret}, sent={sent}, size={size}, calls={calls}, wait={self.timeout}"
+                )
                 _wait(sock, err, monotonic() + self.timeout)
                 continue
             if err == WANT_WRITE:
-                debug(f"sendfile: WANT_WRITE: fd={fd}, ret={ret}, sent={sent}, size={size}, calls={calls}, wait={self.timeout}")
+                debug(
+                    f"sendfile: WANT_WRITE: fd={fd}, ret={ret}, sent={sent}, size={size}, calls={calls}, wait={self.timeout}"
+                )
                 _wait(sock, err, monotonic() + self.timeout)
                 continue
             diag = _sock_diag(sock)  # capture before _read: reading mutates state
@@ -378,20 +368,24 @@ class Connection:
 
         return status, headers, body
 
-    def put(self, target: str, fd: int, size: int, offset:int = 0, req_headers: dict[str, Any] | None = None) -> list[Any]:
+    def put(
+        self, target: str, fd: int, size: int, offset: int = 0, req_headers: dict[str, Any] | None = None
+    ) -> list[Any]:
         extra = "".join(f"{k}: {v}\r\n" for k, v in (req_headers or {}).items())
-        
+
         if self.token:
             msg = f"PUT {target} HTTP/1.1\r\nhost: {self.host}\r\ncontent-length: {size}\r\nAuthorization: {self.token}\r\n{extra}\r\n"
         else:
             msg = f"PUT {target} HTTP/1.1\r\nhost: {self.host}\r\ncontent-length: {size}\r\n{extra}\r\n"
-        
+
         trace(f"write request: {msg}")
         self._write(msg.encode())
         self._sendfile(fd, offset, size)
         status, headers, body = self._read_response()
         if not (200 <= status < 300):
-            raise Exception(f"Unexpected HTTP status code {status} for https://{target}, size {size}: {headers} {body!r}")  # noqa: TRY002
+            raise Exception(
+                f"Unexpected HTTP status code {status} for https://{target}, size {size}: {headers} {body!r}"
+            )  # noqa: TRY002
         return [status, headers, body]
 
 
@@ -434,7 +428,15 @@ class Pool:
         if c.alive:
             self._q.put(c)
 
-    def put(self, target: str, fd: int, size: int, offset: int = 0, tries: int = 1, req_headers: dict[str, Any] | None = None) -> list[Any]:
+    def put(
+        self,
+        target: str,
+        fd: int,
+        size: int,
+        offset: int = 0,
+        tries: int = 1,
+        req_headers: dict[str, Any] | None = None,
+    ) -> list[Any]:
         """PUT via kTLS + SSL_sendfile with retries. Returns status code."""
         for attempt in range(1, tries + 1):
             c = self._acquire()
@@ -450,6 +452,7 @@ class Pool:
                 time.sleep(0.1 * attempt)
         raise RuntimeError("unreachable")
 
+
 # --- Upload ---
 
 
@@ -464,10 +467,7 @@ class File:
 
     def split(self) -> list[Part]:
         chunk = -(-self.size // self.n_parts)
-        return [
-            Part(i * chunk, min(chunk, self.size - i * chunk), i + 1)
-            for i in range(self.n_parts)
-        ]
+        return [Part(i * chunk, min(chunk, self.size - i * chunk), i + 1) for i in range(self.n_parts)]
 
 
 @dataclass
@@ -499,6 +499,7 @@ def find_files(source: Path, s3_path: str) -> list[File]:
         f.n_parts = max(1, min(f.n_parts, -(-f.size // CHUNK_MIN)))
     return files
 
+
 # --- CLI ---
 
 
@@ -515,7 +516,6 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-
 
     # def presign_put(self, key: str, upload_id: str, part_num: int) -> str:
     #     params = {

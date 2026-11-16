@@ -32,7 +32,7 @@ MAX_UPLOAD_RETRIES = 3
 # How many part-sized chunks to read ahead beyond the in-flight uploads
 READ_AHEAD_CHUNKS = int(os.getenv("TOGETHER_UPLOAD_READ_AHEAD", "10"))
 MAX_IN_MEMORY_CHUNKS = UPLOAD_CONCURRENCY_LIMIT + READ_AHEAD_CHUNKS
-SSL_SENDFILE = (sys.platform == "linux" or sys.platform == "linux2")
+SSL_SENDFILE = sys.platform == "linux" or sys.platform == "linux2"
 
 # pyright: reportPossiblyUnboundVariable=false
 
@@ -196,7 +196,7 @@ class Uploader:
 
             try:
                 if SSL_SENDFILE:
-                    ssl_connection_pool = self.get_pool(urlparse(upload_url).hostname) # pyright: ignore
+                    ssl_connection_pool = self.get_pool(urlparse(upload_url).hostname)  # pyright: ignore
                     file_descriptor = os.open(path=file_path, flags=os.O_RDONLY)
 
                     ssl_connection_pool.put(upload_url, file_descriptor, file_size)
@@ -276,7 +276,7 @@ class Uploader:
             offset = (part_number - 1) * chunk
             part_size = min(chunk, file_size - offset)
 
-            return { "offset": offset, "part_size": part_size }
+            return {"offset": offset, "part_size": part_size}
 
         async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any]:
             err = None
@@ -305,7 +305,14 @@ class Uploader:
                 for attempt in range(MAX_UPLOAD_RETRIES):
                     try:
                         if SSL_SENDFILE:
-                            resp = await asyncio.to_thread(ssl_connection_pool.put, target, file_descriptor, part_size, offset=offset, req_headers=headers)
+                            resp = await asyncio.to_thread(
+                                ssl_connection_pool.put,
+                                target,
+                                file_descriptor,
+                                part_size,
+                                offset=offset,
+                                req_headers=headers,
+                            )
                             etag = resp[1]["etag"].strip('"')
                         else:
                             response = await self.http_client.request(method, url, content=data, headers=headers)
@@ -343,5 +350,3 @@ class Uploader:
 
         completed_parts = await asyncio.gather(*tasks)
         return sorted(completed_parts, key=lambda x: x["part_number"])
-
-
