@@ -1,6 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import List, Optional
+from typing_extensions import Literal
 
 from pydantic import Field as FieldInfo
 
@@ -29,7 +30,24 @@ class AdapterRetrieveResponse(BaseModel):
     """Row-level etag required for UpdateAdapter and RemoveAdapter."""
 
     per_cluster: List[DeploymentAdapterStatus] = FieldInfo(alias="perCluster")
-    """Per-cluster adapter load state reported by the controller."""
+    """
+    Per-cluster adapter load state reported by the controller for the clusters the
+    deployment is placed on. Empty while the deployment is stopped or being torn
+    down, and briefly after AddAdapter.
+    """
+
+    serving_state: Literal[
+        "ADAPTER_SERVING_STATE_INACTIVE",
+        "ADAPTER_SERVING_STATE_LOADING",
+        "ADAPTER_SERVING_STATE_READY",
+        "ADAPTER_SERVING_STATE_FAILED",
+    ] = FieldInfo(alias="servingState")
+    """Whether the adapter can serve requests right now.
+
+    INACTIVE means the deployment is stopped, scaled to zero, or being torn down;
+    LOADING means a placed cluster has not finished loading it; READY means every
+    placed cluster serves it; FAILED means a placed cluster failed to load it.
+    """
 
     adapter_model: Optional[str] = FieldInfo(alias="adapterModel", default=None)
     """
