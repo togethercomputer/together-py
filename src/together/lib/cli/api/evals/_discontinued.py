@@ -8,6 +8,6 @@ _SERVICE_DISCONTINUED = "Service discontinued"
 
 
 async def discontinued(
-    *tokens: Annotated[str, Parameter(show=False, allow_leading_hyphen=True)],
+    *_tokens: Annotated[str, Parameter(show=False, allow_leading_hyphen=True)],
 ) -> None:
     raise Exception(_SERVICE_DISCONTINUED)
