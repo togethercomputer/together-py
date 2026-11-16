@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Literal, Optional, cast
+from typing import List, Literal, Optional, cast
 from typing_extensions import Annotated
 
 from cyclopts import Parameter
@@ -9,6 +9,7 @@ from cyclopts import Parameter
 from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
+from together.types.supported_model import UnitPrice
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
@@ -55,11 +56,13 @@ async def public(
     table.add_primary_column("Model", ratio=3)
     table.add_column("GPUs")
     table.add_column("Parallelism")
+    table.add_column("Unit Prices", ratio=2)
 
     for model in response.data:
+        unit_prices = _format_unit_prices(model.unit_prices)
         profiles = model.deployment_profiles or []
         if not profiles:
-            table.add_row(model.name or model.id or "", "", "", "", "")
+            table.add_row(model.name or model.id or "", "", "", unit_prices)
             continue
 
         for profile in profiles:
@@ -73,12 +76,28 @@ async def public(
                 profile_model,
                 gpu,
                 profile.parallelism or "",
+                unit_prices,
             )
     console.print(table)
 
     if response.next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
         console.print(f"  [dim]-[/dim] [white]tg models public --after {response.next_cursor}[/white]")
+
+
+_UNIT_LABELS = {"PRICING_UNIT_AUDIO_MINUTE": "audio min", "PRICING_UNIT_MILLION_CHARACTERS": "1M chars"}
+
+
+def _format_unit_prices(unit_prices: Optional[List[UnitPrice]]) -> str:
+    return "\n".join(
+        f"${_trim_price(price.price_usd)}/{_UNIT_LABELS.get(price.unit, price.unit)} "
+        f"({price.tier.removeprefix('PRICING_TIER_').lower()})"
+        for price in unit_prices or []
+    )
+
+
+def _trim_price(value: float) -> str:
+    return f"{value:.6f}".rstrip("0").rstrip(".")
 
 
 def _profile_cli_model(profile: object, fallback: str | None = None) -> str:

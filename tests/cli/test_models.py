@@ -374,6 +374,32 @@ class TestBetaModelsPublic:
         assert "TP1" in result.output
         assert "cr_1" not in result.output
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_public_table_shows_unit_prices(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        unit_prices = [
+            {"tier": "PRICING_TIER_STANDARD", "unit": "PRICING_UNIT_AUDIO_MINUTE", "priceUsd": 0.0015},
+            {"tier": "PRICING_TIER_BATCH", "unit": "PRICING_UNIT_MILLION_CHARACTERS", "priceUsd": 4},
+        ]
+        respx_mock.get("/v2/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_supported_model_body(unitPrices=unit_prices)],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["models", "public", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "Unit Prices" in result.output
+        assert "$0.0015/audio" in result.output
+        assert "(standard)" in result.output
+        assert "$4/1M" in result.output
+        assert "(batch)" in result.output
+
 
 class TestBetaModelsOrg:
     @pytest.mark.respx(base_url=base_url)
