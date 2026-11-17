@@ -71,7 +71,7 @@ def test_create_lora_training_client_forwards_seed(monkeypatch: pytest.MonkeyPat
         tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", rank=16, seed=7)
 
     resources.create_session_async.assert_awaited_once_with(lora_config={"rank": 16, "seed": 7})
-    resources.stop_async.assert_awaited_once_with()
+    resources.stop_async.assert_awaited_once_with(force=True)
 
 
 def test_create_lora_training_client_forwards_train_unembed(
@@ -86,7 +86,7 @@ def test_create_lora_training_client_forwards_train_unembed(
         tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", rank=16, train_unembed=False)
 
     resources.create_session_async.assert_awaited_once_with(lora_config={"rank": 16, "train_unembed": False})
-    resources.stop_async.assert_awaited_once_with()
+    resources.stop_async.assert_awaited_once_with(force=True)
 
 
 async def test_create_lora_training_client_async_returns_training_client(
@@ -177,7 +177,7 @@ def test_created_resources_close_with_context_manager(monkeypatch: pytest.Monkey
         assert isinstance(training, tinker_compat.TrainingClient)
 
     session.stop.assert_called_once_with()
-    resources.stop.assert_called_once_with()
+    resources.stop.assert_called_once_with(force=True)
     resources.detach.assert_not_called()
 
 
@@ -245,7 +245,7 @@ def test_stop_on_exit_and_sigterm_translation(
 
     (hook,) = hooks
     hook()
-    model_resources.stop.assert_called_once_with()
+    model_resources.stop.assert_called_once_with(force=True)
     assert "mr-123" in caplog.text
     assert lifecycle.closed is False
 
@@ -290,7 +290,7 @@ def test_failed_explicit_close_can_be_retried() -> None:
         lifecycle.close()
 
     assert lifecycle.closed is False
-    model_resources.stop.assert_called_once_with()
+    model_resources.stop.assert_called_once_with(force=True)
 
     session.stop.side_effect = None
     lifecycle.close()
@@ -320,7 +320,7 @@ async def test_async_close_tears_down_inside_a_running_loop() -> None:
         pass
 
     session.stop_async.assert_awaited_once_with()
-    model_resources.stop_async.assert_awaited_once_with()
+    model_resources.stop_async.assert_awaited_once_with(force=True)
     assert lifecycle.closed is True
 
 

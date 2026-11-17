@@ -9,10 +9,18 @@ from together import AsyncTogether, InternalServerError
 from together.post_training import SessionClient, ModelResourcesClient
 
 
-@pytest.mark.parametrize("resource_kind", ["session", "model_resources"])
+@pytest.mark.parametrize(
+    ("resource_kind", "failure_method", "expected_calls"),
+    [
+        ("session", "POST", ["POST", "POST", "GET"]),
+        ("session", "GET", ["POST", "GET", "POST", "GET"]),
+        ("model_resources", "POST", ["POST", "POST"]),
+    ],
+)
 @pytest.mark.parametrize("synchronous", [False, True])
-@pytest.mark.parametrize("failure_method", ["POST", "GET"])
-async def test_stop_retries_transport_failure(resource_kind: str, synchronous: bool, failure_method: str) -> None:
+async def test_stop_retries_transport_failure(
+    resource_kind: str, failure_method: str, expected_calls: list[str], synchronous: bool
+) -> None:
     calls: list[str] = []
     failed = False
     session = resource_kind == "session"
@@ -51,7 +59,7 @@ async def test_stop_retries_transport_failure(resource_kind: str, synchronous: b
 
         assert client.is_closed()
         assert handle._loop.closed
-        assert calls == (["POST", "POST", "GET"] if failure_method == "POST" else ["POST", "GET", "POST", "GET"])
+        assert calls == expected_calls
         assert await handle.stop_async() is None
     finally:
         await handle.detach_async()

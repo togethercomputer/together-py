@@ -18,7 +18,6 @@ from .session import (
 )
 from ..._types import omit
 from ..._client import AsyncTogether
-from ..._exceptions import NotFoundError, BadRequestError
 from ...types.post_training.model_resources import ModelResources
 from ...types.post_training.lora_config_param import LoraConfigParam as LoraConfig
 from ...types.post_training.optimizer_config_param import OptimizerConfigParam as OptimizerConfig
@@ -36,8 +35,6 @@ _TERMINAL_STATUSES = {
     "MODEL_RESOURCES_STATUS_STOPPED",
 }
 DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL: float = 10.0
-DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT: float | None = 300.0
-DEFAULT_MODEL_RESOURCES_STOP_INTERVAL: float = 2.0
 _PROVISIONING_TIMEOUT = httpx.Timeout(timeout=300, connect=300)
 
 
@@ -67,7 +64,7 @@ class ModelResourcesClient:
         if self._loop.closed:
             return
         if self._owns_resource:
-            self.stop()
+            self.stop(force=True)
         else:
             self.detach()
 
@@ -83,7 +80,7 @@ class ModelResourcesClient:
         if self._loop.closed:
             return
         if self._owns_resource:
-            await self.stop_async()
+            await self.stop_async(force=True)
         else:
             await self.detach_async()
 
@@ -237,16 +234,16 @@ class ModelResourcesClient:
                 await output._wait_for_ready_async(timeout=ready_timeout, interval=interval)
                 return output
             except BaseException as exc:
-                if model_resources_id is not None:
-                    tag = f"[model-resources:{model_resources_id}]"
-                    print(f"{tag} stopping model resources due to {type(exc).__name__}...")  # noqa: T201
-                    try:
-                        await client.post_training.model_resources.stop(model_resources_id)
+                # A failed stop propagates with the original exception chained as its
+                # context: a resource that may still be billing outranks the create failure.
+                try:
+                    if model_resources_id is not None:
+                        tag = f"[model-resources:{model_resources_id}]"
+                        print(f"{tag} stopping model resources due to {type(exc).__name__}...")  # noqa: T201
+                        await client.post_training.model_resources.stop(model_resources_id, force=True)
                         print(f"{tag} stopped")  # noqa: T201
-                    except Exception as cleanup_exc:
-                        # Swallowed so it cannot mask exc, the failure that triggered cleanup.
-                        print(f"{tag} failed to stop model resources during cleanup: {cleanup_exc!r}")  # noqa: T201
-                await client.close()
+                finally:
+                    await client.close()
                 raise
 
         return await run_untracked_async(create_on_process_loop())
@@ -339,7 +336,7 @@ class ModelResourcesClient:
         )
 
     def stop(self, *, force: bool = False) -> ModelResources | None:
-        """Stop the resource and wait until billing stops.
+        """Stop the resource. Billing ends once the API accepts the stop.
 
         force also stops every session attached to the resource, including sessions this
         process does not own. Without it the API refuses while any session is still active.
@@ -351,37 +348,9 @@ class ModelResourcesClient:
         return await self._loop.run_teardown_async(self._stop_remote(force=force))
 
     async def _stop_remote(self, *, force: bool) -> ModelResources:
-        try:
-            output = await self._client.post_training.model_resources.stop(
-                self._model_resources_id, force=force if force else omit
-            )
-        except BadRequestError:
-            # The API refuses to stop a resource that already stopped or failed, for example
-            # one the server stopped after its expiry time. That resource needs no stop.
-            output = await self._client.post_training.model_resources.retrieve(self._model_resources_id)
-            if output.status not in _TERMINAL_STATUSES:
-                raise
-        if output.status not in _TERMINAL_STATUSES:
-            start = time.monotonic()
-            while True:
-                try:
-                    current = await self._client.post_training.model_resources.retrieve(self._model_resources_id)
-                except NotFoundError:
-                    # Already gone. Transient retrieve failures are retried by the
-                    # HTTP client; remaining errors still raise.
-                    break
-                if current.status in _TERMINAL_STATUSES:
-                    break
-                if (
-                    DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT is not None
-                    and time.monotonic() - start >= DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT
-                ):
-                    warnings.warn(
-                        f"Timed out waiting for model resources {self._model_resources_id} to stop billing",
-                        stacklevel=2,
-                    )
-                    break
-                await asyncio.sleep(DEFAULT_MODEL_RESOURCES_STOP_INTERVAL)
+        output = await self._client.post_training.model_resources.stop(
+            self._model_resources_id, force=force if force else omit
+        )
         await self._client.close()
         return output
 

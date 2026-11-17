@@ -47,7 +47,7 @@ def _build_model_resources_handle(model_resources: ModelResourcesClient, *, owne
         if owned:
             logger.error(
                 "[model-resources:%s] teardown failed (%r); the GPUs are still allocated. "
-                "Release them with ModelResourcesClient.attach(model_resources_id=%r).stop()",
+                "Release them with ModelResourcesClient.attach(model_resources_id=%r).stop(force=True)",
                 model_resources.model_resources_id,
                 exc,
                 model_resources.model_resources_id,
@@ -60,7 +60,11 @@ def _build_model_resources_handle(model_resources: ModelResourcesClient, *, owne
             )
 
     if owned:
-        return _Handle(model_resources.stop, model_resources.stop_async, report)
+        return _Handle(
+            partial(model_resources.stop, force=True),
+            partial(model_resources.stop_async, force=True),
+            report,
+        )
     return _Handle(model_resources.detach, model_resources.detach_async, report)
 
 

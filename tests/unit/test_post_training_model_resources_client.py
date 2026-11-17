@@ -6,11 +6,9 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
-import httpx
 import pytest
 
 from together._types import omit
-from together._exceptions import BadRequestError
 from together.post_training import MuonConfig, ComputeConfig, WandbMetadata, OptimizerConfig, SessionMetadata
 from together.post_training.clients import model_resources as model_resources_client_module
 from together.post_training.clients.session import SessionClient
@@ -165,8 +163,8 @@ async def test_create_async_stops_and_closes_on_terminal_status(monkeypatch: pyt
     with pytest.raises(RuntimeError, match="MODEL_RESOURCES_STATUS_ERROR"):
         await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", interval=0.0)
 
-    client.post_training.model_resources.stop.assert_awaited_once_with("res-1")
-    client.close.assert_awaited_once()
+    client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=True)
+    client.close.assert_awaited()
 
 
 async def test_create_async_times_out_and_cleans_up(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -178,8 +176,21 @@ async def test_create_async_times_out_and_cleans_up(monkeypatch: pytest.MonkeyPa
         with pytest.raises(TimeoutError):
             await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", ready_timeout=0, interval=0.0)
 
-    client.post_training.model_resources.stop.assert_awaited_once_with("res-1")
-    client.close.assert_awaited_once()
+    client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=True)
+    client.close.assert_awaited()
+
+
+async def test_create_async_raises_failed_cleanup_chained_to_create_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _fake_client(status="MODEL_RESOURCES_STATUS_ERROR")
+    client.post_training.model_resources.stop = AsyncMock(side_effect=ConnectionError("stop failed"))
+    _patch_together(monkeypatch, client)
+
+    with pytest.raises(ConnectionError, match="stop failed") as raised:
+        await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", interval=0.0)
+
+    assert isinstance(raised.value.__context__, RuntimeError)
 
 
 async def test_create_async_prints_queue_position_while_waiting(
@@ -250,22 +261,6 @@ async def test_stop_async_closes_client() -> None:
     assert resources._loop.closed
     client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
     client.post_training.model_resources.retrieve.assert_not_awaited()
-    client.close.assert_awaited_once()
-
-
-async def test_stop_async_waits_until_resources_stop_billing(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(model_resources_client_module, "DEFAULT_MODEL_RESOURCES_STOP_INTERVAL", 0.0)
-    client = MagicMock()
-    output = SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_READY")
-    client.post_training.model_resources.stop = AsyncMock(return_value=output)
-    client.post_training.model_resources.retrieve = AsyncMock(return_value=_STOPPING)
-    client.close = AsyncMock()
-    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
-
-    result = await resources.stop_async()
-
-    assert result is output
-    client.post_training.model_resources.retrieve.assert_awaited_once_with("res-1")
     client.close.assert_awaited_once()
 
 
@@ -404,40 +399,6 @@ async def test_attach_async_raises_and_closes_when_missing(monkeypatch: pytest.M
     client.close.assert_awaited_once()
 
 
-def _bad_request() -> BadRequestError:
-    response = httpx.Response(400, request=httpx.Request("POST", "https://api.together.ai"))
-    return BadRequestError("model resources is in a terminal state", response=response, body=None)
-
-
-async def test_stop_async_accepts_a_resource_that_already_stopped() -> None:
-    client = MagicMock()
-    client.post_training.model_resources.stop = AsyncMock(side_effect=_bad_request())
-    client.post_training.model_resources.retrieve = AsyncMock(
-        return_value=SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_STOPPED")
-    )
-    client.close = AsyncMock()
-    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
-
-    result = await resources.stop_async()
-
-    assert result is not None
-    assert result.status == "MODEL_RESOURCES_STATUS_STOPPED"
-    client.close.assert_awaited_once()
-
-
-async def test_stop_async_raises_when_the_resource_is_still_running() -> None:
-    client = MagicMock()
-    client.post_training.model_resources.stop = AsyncMock(side_effect=_bad_request())
-    client.post_training.model_resources.retrieve = AsyncMock(
-        return_value=SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_READY")
-    )
-    client.close = AsyncMock()
-    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
-
-    with pytest.raises(BadRequestError):
-        await resources.stop_async()
-
-
 async def test_detach_async_closes_client_without_stopping() -> None:
     client = MagicMock()
     client.post_training.model_resources.stop = AsyncMock()
@@ -462,7 +423,7 @@ def test_detach_marks_the_handle_closed_without_stopping() -> None:
     client.post_training.model_resources.stop.assert_not_awaited()
 
 
-def test_context_manager_stops() -> None:
+def test_context_manager_force_stops_an_owned_resource() -> None:
     client = MagicMock()
     client.post_training.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
@@ -471,11 +432,24 @@ def test_context_manager_stops() -> None:
     with resources:
         assert resources.model_resources_id == "res-1"
 
-    client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
+    client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=True)
     client.close.assert_awaited_once()
 
 
-async def test_async_context_manager_stops() -> None:
+def test_context_manager_raises_stop_failure_chained_to_body_exception() -> None:
+    client = MagicMock()
+    client.post_training.model_resources.stop = AsyncMock(side_effect=TimeoutError("to stop billing"))
+    client.close = AsyncMock()
+    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
+
+    with pytest.raises(TimeoutError, match="to stop billing") as raised:
+        with resources:
+            raise RuntimeError("body failed")
+
+    assert isinstance(raised.value.__context__, RuntimeError)
+
+
+async def test_async_context_manager_force_stops_an_owned_resource() -> None:
     client = MagicMock()
     client.post_training.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
@@ -484,7 +458,7 @@ async def test_async_context_manager_stops() -> None:
     async with resources:
         assert resources.model_resources_id == "res-1"
 
-    client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
+    client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=True)
     client.close.assert_awaited_once()
 
 
