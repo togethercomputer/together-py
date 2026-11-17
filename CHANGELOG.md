@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.2.1](https://github.com/togethercomputer/together-py/compare/v3.2.0...v3.2.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* **rl:** force-stop model-resource cleanup and fail loudly when unconfirmed ([#200](https://github.com/togethercomputer/together-py/issues/200)) ([0cc79c9](https://github.com/togethercomputer/together-py/commit/0cc79c9d1ccabe4598cfa6229472b86a230343a7))
+
+
+### Chores
+
+* **cli:** Update evals CLI to handle service discontinue ([#682](https://github.com/togethercomputer/together-py/issues/682)) ([1da10fa](https://github.com/togethercomputer/together-py/commit/1da10fa8c0499bb48bdc672d4dadfe4f9f7894a8))
+* **evals:** mark evaluation endpoints deprecated with 410 Gone ([06bd76e](https://github.com/togethercomputer/together-py/commit/06bd76ea6379d8ec5fc37af1079670a0c6954702))
+
+
+### Documentation
+
+* **whoami:** add a response example for each caller type ([af22aa7](https://github.com/togethercomputer/together-py/commit/af22aa77079595d4b978229b7bee3f719033ca7f))
+
 ## [3.2.0](https://github.com/togethercomputer/together-py/compare/v3.1.1...v3.2.0) (2026-11-16)
 
 
