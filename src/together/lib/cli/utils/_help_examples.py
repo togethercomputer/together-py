@@ -213,6 +213,9 @@ ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Mirror live traffic to a shadow deployment:
   [primary]tg endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> --rate 0.1[/primary]
 
+[dim]-[/dim] Count the requests each deployment received in the last 5 minutes (beta):
+  [primary]tg endpoints metrics <endpoint-or-deployment-name-or-id>[/primary]
+
 [dim]-[/dim] Delete a deployment, adapter, experiment, rollout, or entire endpoint:
   [primary]tg endpoints rm <ep_|dep_|dad_|abx_|exp_|rol_...>[/primary]
 
@@ -328,7 +331,28 @@ ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg endpoints shadow ml_xxxxxxxxxxxx --endpoint <endpoint-name-or-id> \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
 
+[dim]-[/dim] Verify mirrored traffic reaches the shadow target:
+  [dim]A shadow target serves no live traffic, so every request it reports is a mirrored copy.
+  Find the target's deployment ID with `tg endpoints get <endpoint-name-or-id>`.[/dim]
+  [primary]tg endpoints metrics <shadow-target-deployment-id>[/primary]
+
 [dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
+"""
+
+ENDPOINTS_METRICS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Count the requests each deployment of an endpoint received in the last 5 minutes:
+  [primary]tg endpoints metrics <endpoint-name-or-id>[/primary]
+
+[dim]-[/dim] Report one deployment as JSON:
+  [primary]tg endpoints metrics dep_xxxxxxxxxxxx --json[/primary]
+
+[dim]-[/dim] Verify mirrored traffic reaches a shadow target:
+  [dim]A shadow target serves no live traffic, so every request it reports is a mirrored copy.[/dim]
+  [primary]tg endpoints metrics <shadow-target-deployment-id>[/primary]
+
+[dim]Note:[/dim] Beta. This command reads the Prometheus-compatible metrics endpoint described at
+https://docs.together.ai/docs/dedicated-endpoints/monitoring. Counts are estimates: the per-second
+request rate over the last 5 minutes, times 300. Health-check requests are left out.
 """
 
 ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]

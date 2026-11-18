@@ -84,6 +84,7 @@ from together.lib.cli.utils._help_examples import (
     ENDPOINTS_DEPLOY_HELP_EXAMPLES,
     ENDPOINTS_SHADOW_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    ENDPOINTS_METRICS_HELP_EXAMPLES,
     ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
     JIG_SECRETS_UNSET_HELP_EXAMPLES,
     FINE_TUNING_CREATE_HELP_EXAMPLES,
@@ -1016,6 +1017,12 @@ endpoints_app.command(
     (f"{_CLI}.endpoints.events:events"),
     help="List endpoint audit and lifecycle events",
     sort_key=6,
+)
+endpoints_app.command(
+    (f"{_CLI}.endpoints.metrics:metrics"),
+    help="Show how many requests each deployment received in the last 5 minutes (beta)",
+    help_epilogue=ENDPOINTS_METRICS_HELP_EXAMPLES,
+    sort_key=7,
 )
 endpoints_app.command(
     (f"{_CLI}.endpoints.rollout:rollout"),
