@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from types import MappingProxyType
+from typing import get_args
 from collections.abc import Mapping
 
 from ._compat import types
@@ -29,8 +30,13 @@ def loss_spec(loss_fn: types.LossFnType) -> LossSpec:
         The spec describing how that loss maps onto the wire.
 
     Raises:
-        ValueError: If ``loss_fn`` is not a loss name the wrapper maps.
+        NotImplementedError: If ``loss_fn`` is a Tinker loss Together does not support.
+        ValueError: If ``loss_fn`` is not a Tinker loss at all.
     """
-    if loss_fn not in LOSS_SPECS:
-        raise ValueError(f"Unknown loss_fn {loss_fn!r}; expected one of {sorted(LOSS_SPECS)}")
-    return LOSS_SPECS[loss_fn]
+    if loss_fn in LOSS_SPECS:
+        return LOSS_SPECS[loss_fn]
+    if loss_fn in get_args(types.LossFnType):
+        raise NotImplementedError(
+            f"loss_fn {loss_fn!r} is not supported on Together yet; use one of {sorted(LOSS_SPECS)}"
+        )
+    raise ValueError(f"Unknown loss_fn {loss_fn!r}; expected one of {sorted(LOSS_SPECS)}")

@@ -120,5 +120,6 @@ jobs:
       - name: Check tinker and numpy are installed
         run: uv run --python "$PYTHON_VERSION" --extra tinker python -c "import tinker, numpy"
 
-      - name: Run tests that need numpy or tinker
-        run: uv run --python "$PYTHON_VERSION" --extra tinker pytest -n 0 tests/unit/test_post_training_tinker_*.py tests/unit/test_post_training_native_arrays.py
+      # CPU-only torch for the forward_backward_custom tests; the default Linux wheel pulls ~3 GB of CUDA.
+      - name: Run tests that need numpy, tinker or torch
+        run: uv run --python "$PYTHON_VERSION" --extra tinker --with torch --index https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match pytest -n 0 tests/unit/test_post_training_tinker_*.py tests/unit/test_post_training_native_arrays.py

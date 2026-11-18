@@ -12,6 +12,7 @@ import pytest
 
 pytest.importorskip("tinker")
 
+import tinker
 from tinker import types
 
 from together.post_training import Sample, LossConfig, tinker as tinker_compat, _request_types
@@ -30,7 +31,7 @@ def test_module_reexports_types_without_genuine_clients() -> None:
     assert tinker_compat.types is types
     assert tinker_compat.Datum is types.Datum
     assert tinker_compat.ModelInput is types.ModelInput
-    assert tinker_compat.APIFuture is not __import__("tinker").APIFuture
+    assert tinker_compat.APIFuture is not tinker.APIFuture
     assert not hasattr(tinker_compat, "RestClient")
     assert not hasattr(tinker_compat, "resources")
     with pytest.raises(AttributeError, match="RestClient"):
@@ -136,8 +137,50 @@ def test_service_client_stays_silent_on_header_query_kwargs() -> None:
     """Headers/query stay quiet; they are paste boilerplate, not tuned ops knobs."""
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        tinker_compat.ServiceClient(default_headers={"X-Foo": "bar"}, default_query={"q": "1"})
+        tinker_compat.ServiceClient(
+            default_headers={"X-Foo": "bar"},
+            default_headers_overrides={"X-Bar": "baz"},
+            default_query={"q": "1"},
+        )
     assert caught == []
+
+
+@pytest.mark.parametrize(
+    ("display_name", "sent", "truncated"),
+    [
+        (None, None, False),
+        ("run-1", "run-1", False),
+        # The RL API counts characters, not UTF-8 bytes: 128 two-byte characters still fit.
+        ("é" * 128, "é" * 128, False),
+        ("x" * 129, "x" * 128, True),
+    ],
+    ids=["unnamed", "named", "at-limit-non-ascii", "over-limit"],
+)
+def test_service_client_names_its_sessions(
+    monkeypatch: pytest.MonkeyPatch, display_name: str | None, sent: str | None, truncated: bool
+) -> None:
+    """A Tinker script's run name reaches the session; one past the RL API's 128-character limit
+    is cut with a warning pointing at the caller, not rejected after provisioning."""
+    resources = _model_resources_mock("mr-1")
+    resources.create_session_async.return_value = _session_mock()
+    monkeypatch.setattr(_service.ModelResourcesClient, "create_async", AsyncMock(return_value=resources))
+    monkeypatch.setattr(_service, "_exit_on_sigterm", _noop)
+    monkeypatch.setattr(_service, "_stop_on_exit", _ignore)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        service = tinker_compat.ServiceClient(display_name=display_name)
+    service.create_lora_training_client("Qwen/Qwen3.5-4B", rank=16)
+
+    if truncated:
+        assert [str(w.message) for w in caught] == [
+            f"Together limits session display names to 128 characters; using {sent!r}"
+        ]
+        assert caught[0].filename == __file__
+    else:
+        assert caught == []
+    session_kwargs = {} if sent is None else {"display_name": sent}
+    resources.create_session_async.assert_awaited_once_with(lora_config={"rank": 16}, **session_kwargs)
 
 
 def test_service_client_rejects_unknown_kwargs() -> None:
@@ -398,8 +441,14 @@ _CHECKPOINT_UUID = "123e4567-e89b-12d3-a456-426614174000"
 
 
 def test_create_rest_client_raises_tinker_error() -> None:
-    with pytest.raises(__import__("tinker").TinkerError, match="RestClient"):
+    with pytest.raises(tinker.TinkerError, match="RestClient"):
         tinker_compat.ServiceClient().create_rest_client()
+
+
+def test_create_custom_loss_raises_tinker_error() -> None:
+    """create_custom_loss is unsupported; the error points at forward_backward_custom instead."""
+    with pytest.raises(tinker.TinkerError, match="forward_backward_custom"):
+        tinker_compat.ServiceClient().create_custom_loss(lambda *_: None, {})
 
 
 def _training_checkpoint(*, lora_rank: int | None = 16, kind: str = "CHECKPOINT_TYPE_TRAINING") -> SimpleNamespace:
@@ -460,3 +509,347 @@ def test_describe_rejects_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) 
 def test_resume_rejects_weights_access_token() -> None:
     with pytest.raises(NotImplementedError, match="weights_access_token"):
         tinker_compat.ServiceClient().create_training_client_from_state(_CHECKPOINT_UUID, weights_access_token="tok")
+
+
+@pytest.mark.parametrize("entry", ["sync", "async"])
+def test_create_lora_training_client_accepts_default_adam(monkeypatch: pytest.MonkeyPatch, entry: str) -> None:
+    """Tinker callers may name the optimizer; its default Adam is what Together runs."""
+    resources = _model_resources_mock("mr-1")
+    resources.create_session_async.return_value = _session_mock()
+    monkeypatch.setattr(_service.ModelResourcesClient, "create_async", AsyncMock(return_value=resources))
+    monkeypatch.setattr(_service, "_exit_on_sigterm", _noop)
+    monkeypatch.setattr(_service, "_stop_on_exit", _ignore)
+    service = tinker_compat.ServiceClient()
+
+    if entry == "sync":
+        training = service.create_lora_training_client("Qwen/Qwen3.5-4B", optimizer=types.AdamOptimizerConfig())
+    else:
+        training = asyncio.run(
+            service.create_lora_training_client_async("Qwen/Qwen3.5-4B", optimizer=types.AdamOptimizerConfig())
+        )
+
+    assert isinstance(training, tinker_compat.TrainingClient)
+    resources.create_session_async.assert_awaited_once_with(lora_config={"rank": 32})
+
+
+@pytest.mark.parametrize(
+    "create",
+    [
+        lambda service: service.create_lora_training_client("model", optimizer=types.DimuonOptimizerConfig()),
+        lambda service: asyncio.run(
+            service.create_lora_training_client_async("model", optimizer=types.DimuonOptimizerConfig())
+        ),
+        lambda service: service.create_training_client_from_state(
+            _CHECKPOINT_UUID, optimizer=types.DimuonOptimizerConfig()
+        ),
+    ],
+    ids=["sync", "async", "from_state"],
+)
+def test_non_adam_optimizer_is_rejected_before_provisioning(
+    monkeypatch: pytest.MonkeyPatch, create: Callable[[Any], Any]
+) -> None:
+    create_async = AsyncMock()
+    monkeypatch.setattr(_service.ModelResourcesClient, "create_async", create_async)
+    monkeypatch.setattr(_service, "_exit_on_sigterm", _noop)
+
+    with pytest.raises(NotImplementedError, match="DimuonOptimizerConfig"):
+        create(tinker_compat.ServiceClient())
+
+    create_async.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("override", "expected"), [(None, "Qwen/Qwen3.5-4B"), ("Qwen/Qwen3.5-4B-long", "Qwen/Qwen3.5-4B-long")]
+)
+def test_resume_base_model_override_reaches_provisioning(
+    monkeypatch: pytest.MonkeyPatch, override: str | None, expected: str
+) -> None:
+    """base_model overrides the checkpoint's; the server decides whether it is compatible."""
+    monkeypatch.setattr(_service, "_describe_training_checkpoint", lambda *_, **__: _training_checkpoint())
+    resources = _model_resources_mock("mr-1")
+    resources.create_session_async.return_value = _session_mock()
+    create_async = AsyncMock(return_value=resources)
+    monkeypatch.setattr(_service.ModelResourcesClient, "create_async", create_async)
+    monkeypatch.setattr(_service, "_exit_on_sigterm", _noop)
+    monkeypatch.setattr(_service, "_stop_on_exit", _ignore)
+
+    tinker_compat.ServiceClient().create_training_client_from_state(_CHECKPOINT_UUID, base_model=override)
+
+    create_async.assert_awaited_once_with(base_model=expected, api_key=None, base_url=None)
+
+
+def test_training_client_result_returns_itself() -> None:
+    """Tinker code calls .result() on the client a create call returns."""
+    training = tinker_compat.TrainingClient(_session_mock())
+    assert training.result() is training
+    assert training.result(timeout=1.0) is training
+
+
+def _provisioning(monkeypatch: pytest.MonkeyPatch) -> tuple[Any, AsyncMock]:
+    """Resources whose sessions start, and the create call that hands them out."""
+    resources = _model_resources_mock("mr-1")
+    resources.create_session_async.return_value = _session_mock()
+    create_async = AsyncMock(return_value=resources)
+    monkeypatch.setattr(_service.ModelResourcesClient, "create_async", create_async)
+    monkeypatch.setattr(_service, "_exit_on_sigterm", _noop)
+    monkeypatch.setattr(_service, "_stop_on_exit", _ignore)
+    return resources, create_async
+
+
+async def test_create_inside_a_loop_returns_an_awaitable_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tinker's async style awaits the synchronous create call; provisioning starts on the first await only."""
+    resources, create_async = _provisioning(monkeypatch)
+
+    pending = tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", rank=16)
+    create_async.assert_not_awaited()
+
+    training = await pending
+    assert isinstance(training, tinker_compat.TrainingClient)
+    assert await pending is training
+    create_async.assert_awaited_once()
+    resources.create_session_async.assert_awaited_once_with(lora_config={"rank": 16})
+
+
+async def test_unawaited_create_inside_a_loop_provisions_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    _, create_async = _provisioning(monkeypatch)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no "coroutine was never awaited" either
+        tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", rank=16)
+
+    create_async.assert_not_awaited()
+
+
+async def test_pending_client_explains_how_to_use_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    _provisioning(monkeypatch)
+    pending = tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", rank=16)
+
+    with pytest.raises(RuntimeError, match="await the client"):
+        pending.result()
+    with pytest.raises(AttributeError, match="await it for the client"):
+        pending.forward_backward  # noqa: B018 - the attribute access is the call under test
+
+    assert isinstance(await pending.result_async(), tinker_compat.TrainingClient)
+
+
+@pytest.mark.parametrize(
+    ("call", "load_optimizer"),
+    [
+        (lambda service: service.create_training_client_from_state(_CHECKPOINT_UUID), False),
+        (lambda service: service.create_training_client_from_state_with_optimizer(_CHECKPOINT_UUID), True),
+        (lambda service: service.create_training_client_from_state_async(_CHECKPOINT_UUID), False),
+        (lambda service: service.create_training_client_from_state_with_optimizer_async(_CHECKPOINT_UUID), True),
+    ],
+    ids=["await-sync", "await-sync-with-optimizer", "async", "async-with-optimizer"],
+)
+async def test_resume_inside_a_loop(
+    monkeypatch: pytest.MonkeyPatch, call: Callable[[Any], Any], load_optimizer: bool
+) -> None:
+    """Resume in async code, through either the awaited sync call or its *_async twin."""
+    resources, _ = _provisioning(monkeypatch)
+    describe = AsyncMock(return_value=_training_checkpoint())
+    monkeypatch.setattr(_service, "_describe_training_checkpoint_async", describe)
+
+    training = await call(tinker_compat.ServiceClient())
+
+    assert isinstance(training, tinker_compat.TrainingClient)
+    describe.assert_awaited_once_with(_CHECKPOINT_UUID, api_key=None, base_url=None)
+    resources.create_session_async.assert_awaited_once_with(
+        lora_config={"rank": 16},
+        resume_from_checkpoint_id=_CHECKPOINT_UUID,
+        load_optimizer=load_optimizer,
+    )
+
+
+@pytest.mark.parametrize(
+    ("call", "error", "match"),
+    [
+        (
+            lambda service: service.create_training_client_from_state_async(
+                _CHECKPOINT_UUID, optimizer=types.DimuonOptimizerConfig()
+            ),
+            NotImplementedError,
+            "DimuonOptimizerConfig",
+        ),
+        (
+            lambda service: service.create_training_client_from_state_with_optimizer_async(
+                _CHECKPOINT_UUID, weights_access_token="tok"
+            ),
+            NotImplementedError,
+            "weights_access_token",
+        ),
+    ],
+    ids=["optimizer", "weights_access_token"],
+)
+async def test_async_resume_rejects_unsupported_arguments(
+    monkeypatch: pytest.MonkeyPatch, call: Callable[[Any], Any], error: type[Exception], match: str
+) -> None:
+    describe = AsyncMock()
+    monkeypatch.setattr(_service, "_describe_training_checkpoint_async", describe)
+
+    with pytest.raises(error, match=match):
+        await call(tinker_compat.ServiceClient())
+
+    describe.assert_not_awaited()
+
+
+async def test_async_describe_rejects_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = MagicMock()
+    client.post_training.checkpoints.retrieve = AsyncMock(
+        return_value=_training_checkpoint(kind="CHECKPOINT_TYPE_INFERENCE")
+    )
+    client.__aenter__ = AsyncMock(return_value=client)
+    client.__aexit__ = AsyncMock(return_value=None)
+    monkeypatch.setattr(_service, "AsyncTogether", lambda **_: client)
+
+    with pytest.raises(ValueError, match="CHECKPOINT_TYPE_INFERENCE"):
+        await _service._describe_training_checkpoint_async(_CHECKPOINT_UUID, api_key=None, base_url=None)
+    client.__aexit__.assert_awaited_once()
+
+
+async def test_training_client_awaits_to_itself() -> None:
+    """A notebook blocks on create and gets the client; awaiting that client still works."""
+    training = tinker_compat.TrainingClient(_session_mock())
+    assert await training is training
+    assert await training.result_async() is training
+
+
+def test_service_client_context_closes_the_clients_it_created(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Leaving `with ServiceClient()` closes its training clients, then refuses new ones, as in tinker."""
+    _provisioning(monkeypatch)
+
+    with tinker_compat.ServiceClient() as service:
+        training = service.create_lora_training_client("Qwen/Qwen3.5-4B", rank=16)
+        close_async = AsyncMock()
+        monkeypatch.setattr(training, "close_async", close_async)
+
+    close_async.assert_awaited_once_with()
+    with pytest.raises(RuntimeError, match="ServiceClient is closed"):
+        service.create_lora_training_client("Qwen/Qwen3.5-4B", rank=16)
+    with pytest.raises(RuntimeError, match="ServiceClient is closed"):
+        service.__enter__()
+
+
+async def test_service_client_context_inside_a_loop_closes_in_the_background(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The cookbook's `with ServiceClient()` inside `async def main` must not block the loop on exit."""
+    _provisioning(monkeypatch)
+    closed = threading.Event()
+
+    async def close_async() -> None:
+        closed.set()
+
+    with tinker_compat.ServiceClient() as service:
+        training = await service.create_lora_training_client("Qwen/Qwen3.5-4B", rank=16)
+        monkeypatch.setattr(training, "close_async", close_async)
+
+    assert await asyncio.to_thread(closed.wait, 10)
+
+
+async def test_explicit_close_is_awaitable_and_refuses_to_block_a_loop(monkeypatch: pytest.MonkeyPatch) -> None:
+    _provisioning(monkeypatch)
+    service = tinker_compat.ServiceClient()
+    training = await service.create_lora_training_client_async("Qwen/Qwen3.5-4B", rank=16)
+    close_async = AsyncMock()
+    monkeypatch.setattr(training, "close_async", close_async)
+
+    closing = service.close("success", detail="done")
+    with pytest.raises(RuntimeError, match="await the close"):
+        closing.result()
+    await closing
+
+    close_async.assert_awaited_once_with()
+
+
+def test_close_during_a_create_releases_the_new_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A create that finishes after close() must give its GPUs back, not park them on a closed client."""
+    resources, _ = _provisioning(monkeypatch)
+    session = _session_mock()
+    service = tinker_compat.ServiceClient()
+
+    async def start_session(**_: Any) -> Any:
+        service.close("interrupted")  # close() lands while this create is in flight
+        return session
+
+    resources.create_session_async.side_effect = start_session
+
+    with pytest.raises(RuntimeError, match="ServiceClient is closed"):
+        service.create_lora_training_client("Qwen/Qwen3.5-4B", rank=16)
+
+    session.stop_async.assert_awaited_once_with()
+    resources.stop_async.assert_awaited_once_with(force=True)
+
+
+def test_service_client_context_closes_when_the_body_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    _provisioning(monkeypatch)
+    close_async = AsyncMock()
+
+    with pytest.raises(ValueError, match="boom"), tinker_compat.ServiceClient() as service:
+        training = service.create_lora_training_client("Qwen/Qwen3.5-4B", rank=16)
+        monkeypatch.setattr(training, "close_async", close_async)
+        raise ValueError("boom")
+
+    close_async.assert_awaited_once_with()
+
+
+async def test_close_keeps_going_after_one_client_fails() -> None:
+    failing, healthy = AsyncMock(side_effect=RuntimeError("stop failed")), AsyncMock()
+    also_failing = AsyncMock(side_effect=ValueError("second stop failed"))
+    clients = [
+        SimpleNamespace(close_async=failing),
+        SimpleNamespace(close_async=healthy),
+        SimpleNamespace(close_async=also_failing),
+    ]
+
+    with pytest.raises(RuntimeError, match="stop failed") as raised:
+        await _service._close_training_clients(cast(Any, clients))
+
+    healthy.assert_awaited_once_with()
+    also_failing.assert_awaited_once_with()
+    assert any("second stop failed" in note for note in raised.value.__notes__)
+
+
+async def test_cancelling_a_close_waiter_does_not_abort_the_close() -> None:
+    """A Ctrl-C or timeout on the waiter must not cut short the release of GPUs."""
+    release = threading.Event()
+    finished = threading.Event()
+
+    async def slow_close() -> None:
+        await asyncio.to_thread(release.wait, 10)
+        finished.set()
+
+    closing = _service._Closing(_service.submit_untracked(slow_close()))
+    assert "closing" in repr(closing)
+    waiter = asyncio.ensure_future(closing.coroutine())
+    await asyncio.sleep(0.05)
+    waiter.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await waiter
+
+    release.set()
+    assert await asyncio.to_thread(closing.future().result, 10) is None
+    assert finished.is_set()
+    await closing.result_async(timeout=1)
+    assert "done" in repr(closing)
+
+
+async def test_create_wait_timeout_cancels_the_create(monkeypatch: pytest.MonkeyPatch) -> None:
+    """As in tinker, a create whose wait times out is cancelled and gives back what it provisioned."""
+    resources, _ = _provisioning(monkeypatch)
+    started = asyncio.Event()
+
+    async def slow_session(**_: Any) -> Any:
+        started.set()
+        await asyncio.sleep(10)
+
+    resources.create_session_async.side_effect = slow_session
+    pending = tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", rank=16)
+    assert "pending" in repr(pending)
+
+    with pytest.raises(asyncio.TimeoutError):
+        await pending.result_async(timeout=0.2)
+    assert started.is_set()
+    resources.stop_async.assert_awaited_once_with(force=True)
+    with pytest.raises(asyncio.CancelledError):
+        await pending

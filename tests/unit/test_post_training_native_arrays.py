@@ -1,10 +1,11 @@
 """Torch/numpy coercion on the native RL clients.
 
 numpy is installed by the ``tinker`` extra, so the numpy cases run on the ``test-tinker``
-CI job and skip elsewhere. torch is not installed anywhere in CI — nothing this package
-ships depends on it — so the torch branch is covered by ``FakeTensor``, a stub that
-enforces the parts of torch's contract the coercion relies on: ``.numpy()`` refuses a
-tensor that still carries an autograd graph, lives off the host, or holds ``bfloat16``.
+CI job and skip elsewhere. That job installs CPU torch for the custom-loss tests, but
+nothing this package ships depends on torch, so the torch branch here is covered by
+``FakeTensor``, a stub that enforces the parts of torch's contract the coercion relies on:
+``.numpy()`` refuses a tensor that still carries an autograd graph, lives off the host, or
+holds ``bfloat16``.
 """
 
 from __future__ import annotations

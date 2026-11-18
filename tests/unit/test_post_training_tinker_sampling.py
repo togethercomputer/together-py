@@ -262,3 +262,118 @@ def test_compute_logprobs_posts_prompt_logprobs(monkeypatch: pytest.MonkeyPatch)
     assert posted["prompt_logprobs"] is True
     assert posted["sampling_params"]["max_tokens"] == 1
     _close(session)
+
+
+@pytest.mark.parametrize("collect", ["sync", "async"])
+@pytest.mark.parametrize(
+    "option",
+    [
+        {"topk_sample_logprobs": 5},
+        {"target_prompt_logprobs": types.TensorData([1], dtype="int64")},
+        {"prompt_alt_tokens_k": 2},
+        {"prompt_logprobs_last_n": 4},
+    ],
+    ids=lambda option: next(iter(option)),
+)
+def test_sample_rejects_tinker_options_together_lacks(collect: str, option: dict[str, Any]) -> None:
+    """Tinker sampling options Together lacks fail by name before any request is sent."""
+    sample = AsyncMock(return_value=_OPERATION)
+    session = _session_with_operations(sample=sample)
+    client = tinker_compat.SamplingClient(session)
+    args = (types.ModelInput.from_ints([1]), 1, types.SamplingParams(max_tokens=1))
+
+    with pytest.raises(NotImplementedError, match=next(iter(option))):
+        if collect == "sync":
+            client.sample(*args, **option)
+        else:
+            asyncio.run(client.sample_async(*args, **option))
+
+    sample.assert_not_awaited()
+    _close(session)
+
+
+@pytest.mark.parametrize("collect", ["sync", "async"])
+def test_compute_logprobs_rejects_last_n(collect: str) -> None:
+    sample = AsyncMock(return_value=_OPERATION)
+    session = _session_with_operations(sample=sample)
+    client = tinker_compat.SamplingClient(session)
+    prompt = types.ModelInput.from_ints([1, 2])
+
+    with pytest.raises(NotImplementedError, match="prompt_logprobs_last_n"):
+        if collect == "sync":
+            client.compute_logprobs(prompt, prompt_logprobs_last_n=1)
+        else:
+            asyncio.run(client.compute_logprobs_async(prompt, prompt_logprobs_last_n=1))
+
+    sample.assert_not_awaited()
+    _close(session)
+
+
+def test_sampling_client_result_returns_itself() -> None:
+    """Tinker code calls .result() on the client save_weights_and_get_sampling_client returns."""
+    session = _session_with_operations()
+    client = tinker_compat.SamplingClient(session)
+
+    assert client.result() is client
+    _close(session)
+
+
+def _one_sequence_output(*, prompt_logprobs: list[float] | None = None) -> Any:
+    return SimpleNamespace(
+        results=[
+            SampleResult(
+                policy_segments=[],
+                sequences=[SampledSequence(prompt_cache_hit_tokens=0, stop_reason="STOP_REASON_STOP", tokens=[1])],
+                prompt_logprobs=prompt_logprobs,
+            )
+        ]
+    )
+
+
+async def _passthrough_payload(_client: Any, *, session_id: str, result: Any) -> Any:  # noqa: ARG001
+    return result
+
+
+async def test_plain_sample_and_compute_logprobs_are_awaitable_inside_a_loop(monkeypatch: pytest.MonkeyPatch) -> None:
+    """tinker-cookbook's completers await the plain sample call; tinker 0.39 deprecates sample_async."""
+    patch_wait(monkeypatch, _one_sequence_output(prompt_logprobs=[0.0, -0.25]))
+    monkeypatch.setattr(_payloads, "resolve_result_payload", _passthrough_payload)
+    session = _session_with_operations(sample=AsyncMock(return_value=_OPERATION))
+    client = tinker_compat.SamplingClient(session)
+
+    response = await client.sample(
+        types.ModelInput.from_ints([1, 2]), num_samples=1, sampling_params=types.SamplingParams(max_tokens=1)
+    )
+    logprobs = await client.compute_logprobs(types.ModelInput.from_ints([1, 2]))
+
+    assert isinstance(response, types.SampleResponse)
+    assert logprobs == [None, -0.25]
+    await session.detach_async()
+
+
+async def test_samples_inside_a_loop_are_sent_concurrently(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unlike training requests, a rollout's samples are not queued one behind another."""
+    patch_wait(monkeypatch, _one_sequence_output())
+    monkeypatch.setattr(_payloads, "resolve_result_payload", _passthrough_payload)
+    in_flight = 0
+    peak = 0
+
+    async def sample(*_: Any, **__: Any) -> Any:
+        nonlocal in_flight, peak
+        in_flight += 1
+        peak = max(peak, in_flight)
+        await asyncio.sleep(0.05)
+        in_flight -= 1
+        return _OPERATION
+
+    session = _session_with_operations(sample=AsyncMock(side_effect=sample))
+    client = tinker_compat.SamplingClient(session)
+    params = types.SamplingParams(max_tokens=1)
+
+    futures = [
+        client.sample(types.ModelInput.from_ints([1, 2]), num_samples=1, sampling_params=params) for _ in range(3)
+    ]
+    await asyncio.gather(*futures)
+
+    assert peak == 3
+    await session.detach_async()

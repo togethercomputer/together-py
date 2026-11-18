@@ -20,6 +20,9 @@ from together.types.post_training.sampled_sequence import SampledSequence
 from together.types.post_training.prompt_top_logprobs import PromptTopLogprobs
 from together.types.post_training.forward_backward_result import ForwardBackwardResult
 
+# Tinker losses with no Together equivalent yet; loss_spec names them unsupported.
+_UNSUPPORTED_TINKER_LOSSES = {"gspo", "stable_reinforce", "custom"}
+
 
 def test_datum_arrays_pass_through_unshifted() -> None:
     """The arrays must NOT be shifted again: rl_loop pre-shifts them, and a second
@@ -282,6 +285,8 @@ def test_sample_response_normalizes_wire_shapes() -> None:
     response = _converters._to_sample_response(result)
 
     first, second = response.sequences
+    # tinker requires an id per sequence; Together mints a distinct one for each.
+    assert first.sequence_id and second.sequence_id and first.sequence_id != second.sequence_id
     assert response.prompt_cache_hit_tokens == 0
     assert first.tokens_np is not None and first.tokens_np.dtype == np.int32
     assert first.tokens == [10, 11]
@@ -328,7 +333,7 @@ def test_tinker_loss_specs_share_native_contracts() -> None:
 
 
 def test_loss_specs_cover_every_mappable_loss() -> None:
-    assert set(_losses.LOSS_SPECS) == set(get_args(types.LossFnType))
+    assert set(_losses.LOSS_SPECS) == set(get_args(types.LossFnType)) - _UNSUPPORTED_TINKER_LOSSES
     mapped = {spec.wire_type for spec in _losses.LOSS_SPECS.values()}
     assert set(rl_losses.LOSS_SPECS) - mapped == {"LOSS_TYPE_GRPO", "LOSS_TYPE_DPPO"}
 

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, TypeVar, NoReturn
 from functools import partial
 from dataclasses import field, dataclass
+from collections.abc import Coroutine, Generator
 
 from .. import SamplingParams as WireSamplingParams
-from ._compat import types
+from ._compat import types, tinker, _missing_attribute_error
+from ._pending import _deliver
 from .._futures import OperationFuture
 from .._payloads import resolve_operation_payload
 from ._converters import (
@@ -22,6 +25,8 @@ from ...types.post_training.model_input_param import ModelInput as WireModelInpu
 
 _MAX_TOPK_PROMPT_LOGPROBS = 20
 
+_T = TypeVar("_T")
+
 
 @dataclass
 class _PublishedWeights:
@@ -36,6 +41,25 @@ async def _resolve_sample(
 ) -> types.SampleResponse:
     resolved = await resolve_operation_payload(completed, session=session)
     return _to_sample_response(resolved.results[0], topk_prompt_logprobs)
+
+
+def _reject_unsupported_sample_options(
+    *,
+    topk_sample_logprobs: int = 0,
+    target_prompt_logprobs: types.TensorData | None = None,
+    prompt_alt_tokens_k: int = 0,
+    prompt_logprobs_last_n: int | None = None,
+) -> None:
+    """Reject tinker sampling options Together has no equivalent for, naming the ones set."""
+    requested = {
+        "topk_sample_logprobs": topk_sample_logprobs != 0,
+        "target_prompt_logprobs": target_prompt_logprobs is not None,
+        "prompt_alt_tokens_k": prompt_alt_tokens_k != 0,
+        "prompt_logprobs_last_n": prompt_logprobs_last_n is not None,
+    }
+    unsupported = sorted(name for name, is_set in requested.items() if is_set)
+    if unsupported:
+        raise NotImplementedError(f"Together's Tinker-compatible sampler does not support {unsupported}")
 
 
 def _to_sample_request(
@@ -70,17 +94,40 @@ class SamplingClient:
     _version: int = 0
     _allow_stale: bool = True
 
+    def result(self, timeout: float | None = None) -> SamplingClient:
+        """Return this client, for Tinker code that calls ``.result()`` on a newly published sampling client.
+
+        The publish has already been submitted when the creating call returns, so there is nothing to wait for.
+        """
+        del timeout
+        return self
+
+    async def result_async(self, timeout: float | None = None) -> SamplingClient:
+        """See :meth:`result`."""
+        del timeout
+        return self
+
+    def __await__(self) -> Generator[Any, None, SamplingClient]:
+        """Resolve to this client, for Tinker code that awaits what a publish call returns."""
+        return self.result_async().__await__()
+
+    if not TYPE_CHECKING:  # visible to type checkers, it would let any misspelled attribute through
+
+        def __getattr__(self, name: str) -> NoReturn:
+            """Name a tinker method this client leaves out as unsupported, rather than a bare missing attribute."""
+            raise _missing_attribute_error(type(self), tinker.SamplingClient, name)
+
     def _check_fresh(self) -> None:
         """Reject a client whose weights have been superseded, unless the caller opted out."""
         if self._allow_stale:
             return
         if self._version != self._published_weights.version:
             raise RuntimeError(
-                "This sampling client is stale because newer weights were published. "
+                "This sampling client is stale because a newer publish was requested. "
                 "Together's sampler serves the most recently published weights and snapshot "
-                "checkpoints are not supported yet. Re-create the sampling client after each "
-                "publish, or pass allow_stale=True to save_weights_and_get_sampling_client to "
-                "sample from whatever weights are live."
+                "checkpoints are not supported yet. Sample from the client the latest successful "
+                "publish returned, or pass allow_stale=True to save_weights_and_get_sampling_client "
+                "to sample from whatever weights are live."
             )
 
     def sample(
@@ -90,10 +137,20 @@ class SamplingClient:
         sampling_params: types.SamplingParams,
         include_prompt_logprobs: bool = False,
         topk_prompt_logprobs: int = 0,
+        topk_sample_logprobs: int = 0,
+        target_prompt_logprobs: types.TensorData | None = None,
+        prompt_alt_tokens_k: int = 0,
+        prompt_logprobs_last_n: int | None = None,
     ) -> OperationFuture[types.SampleResponse]:
         self._check_fresh()
+        _reject_unsupported_sample_options(
+            topk_sample_logprobs=topk_sample_logprobs,
+            target_prompt_logprobs=target_prompt_logprobs,
+            prompt_alt_tokens_k=prompt_alt_tokens_k,
+            prompt_logprobs_last_n=prompt_logprobs_last_n,
+        )
         model_input, params = _to_sample_request(prompt, sampling_params, topk_prompt_logprobs)
-        return self._session.run(
+        return self._send(
             self._submit_sample_async(
                 model_input,
                 params,
@@ -110,8 +167,18 @@ class SamplingClient:
         sampling_params: types.SamplingParams,
         include_prompt_logprobs: bool = False,
         topk_prompt_logprobs: int = 0,
+        topk_sample_logprobs: int = 0,
+        target_prompt_logprobs: types.TensorData | None = None,
+        prompt_alt_tokens_k: int = 0,
+        prompt_logprobs_last_n: int | None = None,
     ) -> types.SampleResponse:
         self._check_fresh()
+        _reject_unsupported_sample_options(
+            topk_sample_logprobs=topk_sample_logprobs,
+            target_prompt_logprobs=target_prompt_logprobs,
+            prompt_alt_tokens_k=prompt_alt_tokens_k,
+            prompt_logprobs_last_n=prompt_logprobs_last_n,
+        )
         model_input, params = _to_sample_request(prompt, sampling_params, topk_prompt_logprobs)
         future = await self._submit_sample_async(
             model_input,
@@ -145,12 +212,26 @@ class SamplingClient:
         resolve = partial(_resolve_sample, session=session, topk_prompt_logprobs=topk_prompt_logprobs)
         return OperationFuture(session, operation, resolve)
 
-    def compute_logprobs(self, prompt: types.ModelInput) -> OperationFuture[list[float | None]]:
+    def compute_logprobs(
+        self, prompt: types.ModelInput, prompt_logprobs_last_n: int | None = None
+    ) -> OperationFuture[list[float | None]]:
         self._check_fresh()
-        return self._session.run(self._submit_compute_logprobs_async(prompt))
+        _reject_unsupported_sample_options(prompt_logprobs_last_n=prompt_logprobs_last_n)
+        return self._send(self._submit_compute_logprobs_async(prompt))
 
-    async def compute_logprobs_async(self, prompt: types.ModelInput) -> list[float | None]:
+    def _send(self, request: Coroutine[Any, Any, OperationFuture[_T]]) -> OperationFuture[_T]:
+        """Send a sampling request now and return its future in the form the calling context can collect.
+
+        Sampling requests are independent of each other, so unlike training requests they are
+        not ordered: inside a running event loop a rollout's samples go out concurrently.
+        """
+        return _deliver(self._session, self._session._loop.submit(request))
+
+    async def compute_logprobs_async(
+        self, prompt: types.ModelInput, prompt_logprobs_last_n: int | None = None
+    ) -> list[float | None]:
         self._check_fresh()
+        _reject_unsupported_sample_options(prompt_logprobs_last_n=prompt_logprobs_last_n)
         future = await self._submit_compute_logprobs_async(prompt)
         return await future
 

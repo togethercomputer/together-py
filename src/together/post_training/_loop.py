@@ -90,7 +90,7 @@ def _blocking_result(fut: Future[_T]) -> _T:
 
 
 def _consume_exception(future: asyncio.Future[Any]) -> None:
-    """Retrieve a shielded wait's exception even if its caller was cancelled."""
+    """Retrieve an abandoned waiter's exception, so asyncio does not log it as never retrieved."""
     if not future.cancelled():
         future.exception()
 
@@ -201,6 +201,11 @@ _process_loop = _ProcessLoop()
 _live_gates: weakref.WeakSet[LoopGate] = weakref.WeakSet()
 
 
+def submit_untracked(coro: Coroutine[Any, Any, _T]) -> Future[_T]:
+    """Schedule coro on the process loop without blocking and return its future. Untracked."""
+    return _process_loop.submit(coro)
+
+
 def run_untracked(coro: Coroutine[Any, Any, _T]) -> _T:
     """Drive coro to completion on the process loop, blocking the calling thread.
 
@@ -254,6 +259,10 @@ class LoopGate:
     async def run_async(self, coro: Coroutine[Any, Any, _T]) -> _T:
         """Await coro on the process loop, hopping from a foreign loop when needed. Tracked."""
         return await self._drive_async(coro)
+
+    def submit(self, coro: Coroutine[Any, Any, _T]) -> Future[_T]:
+        """Schedule coro on the process loop without blocking and return its future. Tracked."""
+        return self._submit_and_track(coro)
 
     def run_teardown(self, coro: Coroutine[Any, Any, _T], *, stops_remote: bool = True) -> _T | None:
         """Run coro then close. Runs at most once; on failure leaves the gate retryable.

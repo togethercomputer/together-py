@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import warnings
+from uuid import uuid4
 from typing import Any, Literal, cast
 from collections.abc import Mapping, Sequence
 
 import numpy as np
-from tinker.types.topk_prompt_logprobs import TopkPromptLogprobs
+from tinker.types.topk_logprobs import TopkLogprobs
 
 from .. import (
     Sample as WireSample,
@@ -103,8 +104,9 @@ def _to_sample(datum: types.Datum, loss_fn: types.LossFnType) -> WireSample:
         The wire sample, with its tensors under ``loss_fn_inputs``.
 
     Raises:
-        ValueError: If ``loss_fn`` is unsupported or a key the loss requires is missing.
-            A key the loss does not declare warns and is forwarded.
+        NotImplementedError: If ``loss_fn`` is a Tinker loss Together does not support.
+        ValueError: If ``loss_fn`` is not a Tinker loss, or a key the loss requires is
+            missing. A key the loss does not declare warns and is forwarded.
     """
     spec = loss_spec(loss_fn)
     inputs = datum.loss_fn_inputs
@@ -115,7 +117,7 @@ def _to_sample(datum: types.Datum, loss_fn: types.LossFnType) -> WireSample:
     )
 
 
-def _to_loss_config(loss_fn: types.LossFnType, config: Mapping[str, float] | None) -> WireLossConfig:
+def _to_loss_config(loss_fn: types.LossFnType, config: Mapping[str, float | str] | None) -> WireLossConfig:
     """Map a tinker loss and its config onto Together's wire selector."""
     spec = loss_spec(loss_fn)
     values = config or {}
@@ -200,9 +202,9 @@ def _to_forward_backward_output(result: ForwardBackwardResult) -> types.ForwardB
 
     Together's total ``loss`` is published under ``metrics["loss:sum"]``, so scripts that
     only read ``.metrics`` keep working. Per-datum ``loss_fn_outputs`` carry real logprobs
-    only when the operation was asked for them, which ``forward`` does and
-    ``forward_backward`` does not; they stay empty otherwise, since inventing them would
-    silently corrupt scripts that read them.
+    when the operation was asked for them, which ``forward`` and ``forward_backward`` do
+    unless called with ``return_loss_fn_outputs=False``; they stay empty otherwise, since
+    inventing them would silently corrupt scripts that read them.
     """
     metrics = dict(result.metrics or {})
     metrics.setdefault("loss:sum", result.loss)
@@ -285,7 +287,7 @@ def _prompt_logprobs(result: SampleResult) -> np.ndarray | None:
     return values
 
 
-def _topk_prompt_logprobs(result: SampleResult, width: int) -> TopkPromptLogprobs | None:
+def _topk_prompt_logprobs(result: SampleResult, width: int) -> TopkLogprobs | None:
     if result.topk_prompt_logprobs is None:
         return None
     token_ids = np.zeros((len(result.topk_prompt_logprobs), width), dtype=np.int32)
@@ -298,13 +300,16 @@ def _topk_prompt_logprobs(result: SampleResult, width: int) -> TopkPromptLogprob
         count = min(width, len(row_token_ids))
         token_ids[row, :count] = row_token_ids[:count]
         logprobs[row, :count] = row_logprobs[:count]
-    return TopkPromptLogprobs(token_ids=token_ids, logprobs=logprobs)
+    return TopkLogprobs(token_ids=token_ids, logprobs=logprobs)
 
 
 def _to_sample_response(result: SampleResult, topk_prompt_logprobs: int = 0) -> types.SampleResponse:
     return types.SampleResponse(
         sequences=[
             types.SampledSequence(
+                # Tinker requires an id per sequence; it only feeds provenance spans, which
+                # stable_reinforce reads and Together does not support, so any unique id works.
+                sequence_id=str(uuid4()),
                 stop_reason=_stop_reason(sequence.stop_reason),
                 # int64 tokens arrive as strings on the wire
                 tokens_np=np.asarray([int(token) for token in sequence.tokens], dtype=np.int32),

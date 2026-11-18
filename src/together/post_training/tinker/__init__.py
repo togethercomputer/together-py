@@ -9,12 +9,32 @@ Types resolve to the genuine ``tinker.types`` ones (via ``__getattr__``), so
 objects built by ``tinker_cookbook`` — renderer prompts, ``Datum``s — pass
 through unchanged; only the service client swaps. Unsupported Tinker clients
 (``RestClient``, ``resources``, …) are not exposed; ``ServiceClient.create_rest_client``
-raises ``tinker.TinkerError``. ``save_state`` returns a bare checkpoint UUID; resume
-describes that id and starts a new session. ``save_weights_for_sampler`` creates an
-inference checkpoint and returns its UUID (Tinker ``name`` / TTL are ignored).
-``forward`` fills per-datum ``loss_fn_outputs`` with real logprobs, and ``forward_backward`` does too when asked via ``return_loss_fn_outputs`` — an
-argument Tinker itself has no equivalent for, since on Together the two operations
-are one. Both publish the total loss under ``metrics["loss:sum"]``.
+and ``ServiceClient.create_custom_loss`` raise ``tinker.TinkerError``; any other tinker
+method called on a client instance that leaves it out (``save_weights_external``, …)
+raises an ``AttributeError`` that names it as unsupported. ``save_state`` returns a bare
+checkpoint UUID; resume describes that id and starts a new session.
+``save_weights_for_sampler`` creates an inference checkpoint and returns its UUID
+(Tinker ``name`` / TTL are ignored). ``forward`` and ``forward_backward`` fill per-datum
+``loss_fn_outputs`` with real logprobs, as tinker's do; a position the loss excludes comes
+back masked to zero. ``return_loss_fn_outputs=False`` skips them, an argument Tinker itself
+has no equivalent for. Both publish the total loss under ``metrics["loss:sum"]``.
+
+Every call follows tinker 0.39's two call styles. Synchronous code gets the client, or an
+``APIFuture`` to call ``.result()`` on. Inside a running event loop the same plain calls do
+not block: they return an awaitable at once, so
+``await service_client.create_lora_training_client(...)``, ``await sampling_client.sample(...)``
+and ``fwd = training_client.forward_backward(...); step = training_client.optim_step(...)``,
+then awaiting both, all work. A training or sampling call has already sent or queued its
+request when it returns; a create starts when first awaited. In a notebook the calls block,
+because the kernel's loop is logically synchronous. A training client's requests reach the
+server in the order they were called, whichever style made them; a failed
+``forward_backward_custom`` makes the client reject every later training request, as in
+tinker, and, stricter than tinker, so does one the server fails. A request is not withdrawn
+once the call is made, even if the call or the caller's wait is interrupted; a create,
+which is only sent once awaited, is cancelled with an interrupted wait. The deprecated
+``*_async`` methods remain. ``APIFuture.future()`` gives a ``concurrent.futures.Future``.
+``with ServiceClient(...) as service_client:`` and ``service_client.close(status)`` close
+every training client that service client created.
 """
 
 from __future__ import annotations

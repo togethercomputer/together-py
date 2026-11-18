@@ -4,6 +4,7 @@ import time
 import asyncio
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 from collections.abc import Callable, Awaitable, Generator
+from concurrent.futures import Future
 
 from . import _operations
 
@@ -16,10 +17,11 @@ T = TypeVar("T")
 class OperationFuture(Generic[T]):
     """Lazy handle for a submitted RL operation.
 
-    Polling starts only when the caller collects via ``result()``,
-    ``result_async()``, or ``await``. ``resolve`` receives the completed operation and
-    returns the value callers see; it gets the whole operation, not just ``output``, so
-    that a resolver rejecting an empty output can name the operation that produced it.
+    Polling starts only when the caller collects via ``result()``, ``result_async()``,
+    ``coroutine()``, ``future()``, or ``await``. ``resolve`` receives the completed
+    operation and returns the value callers see; it gets the whole operation, not just
+    ``output``, so that a resolver rejecting an empty output can name the operation that
+    produced it.
     A resolved value is cached, as is a failed operation status; transport and resolver
     errors are not, so the caller may collect again. Collection waits indefinitely
     unless the caller passes ``timeout``.
@@ -92,6 +94,17 @@ class OperationFuture(Generic[T]):
             self._value = value
             self._resolved = True
             return value
+
+    def future(self) -> Future[T]:
+        """This result as a ``concurrent.futures.Future``, for blocking or threaded code.
+
+        Cancelling it stops waiting for the result; the operation itself keeps running.
+        """
+        return self._session._loop.submit(self._collect())
+
+    async def coroutine(self) -> T:
+        """This future as a coroutine, for APIs that take one rather than an awaitable (``asyncio.create_task``)."""
+        return await self
 
     def __await__(self) -> Generator[Any, None, T]:
         return self.result_async().__await__()
