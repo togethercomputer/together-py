@@ -739,6 +739,93 @@ class TestBetaJigModelMounts:
         assert "/models" in output
 
 
+_PLACEMENT_PYPROJECT = """
+[tool.jig]
+name = "placement-app"
+
+[tool.jig.deploy]
+placement_group = "shared-gpu"
+regions = ["us-east", "eu-west-1"]
+"""
+
+
+class TestBetaJigPlacement:
+    def _deploy_payload(self, deploy: Any) -> dict[str, Any]:
+        calls: list[dict[str, Any]] = []
+
+        class _Api:
+            def update(self, _id: str, **kwargs: Any) -> SimpleNamespace:
+                calls.append(kwargs)
+                return SimpleNamespace(status="Updating", environment_variables=[])
+
+        def _noop_track(_response: Any) -> None:
+            return None
+
+        jig = SimpleNamespace(
+            api=_Api(),
+            config=SimpleNamespace(deploy=deploy, experimental=_jig_mod.ExperimentalConfig()),
+            name=_DEPLOY_NAME,
+            registry=lambda: "registry.together.ai/test/",
+            state=SimpleNamespace(secrets={}),
+            sync_secrets_from_deployment=lambda: None,
+            validate_model_mounts=lambda: None,
+            validate_volumes=lambda: None,
+            track=_noop_track,
+            together=SimpleNamespace(api_key="test-key", base_url=httpx.URL(base_url)),
+        )
+
+        _jig_mod.Jig.deploy(cast(Any, jig), existing_image="example.com/acme/app:tag")
+        return calls[0]
+
+    def test_config_parses_placement_group_and_regions(self, tmp_path: Path) -> None:
+        data: dict[str, Any] = _jig_mod.tomllib.loads(_PLACEMENT_PYPROJECT)
+        with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
+            cfg = _jig_mod.Config.load(data, tmp_path / "pyproject.toml")
+        assert cfg.deploy.placement_group == "shared-gpu"
+        assert cfg.deploy.regions == ["us-east", "eu-west-1"]
+
+    def test_deploy_omits_placement_fields_when_unset(self) -> None:
+        payload = self._deploy_payload(_jig_mod.DeployConfig())
+        assert "placement_group" not in payload
+        assert "regions" not in payload
+
+    def test_deploy_sends_placement_fields_when_set(self) -> None:
+        payload = self._deploy_payload(_jig_mod.DeployConfig(placement_group="shared-gpu", regions=["us-east"]))
+        assert payload["placement_group"] == "shared-gpu"
+        assert payload["regions"] == ["us-east"]
+
+    def test_deploy_sends_empty_values_to_clear_placement(self) -> None:
+        payload = self._deploy_payload(_jig_mod.DeployConfig(placement_group="", regions=[]))
+        assert payload["placement_group"] == ""
+        assert payload["regions"] == []
+
+    def test_status_shows_placement_group_and_regions(self) -> None:
+        deployment = _jig_mod.Deployment(
+            name=_DEPLOY_NAME,
+            image="registry.together.ai/test/app@sha256:abcdef123456",
+            status="Ready",
+            gpu_count=1,
+            gpu_type="h100-80gb",
+            cpu=1,
+            memory=8,
+            storage=100,
+            volumes=[],
+            environment_variables=[],
+            placement_group="shared-gpu",
+            regions=["us-east", "eu-west-1"],
+        )
+
+        def _short_image(image: str) -> str:
+            return image
+
+        jig = SimpleNamespace(registry=lambda: "registry.together.ai/test/", short_image=_short_image)
+
+        output = _jig_mod.Jig.format_status(cast(Any, jig), deployment)
+
+        assert "Placement Group: shared-gpu" in output
+        assert "Regions: us-east, eu-west-1" in output
+
+
 _S3_URI = "s3://my-bucket/weights"
 _ROLE_ARN = "arn:aws:iam::123456789012:role/together"
 
