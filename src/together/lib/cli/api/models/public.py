@@ -88,7 +88,7 @@ def _format_model_cell(model: SupportedModel) -> str:
         if not name or name in seen:
             continue
         seen.add(name)
-        lines.append(f"  > {name}")
+        lines.append(f"  └ {name}")
     return "\n".join(lines)
 
 
