@@ -493,6 +493,9 @@ class TestBetaModelsRetrieve:
     ) -> None:
         respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=_not_found())
         respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body(organization=None)))
+        respx_mock.get("/v2/supported-models").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
 
         result = cli_runner.invoke(["models", "get", "ml_1", "--project", "proj", "--json"])
 
@@ -506,6 +509,9 @@ class TestBetaModelsRetrieve:
         respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=_not_found())
         respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         org = respx_mock.get("/v2/organizations/org-1/models/ml_1").mock(return_value=_not_found())
+        respx_mock.get("/v2/supported-models").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
 
         result = cli_runner.invoke(["models", "get", "ml_1", "--project", "proj", "--json"])
 
@@ -600,6 +606,72 @@ class TestBetaModelsRetrieve:
         assert not any(call.request.url.path == "/v2/supported-models" for call in cast(list[Call], respx_mock.calls))
 
     @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_resolves_catalog_name_when_profiles_differ(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v2/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/v2/projects/together/models/ml_base").mock(
+            return_value=httpx.Response(
+                200,
+                json=_model_body(model_id="ml_base", name="meta-llama/Llama-3-8B", projectId="together"),
+            )
+        )
+        respx_mock.get("/v2/projects/together/models/ml_base/files").mock(
+            return_value=httpx.Response(200, json=_files_body())
+        )
+
+        result = cli_runner.invoke(["models", "get", "meta-llama/Llama-3-8B", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(result.output)["id"] == "ml_base"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_resolves_serverless_name_without_profile_model_path(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        profile = _supported_model_body()["deploymentProfiles"][0]
+        profile = {**profile, "model": "", "modelName": "Qwen/Qwen3-TTS-12Hz-1.7B"}
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v2/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _supported_model_body(
+                            id="ml_tts",
+                            name="Qwen/Qwen3-TTS-12Hz-1.7B",
+                            baseModel="projects/together/models/ml_tts",
+                            baseModelId="ml_tts",
+                            deploymentProfiles=[profile],
+                        )
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+        respx_mock.get("/v2/projects/together/models/ml_tts").mock(
+            return_value=httpx.Response(
+                200,
+                json=_model_body(model_id="ml_tts", name="Qwen/Qwen3-TTS-12Hz-1.7B", projectId="together"),
+            )
+        )
+        respx_mock.get("/v2/projects/together/models/ml_tts/files").mock(
+            return_value=httpx.Response(200, json=_files_body())
+        )
+
+        result = cli_runner.invoke(["models", "get", "Qwen/Qwen3-TTS-12Hz-1.7B", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(result.output)["id"] == "ml_tts"
+
+    @pytest.mark.respx(base_url=base_url)
     def test_retrieve_public_name_lists_candidates_when_not_exact(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
@@ -611,7 +683,7 @@ class TestBetaModelsRetrieve:
             )
         )
 
-        result = cli_runner.invoke(["models", "get", "meta-llama/Llama-3-8B", "--project", "proj"])
+        result = cli_runner.invoke(["models", "get", "meta-llama/Llama", "--project", "proj"])
 
         assert result.exit_code != 0
         assert "No exact match for model" in result.output

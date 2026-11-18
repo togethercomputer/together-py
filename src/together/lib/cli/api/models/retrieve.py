@@ -14,7 +14,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.api.models._utils import print_model_detail
 from together.lib.cli.components.loader import show_loading_status
 from together.types.model_list_files_response import ModelListFilesResponse
-from together.lib.cli.api.models._resolve_base_model import resolve_supported_model_location
+from together.lib.cli.api.models._resolve_base_model import resolve_public_model_id, resolve_supported_model_location
 from together.lib.cli.api.endpoints._utils._resolve_model import MODEL_PATH_RE, _find_private_model_by_name
 
 
@@ -54,7 +54,7 @@ async def _load_model(config: CLIConfig, model_id: str) -> tuple[Model, ModelLis
     try:
         model = await config.client.models.retrieve(model_id)
     except NotFoundError as project_error:
-        model = await _retrieve_org_model(config, model_id, project_error)
+        model = await _retrieve_model_after_project_miss(config, model_id, project_error)
 
     # Wait for the model so a failed project lookup never starts a file list, and an
     # org fallback lists files from the project that actually owns the model.
@@ -96,6 +96,21 @@ async def _load_project_model_by_name(
         return None
     files = await safe_fetch(config.client.models.list_files(id=model.id, project_id=model.project_id))
     return model, files
+
+
+async def _retrieve_model_after_project_miss(config: CLIConfig, model_id: str, project_error: NotFoundError) -> Model:
+    try:
+        return await _retrieve_org_model(config, model_id, project_error)
+    except NotFoundError:
+        pass
+    location = await resolve_public_model_id(config, model_id)
+    if location is None:
+        raise project_error
+    project_id, resolved_id = location
+    try:
+        return await config.client.models.retrieve(id=resolved_id, project_id=project_id)
+    except NotFoundError:
+        raise project_error from None
 
 
 async def _retrieve_org_model(config: CLIConfig, model_id: str, project_error: NotFoundError) -> Model:
