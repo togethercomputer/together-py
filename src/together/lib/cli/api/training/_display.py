@@ -80,9 +80,12 @@ def _optimizer_name(resource: ModelResources) -> str:
 
 def _compute_summary(resource: ModelResources) -> str:
     replicas = resource.compute_config.num_generator_replicas
+    trainers = resource.compute_config.num_trainer_replicas
     gpu = resource.compute_config.gpu_type or "default GPU"
     if replicas == 0:
         return "trainer only"
+    if trainers == 0:
+        return f"{replicas}× {gpu} (generator only)"
     return f"{replicas}× {gpu}"
 
 
