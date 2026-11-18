@@ -24,6 +24,12 @@ class TestMainGlobalOptions:
         assert result.exit_code == 0
         assert "together" in result.output.lower() or "CLI" in result.output
 
+    def test_help_links_to_the_cli_docs(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["--help"])
+
+        assert result.exit_code == 0
+        assert "https://docs.together.ai/reference/cli/getting-started" in "".join(result.output.split())
+
     def test_timeout_and_max_retries_passed_to_client(self, cli_runner: CliRunner) -> None:
         from unittest.mock import AsyncMock, patch
 

@@ -14,6 +14,7 @@ from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.components.loader import show_loading_status
 from together.types.endpoints.ab_experiment import AbExperiment
 from together.lib.cli.api.endpoints.retrieve import retrieve as retrieve_endpoint
+from together.lib.cli.api.endpoints._utils._parameters import validate_inactive_timeout
 from together.lib.cli.api.endpoints._utils._traffic_split import upsert_traffic_weight
 from together.lib.cli.api.endpoints._utils._ab_experiments import (
     find_ab_for_deployment,
@@ -105,7 +106,7 @@ async def update(
         Optional[int],
         Parameter(
             help="Updated inactive timeout in minutes (0 to disable; otherwise 30-1440).",
-            validator=Number(gte=0, lte=1440),
+            validator=validate_inactive_timeout,
         ),
     ] = None,
     max_concurrent_requests_per_replica: Annotated[

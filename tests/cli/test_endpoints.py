@@ -197,6 +197,33 @@ class TestBetaEndpointsDeploy:
         assert "--enable-lora" not in output
         assert example in output
 
+    @pytest.mark.respx(base_url=base_url)
+    @pytest.mark.parametrize("minutes", ["-1", "10", "29", "1441"])
+    def test_deploy_rejects_inactive_timeout_the_api_refuses(
+        self, respx_mock: MockRouter, cli_runner: CliRunner, minutes: str
+    ) -> None:
+        result = cli_runner.invoke(
+            [
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "fresh-endpoint",
+                "--model",
+                "ml_1",
+                "--inactive-timeout",
+                minutes,
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 1
+        assert respx_mock.calls.call_count == 0
+        error = json.loads(result.out_out)["error"]
+        assert "--inactive-timeout" in error
+        assert "Must be 0 or from 30 to 1440 minutes. 0 turns idle shutdown off." in error
+
     @pytest.mark.usefixtures("plain_cli_help")
     def test_models_deploy_help_matches_endpoints_deploy(self, cli_runner: CliRunner) -> None:
         endpoints = cli_runner.invoke(["endpoints", "deploy", "--help"])
