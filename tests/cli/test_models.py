@@ -359,17 +359,23 @@ class TestBetaModelsPublic:
 
     @pytest.mark.respx(base_url=base_url)
     def test_public_table_shows_profile_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        body = _supported_model_body()
+        fp8 = {**body["deploymentProfiles"][0], "profileId": "cr_2", "modelName": "meta-llama/Llama-3-8B-FP8"}
+        body["deploymentProfiles"].append(fp8)
         respx_mock.get("/v2/supported-models").mock(
             return_value=httpx.Response(
                 200,
-                json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
+                json={"object": "list", "data": [body], "next_cursor": None},
             )
         )
 
         result = cli_runner.invoke(["models", "public", "--project", "proj"])
 
         assert result.exit_code == 0, result.output
-        assert "meta-llama/Llama-3-8B-FP16" in result.output
+        parent = result.output.index("meta-llama/Llama-3-8B")
+        fp16 = result.output.index("> meta-llama/Llama-3-8B-FP16")
+        fp8_at = result.output.index("> meta-llama/Llama-3-8B-FP8")
+        assert parent < fp16 < fp8_at
         assert "dedicated endpoints" in result.output
         assert "Products" in result.output
         assert "GPUs" not in result.output
