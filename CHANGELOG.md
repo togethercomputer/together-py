@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.3.0](https://github.com/togethercomputer/together-py/compare/v3.2.1...v3.3.0) (2026-11-18)
+
+
+### Features
+
+* **cli:** add placement_group and regions to jig deploy config ([#679](https://github.com/togethercomputer/together-py/issues/679)) ([ae74b29](https://github.com/togethercomputer/together-py/commit/ae74b29e2d3a4a7d66f74727a5070435d1e6fa92))
+* **cli:** label generator-only model resources in `tg training` ([#678](https://github.com/togethercomputer/together-py/issues/678)) ([afe221e](https://github.com/togethercomputer/together-py/commit/afe221e78c6cfe10022cb5006b595a68b6395ef2))
+* **rl:** run the Tinker-compatible client on tinker 0.39.0 ([#198](https://github.com/togethercomputer/together-py/issues/198)) ([d25d297](https://github.com/togethercomputer/together-py/commit/d25d2978bd165319391e949fef697981711cb30f))
+
 ## [3.2.1](https://github.com/togethercomputer/together-py/compare/v3.2.0...v3.2.1) (2026-11-17)
 
 
