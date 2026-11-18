@@ -370,12 +370,15 @@ class TestBetaModelsPublic:
 
         assert result.exit_code == 0, result.output
         assert "meta-llama/Llama-3-8B-FP16" in result.output
-        assert "1x H100" in result.output
-        assert "TP1" in result.output
+        assert "dedicated endpoints" in result.output
+        assert "Products" in result.output
+        assert "GPUs" not in result.output
+        assert "Parallelism" not in result.output
+        assert "Unit Prices" not in result.output
         assert "cr_1" not in result.output
 
     @pytest.mark.respx(base_url=base_url)
-    def test_public_table_shows_unit_prices(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+    def test_public_table_shows_products_not_prices(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         unit_prices = [
             {"tier": "PRICING_TIER_STANDARD", "unit": "PRICING_UNIT_AUDIO_MINUTE", "priceUsd": 0.0015},
             {"tier": "PRICING_TIER_BATCH", "unit": "PRICING_UNIT_MILLION_CHARACTERS", "priceUsd": 4},
@@ -385,7 +388,18 @@ class TestBetaModelsPublic:
                 200,
                 json={
                     "object": "list",
-                    "data": [_supported_model_body(unitPrices=unit_prices)],
+                    "data": [
+                        _supported_model_body(
+                            products=[
+                                "PRODUCT_FINE_TUNING",
+                                "PRODUCT_RESERVED",
+                                "PRODUCT_SERVERLESS",
+                                "PRODUCT_DEDICATED",
+                            ],
+                            deploymentProfiles=[],
+                            unitPrices=unit_prices,
+                        )
+                    ],
                     "next_cursor": None,
                 },
             )
@@ -394,11 +408,21 @@ class TestBetaModelsPublic:
         result = cli_runner.invoke(["models", "public", "--project", "proj"])
 
         assert result.exit_code == 0, result.output
-        assert "Unit Prices" in result.output
-        assert "$0.0015/audio" in result.output
-        assert "(standard)" in result.output
-        assert "$4/1M" in result.output
-        assert "(batch)" in result.output
+        assert "meta-llama/Llama-3-8B" in result.output
+        serverless = result.output.index("serverless")
+        dedicated = result.output.index("dedicated endpoints")
+        training = result.output.index("training")
+        reserved = result.output.index("reserved")
+        assert serverless < dedicated < training < reserved
+        assert "$0.0015" not in result.output
+        assert "Unit Prices" not in result.output
+        assert "1x H100" not in result.output
+
+        json_result = cli_runner.invoke(["models", "public", "--project", "proj", "--json"])
+        assert json_result.exit_code == 0, json_result.output
+        payload = json.loads(json_result.output)
+        assert payload["data"][0]["unitPrices"][0]["priceUsd"] == 0.0015
+        assert "PRODUCT_SERVERLESS" in payload["data"][0]["products"]
 
 
 class TestBetaModelsOrg:
@@ -529,6 +553,83 @@ class TestBetaModelsRetrieve:
         assert result.exit_code == 0, result.output
         assert "Multiple configs" not in output
         assert "Qwen/Qwen3.5-9B-BF16" in output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_resolves_public_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        supported = respx_mock.get("/v2/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/v2/projects/together/models/ml_base").mock(
+            return_value=httpx.Response(
+                200,
+                json=_model_body(model_id="ml_base", name="meta-llama/Llama-3-8B-FP16", projectId="together"),
+            )
+        )
+        respx_mock.get("/v2/projects/together/models/ml_base/files").mock(
+            return_value=httpx.Response(200, json=_files_body())
+        )
+
+        result = cli_runner.invoke(["models", "get", "meta-llama/Llama-3-8B-FP16", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        assert "search=meta-llama%2FLlama-3-8B-FP16" in str(cast(Call, supported.calls[0]).request.url)
+        payload = json.loads(result.output)
+        assert payload["id"] == "ml_base"
+        assert payload["projectId"] == "together"
+        assert payload["files"][0]["path"] == "weights.bin"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_resolves_project_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v2/projects/proj/models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_model_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/v2/projects/proj/models/ml_1/files").mock(return_value=httpx.Response(200, json=_files_body()))
+
+        result = cli_runner.invoke(["models", "get", "my-project/my-model", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(result.output)["id"] == "ml_1"
+        assert not any(call.request.url.path == "/v2/supported-models" for call in cast(list[Call], respx_mock.calls))
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_public_name_lists_candidates_when_not_exact(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v2/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
+            )
+        )
+
+        result = cli_runner.invoke(["models", "get", "meta-llama/Llama-3-8B", "--project", "proj"])
+
+        assert result.exit_code != 0
+        assert "No exact match for model" in result.output
+        assert "meta-llama/Llama-3-8B-FP16" in result.output
+        assert "ml_base" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_unknown_public_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/v3/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/v2/supported-models").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
+
+        result = cli_runner.invoke(["models", "get", "missing/model", "--project", "proj"])
+
+        assert result.exit_code != 0
+        assert 'Model "missing/model" not found' in result.output
+        assert "tg models public --search missing/model" in result.output
 
 
 class TestBetaModelsRm:

@@ -463,6 +463,7 @@ MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] List project models and inspect one:
   [primary]tg models ls[/primary]
   [primary]tg models ml_yyyyyyyyyyyy[/primary]
+  [primary]tg models get Qwen/Qwen3.5-9B-FP8[/primary]
 
 [dim]-[/dim] List configs for a model to be used with [primary]tg models deploy --config[/primary]:
   [primary]tg models configs ml_yyyyyyyyyyyy[/primary]
@@ -504,6 +505,9 @@ MODELS_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
 MODELS_PUBLIC_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Search supported base models:
   [primary]tg models public --search Qwen[/primary]
+
+[dim]-[/dim] Inspect a name from the Model column:
+  [primary]tg models get Qwen/Qwen3.5-9B-FP8[/primary]
 
 [dim]-[/dim] Filter by modality / product:
   [primary]tg models public --modality text --product dedicated[/primary]
