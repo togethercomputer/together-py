@@ -35,7 +35,7 @@ MIN_SAMPLES = 1
 NUM_BYTES_IN_GB = 2**30
 
 # maximum number of GB sized files we support finetuning for
-MAX_FILE_SIZE_GB = 50.1
+MAX_FILE_SIZE_GB = 100
 
 # Multimodal limits
 MAX_IMAGES_PER_EXAMPLE = 10
