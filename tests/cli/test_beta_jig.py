@@ -826,6 +826,86 @@ class TestBetaJigPlacement:
         assert "Regions: us-east, eu-west-1" in output
 
 
+_TRAFFIC_PYPROJECT = """
+[tool.jig]
+name = "traffic-app"
+
+[tool.jig.deploy]
+traffic_weight = 70
+"""
+
+
+class TestBetaJigTrafficWeight:
+    def _deploy_payload(self, deploy: Any) -> dict[str, Any]:
+        calls: list[dict[str, Any]] = []
+
+        class _Api:
+            def update(self, _id: str, **kwargs: Any) -> SimpleNamespace:
+                calls.append(kwargs)
+                return SimpleNamespace(status="Updating", environment_variables=[])
+
+        def _noop_track(_response: Any) -> None:
+            return None
+
+        jig = SimpleNamespace(
+            api=_Api(),
+            config=SimpleNamespace(deploy=deploy, experimental=_jig_mod.ExperimentalConfig()),
+            name=_DEPLOY_NAME,
+            registry=lambda: "registry.together.ai/test/",
+            state=SimpleNamespace(secrets={}),
+            sync_secrets_from_deployment=lambda: None,
+            validate_model_mounts=lambda: None,
+            validate_volumes=lambda: None,
+            track=_noop_track,
+            together=SimpleNamespace(api_key="test-key", base_url=httpx.URL(base_url)),
+        )
+
+        _jig_mod.Jig.deploy(cast(Any, jig), existing_image="example.com/acme/app:tag")
+        return calls[0]
+
+    def test_config_parses_traffic_weight(self, tmp_path: Path) -> None:
+        data: dict[str, Any] = _jig_mod.tomllib.loads(_TRAFFIC_PYPROJECT)
+        with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
+            cfg = _jig_mod.Config.load(data, tmp_path / "pyproject.toml")
+        assert cfg.deploy.traffic_weight == 70
+
+    def test_deploy_omits_traffic_weight_when_unset(self) -> None:
+        payload = self._deploy_payload(_jig_mod.DeployConfig())
+        assert "traffic_weight" not in payload
+
+    def test_deploy_sends_traffic_weight_when_set(self) -> None:
+        payload = self._deploy_payload(_jig_mod.DeployConfig(traffic_weight=70))
+        assert payload["traffic_weight"] == 70
+
+    def test_deploy_sends_zero_traffic_weight(self) -> None:
+        payload = self._deploy_payload(_jig_mod.DeployConfig(traffic_weight=0))
+        assert payload["traffic_weight"] == 0
+
+    def test_status_shows_traffic_weight(self) -> None:
+        deployment = _jig_mod.Deployment(
+            name=_DEPLOY_NAME,
+            image="registry.together.ai/test/app@sha256:abcdef123456",
+            status="Ready",
+            gpu_count=1,
+            gpu_type="h100-80gb",
+            cpu=1,
+            memory=8,
+            storage=100,
+            volumes=[],
+            environment_variables=[],
+            traffic_weight=0,
+        )
+
+        def _short_image(image: str) -> str:
+            return image
+
+        jig = SimpleNamespace(registry=lambda: "registry.together.ai/test/", short_image=_short_image)
+
+        output = _jig_mod.Jig.format_status(cast(Any, jig), deployment)
+
+        assert "Traffic Weight: 0" in output
+
+
 _S3_URI = "s3://my-bucket/weights"
 _ROLE_ARN = "arn:aws:iam::123456789012:role/together"
 
