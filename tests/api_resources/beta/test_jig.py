@@ -109,6 +109,7 @@ class TestJig:
             regions=["string"],
             storage=400,
             termination_grace_period_seconds=0,
+            traffic_weight=0,
             volumes=[
                 {
                     "mount_path": "mount_path",
@@ -224,6 +225,7 @@ class TestJig:
             regions=["string"],
             storage=400,
             termination_grace_period_seconds=0,
+            traffic_weight=0,
             volumes=[
                 {
                     "mount_path": "mount_path",
@@ -577,6 +579,7 @@ class TestAsyncJig:
             regions=["string"],
             storage=400,
             termination_grace_period_seconds=0,
+            traffic_weight=0,
             volumes=[
                 {
                     "mount_path": "mount_path",
@@ -692,6 +695,7 @@ class TestAsyncJig:
             regions=["string"],
             storage=400,
             termination_grace_period_seconds=0,
+            traffic_weight=0,
             volumes=[
                 {
                     "mount_path": "mount_path",

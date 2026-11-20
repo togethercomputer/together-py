@@ -143,6 +143,12 @@ class JigDeployParams(TypedDict, total=False):
     shutdown before forcefully terminating the replica
     """
 
+    traffic_weight: int
+    """
+    TrafficWeight is the deployment's share of its model's traffic, relative to the
+    other deployments of that model.
+    """
+
     volumes: Iterable[Volume]
     """Volumes is a list of volume mounts to attach to the container.
 

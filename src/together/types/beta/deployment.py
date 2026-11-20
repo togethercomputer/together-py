@@ -296,6 +296,12 @@ class Deployment(BaseModel):
     shutdown before forcefully terminating the replica
     """
 
+    traffic_weight: Optional[int] = None
+    """
+    TrafficWeight is the deployment's share of its model's traffic, relative to the
+    other deployments of that model
+    """
+
     updated_at: Optional[datetime] = None
     """UpdatedAt is the ISO8601 timestamp when this deployment was last updated"""
 

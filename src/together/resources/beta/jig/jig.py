@@ -150,6 +150,7 @@ class JigResource(SyncAPIResource):
         regions: SequenceNotStr[str] | Omit = omit,
         storage: int | Omit = omit,
         termination_grace_period_seconds: int | Omit = omit,
+        traffic_weight: int | Omit = omit,
         volumes: Iterable[jig_update_params.Volume] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -223,6 +224,9 @@ class JigResource(SyncAPIResource):
           termination_grace_period_seconds: TerminationGracePeriodSeconds is the time in seconds to wait for graceful
               shutdown before forcefully terminating the replica
 
+          traffic_weight: TrafficWeight is the deployment's share of its model's traffic, relative to the
+              other deployments of that model.
+
           volumes: Volumes is a list of volume mounts to attach to the container. Replaces all
               existing volumes.
 
@@ -261,6 +265,7 @@ class JigResource(SyncAPIResource):
                     "regions": regions,
                     "storage": storage,
                     "termination_grace_period_seconds": termination_grace_period_seconds,
+                    "traffic_weight": traffic_weight,
                     "volumes": volumes,
                 },
                 jig_update_params.JigUpdateParams,
@@ -314,6 +319,7 @@ class JigResource(SyncAPIResource):
         regions: SequenceNotStr[str] | Omit = omit,
         storage: int | Omit = omit,
         termination_grace_period_seconds: int | Omit = omit,
+        traffic_weight: int | Omit = omit,
         volumes: Iterable[jig_deploy_params.Volume] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -392,6 +398,9 @@ class JigResource(SyncAPIResource):
           termination_grace_period_seconds: TerminationGracePeriodSeconds is the time in seconds to wait for graceful
               shutdown before forcefully terminating the replica
 
+          traffic_weight: TrafficWeight is the deployment's share of its model's traffic, relative to the
+              other deployments of that model.
+
           volumes: Volumes is a list of volume mounts to attach to the container. Each mount must
               reference an existing volume by name
 
@@ -428,6 +437,7 @@ class JigResource(SyncAPIResource):
                     "regions": regions,
                     "storage": storage,
                     "termination_grace_period_seconds": termination_grace_period_seconds,
+                    "traffic_weight": traffic_weight,
                     "volumes": volumes,
                 },
                 jig_deploy_params.JigDeployParams,
@@ -768,6 +778,7 @@ class AsyncJigResource(AsyncAPIResource):
         regions: SequenceNotStr[str] | Omit = omit,
         storage: int | Omit = omit,
         termination_grace_period_seconds: int | Omit = omit,
+        traffic_weight: int | Omit = omit,
         volumes: Iterable[jig_update_params.Volume] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -841,6 +852,9 @@ class AsyncJigResource(AsyncAPIResource):
           termination_grace_period_seconds: TerminationGracePeriodSeconds is the time in seconds to wait for graceful
               shutdown before forcefully terminating the replica
 
+          traffic_weight: TrafficWeight is the deployment's share of its model's traffic, relative to the
+              other deployments of that model.
+
           volumes: Volumes is a list of volume mounts to attach to the container. Replaces all
               existing volumes.
 
@@ -879,6 +893,7 @@ class AsyncJigResource(AsyncAPIResource):
                     "regions": regions,
                     "storage": storage,
                     "termination_grace_period_seconds": termination_grace_period_seconds,
+                    "traffic_weight": traffic_weight,
                     "volumes": volumes,
                 },
                 jig_update_params.JigUpdateParams,
@@ -932,6 +947,7 @@ class AsyncJigResource(AsyncAPIResource):
         regions: SequenceNotStr[str] | Omit = omit,
         storage: int | Omit = omit,
         termination_grace_period_seconds: int | Omit = omit,
+        traffic_weight: int | Omit = omit,
         volumes: Iterable[jig_deploy_params.Volume] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -1010,6 +1026,9 @@ class AsyncJigResource(AsyncAPIResource):
           termination_grace_period_seconds: TerminationGracePeriodSeconds is the time in seconds to wait for graceful
               shutdown before forcefully terminating the replica
 
+          traffic_weight: TrafficWeight is the deployment's share of its model's traffic, relative to the
+              other deployments of that model.
+
           volumes: Volumes is a list of volume mounts to attach to the container. Each mount must
               reference an existing volume by name
 
@@ -1046,6 +1065,7 @@ class AsyncJigResource(AsyncAPIResource):
                     "regions": regions,
                     "storage": storage,
                     "termination_grace_period_seconds": termination_grace_period_seconds,
+                    "traffic_weight": traffic_weight,
                     "volumes": volumes,
                 },
                 jig_deploy_params.JigDeployParams,
