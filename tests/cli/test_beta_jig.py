@@ -616,6 +616,37 @@ class TestBetaJigModelMounts:
         ]
         assert "extra_body" not in calls[0]
 
+    def test_deploy_sends_replica_size_as_experimental(self) -> None:
+        calls: list[dict[str, Any]] = []
+
+        class _Api:
+            def update(self, _id: str, **kwargs: Any) -> SimpleNamespace:
+                calls.append(kwargs)
+                return SimpleNamespace(status="Updating", environment_variables=[])
+
+        def deploy_with(toml: str) -> dict[str, Any]:
+            with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
+                config = _jig_mod.Config.load(_jig_mod.tomllib.loads(toml), Path("jig.toml"))
+            jig = SimpleNamespace(
+                api=_Api(),
+                config=config,
+                name=_DEPLOY_NAME,
+                registry=lambda: "registry.together.ai/test/",
+                state=SimpleNamespace(secrets={}),
+                sync_secrets_from_deployment=lambda: None,
+                validate_model_mounts=lambda: None,
+                validate_volumes=lambda: None,
+                track=_noop_track,
+                together=SimpleNamespace(api_key="test-key", base_url=httpx.URL(base_url)),
+            )
+            _jig_mod.Jig.deploy(cast(Any, jig), existing_image="example.com/acme/app:tag")
+            return calls.pop()
+
+        assert deploy_with("[deploy.experimental]\nreplica_size = 2\n")["extra_body"] == {
+            "experimental": {"replica_size": 2}
+        }
+        assert "extra_body" not in deploy_with("[deploy]\ngpu_count = 1\n")
+
     def test_deploy_warns_about_secrets_expiring_soon(self, capsys: pytest.CaptureFixture[str]) -> None:
         def expires_in(days: int) -> datetime:
             return datetime.now(timezone.utc) + timedelta(days=days)

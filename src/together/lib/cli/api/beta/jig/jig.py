@@ -286,6 +286,7 @@ class ExperimentalConfig:
 
     auto_optimize: bool = False
     capacity_type: Optional[Literal["stable", "preemptible"]] = None
+    replica_size: Optional[int] = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ExperimentalConfig:
@@ -366,7 +367,9 @@ class JigConfig:
         return cls(
             image=ImageConfig.from_dict(jig_config.get("image", {})),
             deploy=DeployConfig.from_dict(jig_config.get("deploy", {})),
-            experimental=ExperimentalConfig.from_dict(jig_config.get("experimental", {})),
+            experimental=ExperimentalConfig.from_dict(
+                {**jig_config.get("experimental", {}), **deploy_config.get("experimental", {})}
+            ),
             model_name=name,
             _path=path,
             _unique_name_hint=hint,
