@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Optional, Annotated
+from typing import TYPE_CHECKING, Any, Literal, Optional, Annotated
 from typing_extensions import override
 
 from cyclopts import Group, Parameter
@@ -16,6 +16,23 @@ from together.types.endpoints.deployment_create_params import (
     PlacementInline,
 )
 from together.lib.cli.api.endpoints._utils._resolve_model import MODEL_PATH_RE
+
+INACTIVE_TIMEOUT_MIN_MINUTES = 30
+INACTIVE_TIMEOUT_MAX_MINUTES = 1440
+
+
+def validate_inactive_timeout(_type: Any, value: Any) -> None:
+    """Reject an --inactive-timeout the API would refuse, before any request is sent.
+
+    The API accepts 0, which turns idle shutdown off, or a value from 30 to 1440 minutes.
+    """
+    if value is None or value == 0:
+        return
+    if not INACTIVE_TIMEOUT_MIN_MINUTES <= value <= INACTIVE_TIMEOUT_MAX_MINUTES:
+        raise ValueError(
+            f"Must be 0 or from {INACTIVE_TIMEOUT_MIN_MINUTES} to {INACTIVE_TIMEOUT_MAX_MINUTES} minutes. "
+            "0 turns idle shutdown off."
+        )
 
 
 class PlacementModel:

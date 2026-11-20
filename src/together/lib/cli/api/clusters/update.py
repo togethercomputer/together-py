@@ -10,12 +10,13 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.api.clusters.create import NUM_GPUS_HELP
 from together.types.cluster_update_params import AddOn
 
 
 async def update(
     cluster_id: str,
-    num_gpus: Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")] = None,
+    num_gpus: Annotated[Optional[int], Parameter(help=NUM_GPUS_HELP)] = None,
     cluster_type: Annotated[
         Optional[Literal["KUBERNETES", "SLURM"]], Parameter(help="Type of cluster to update")
     ] = None,

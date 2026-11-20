@@ -23,6 +23,7 @@ from together.lib.cli.api.endpoints._utils._parameters import (
     PlacementGroup,
     PlacementModel,
     placement_model,
+    validate_inactive_timeout,
 )
 from together.types.endpoints.deployment_create_params import (
     Placement,
@@ -181,7 +182,7 @@ async def deploy(
         Optional[int],
         Parameter(
             help="Minutes of inactivity before the deployment auto-stops (0 to disable; otherwise 30-1440).",
-            validator=Number(gte=0, lte=1440),
+            validator=validate_inactive_timeout,
         ),
     ] = None,
     max_concurrent_requests_per_replica: Annotated[

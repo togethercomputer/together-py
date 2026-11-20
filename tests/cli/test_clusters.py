@@ -1043,6 +1043,16 @@ class TestClustersCreate:
         assert "GB200_NVL" in result.output
         assert result.exit_code == 0
 
+    @pytest.mark.usefixtures("plain_cli_help")
+    @pytest.mark.parametrize("command", ["create", "update"])
+    def test_num_gpus_help_states_the_minimum_and_step(self, command: str, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["clusters", command, "--help"])
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0
+        assert "Must be at least 8 and a multiple of 8" in output
+        assert "GB200_NVL: at least 4 and a multiple of 4" in output
+
     def test_invalid_nvidia_selector_is_json_in_json_mode(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(
             [

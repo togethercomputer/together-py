@@ -210,6 +210,39 @@ class TestBetaEndpointsUpdate:
         assert json.loads(req.content.decode()) == {"inactiveTimeout": 0}
 
     @pytest.mark.respx(base_url=base_url)
+    @pytest.mark.parametrize("minutes", ["30", "1440"])
+    def test_update_inactive_timeout_accepts_range_bounds(
+        self, respx_mock: MockRouter, cli_runner: CliRunner, minutes: str
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(_update_args("dep_control", "--inactive-timeout", minutes))
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {"inactiveTimeout": int(minutes)}
+
+    @pytest.mark.respx(base_url=base_url, assert_all_called=False)
+    @pytest.mark.parametrize("minutes", ["-1", "1", "10", "29", "1441"])
+    def test_update_inactive_timeout_rejects_values_the_api_refuses(
+        self, respx_mock: MockRouter, cli_runner: CliRunner, minutes: str
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        route = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(_update_args("dep_control", "--inactive-timeout", minutes))
+
+        assert result.exit_code == 1
+        assert route.call_count == 0
+        error = json.loads(result.out_out)["error"]
+        assert "--inactive-timeout" in error
+        assert "Must be 0 or from 30 to 1440 minutes. 0 turns idle shutdown off." in error
+
+    @pytest.mark.respx(base_url=base_url)
     def test_update_max_concurrent_requests_per_replica(
         self,
         respx_mock: MockRouter,

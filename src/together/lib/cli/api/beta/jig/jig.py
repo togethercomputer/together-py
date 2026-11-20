@@ -1380,6 +1380,24 @@ def _api_error_message(e: APIError) -> str:
     return e.message
 
 
+_CONTAINER_ONLY_HINT = (
+    "This applies to container deployments (`tg beta jig`) only. "
+    "To deploy and manage models on dedicated endpoints, use `tg endpoints`."
+)
+
+
+def _with_container_only_hint(message: str) -> str:
+    """Say what an "enterprise feature" refusal covers.
+
+    The API refuses accounts without container inference access with a message that
+    calls it an enterprise feature. On its own that reads as if dedicated endpoints
+    are unavailable too, which they are not.
+    """
+    if "enterprise feature" not in message.lower():
+        return message
+    return f"{message.rstrip()} {_CONTAINER_ONLY_HINT}"
+
+
 def _run_jig_cmd(config: CLIConfig, config_path: str | None, fn: Callable[[Jig], Any]) -> None:
     try:
         jig = Jig(_sync_together_from_config(config), config_path)
@@ -1399,7 +1417,7 @@ def _run_jig_cmd(config: CLIConfig, config_path: str | None, fn: Callable[[Jig],
     except AuthenticationError:
         _jig_fail("Invalid or missing API key. Set TOGETHER_API_KEY or use --api-key.")
     except APIError as e:
-        _jig_fail(_api_error_message(e))
+        _jig_fail(_with_container_only_hint(_api_error_message(e)))
     except JigError as e:
         _jig_fail(str(e))
     except Exception as e:
