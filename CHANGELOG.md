@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.4.0](https://github.com/togethercomputer/together-py/compare/v3.3.0...v3.4.0) (2026-11-20)
+
+
+### Features
+
+* **deployments:** add model_name to deployment create, update, and response ([ce3ee10](https://github.com/togethercomputer/together-py/commit/ce3ee10ac70156ff0220b2cd8e395a69ab237252))
+* **deployments:** add traffic_weight to deployments ([a24ff4f](https://github.com/togethercomputer/together-py/commit/a24ff4ff075958af71ac3e8ac71420e1c6872b83))
+
 ## [3.3.0](https://github.com/togethercomputer/together-py/compare/v3.2.1...v3.3.0) (2026-11-18)
 
 
