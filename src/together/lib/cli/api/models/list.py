@@ -17,6 +17,12 @@ from together.lib.cli.utils._mock_pagination import AfterParameter
 async def list(
     limit: Annotated[Optional[int], Parameter(help="Maximum models to return")] = None,
     after: AfterParameter = None,
+    order_by: Annotated[
+        Optional[str],
+        Parameter(
+            help="Sort field. Supports created_at, optionally followed by asc or desc. Defaults to ascending.",
+        ),
+    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -25,6 +31,7 @@ async def list(
         config.client.models.list(
             limit=limit if limit is not None else omit,
             after=after or omit,
+            order_by=order_by or omit,
         ),
     )
 
