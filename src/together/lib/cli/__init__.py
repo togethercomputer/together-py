@@ -876,7 +876,7 @@ models_app.command(
     alias="list-revisions",
     help="List revisions for a model",
 )
-models_app.command((f"{_CLI}.models.retrieve:retrieve"), alias="get", help="Get a model by ID")
+models_app.command((f"{_CLI}.models.retrieve:retrieve"), alias="get", help="Get a model by ID or name")
 models_app.command(
     (f"{_CLI}.models.update:update"),
     help="Update a model (provided fields only)",
