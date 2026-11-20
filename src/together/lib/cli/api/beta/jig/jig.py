@@ -222,6 +222,7 @@ class DeployConfig:
     image: Optional[str] = None
     placement_group: Optional[str] = None
     regions: Optional[list[str]] = None
+    model_name: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
@@ -1004,6 +1005,8 @@ class Jig:
             deploy_data["placement_group"] = self.config.deploy.placement_group
         if self.config.deploy.regions is not None:
             deploy_data["regions"] = self.config.deploy.regions
+        if self.config.deploy.model_name is not None:
+            deploy_data["model_name"] = self.config.deploy.model_name
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
@@ -1260,6 +1263,8 @@ Configuration:""")
             lines.append(f"  Placement Group: {d.placement_group}")
         if d.regions:
             lines.append(f"  Regions: {', '.join(d.regions)}")
+        if d.api_model_name and d.api_model_name != d.name:
+            lines.append(f"  Model Name: {d.api_model_name}")
         if d.health_check_path:
             lines.append(f"  Health Check Path: {d.health_check_path}")
 

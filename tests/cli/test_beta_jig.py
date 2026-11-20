@@ -825,6 +825,67 @@ class TestBetaJigPlacement:
         assert "Placement Group: shared-gpu" in output
         assert "Regions: us-east, eu-west-1" in output
 
+    def test_config_parses_model_name(self, tmp_path: Path) -> None:
+        data: dict[str, Any] = _jig_mod.tomllib.loads('[tool.jig.deploy]\nmodel_name = "shared-model"\n')
+        with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
+            cfg = _jig_mod.Config.load(data, tmp_path / "pyproject.toml")
+        assert cfg.deploy.model_name == "shared-model"
+
+    def test_deploy_omits_model_name_when_unset(self) -> None:
+        payload = self._deploy_payload(_jig_mod.DeployConfig())
+        assert "model_name" not in payload
+
+    def test_deploy_sends_model_name_when_set(self) -> None:
+        payload = self._deploy_payload(_jig_mod.DeployConfig(model_name="shared-model"))
+        assert payload["model_name"] == "shared-model"
+
+    def test_status_shows_model_name_when_it_differs_from_name(self) -> None:
+        deployment = _jig_mod.Deployment(
+            name=_DEPLOY_NAME,
+            model_name="shared-model",
+            image="registry.together.ai/test/app@sha256:abcdef123456",
+            status="Ready",
+            gpu_count=1,
+            gpu_type="h100-80gb",
+            cpu=1,
+            memory=8,
+            storage=100,
+            volumes=[],
+            environment_variables=[],
+        )
+
+        def _short_image(image: str) -> str:
+            return image
+
+        jig = SimpleNamespace(registry=lambda: "registry.together.ai/test/", short_image=_short_image)
+
+        output = _jig_mod.Jig.format_status(cast(Any, jig), deployment)
+
+        assert "Model Name: shared-model" in output
+
+    def test_status_hides_model_name_when_it_equals_name(self) -> None:
+        def _short_image(image: str) -> str:
+            return image
+
+        deployment = _jig_mod.Deployment(
+            name=_DEPLOY_NAME,
+            model_name=_DEPLOY_NAME,
+            image="registry.together.ai/test/app@sha256:abcdef123456",
+            status="Ready",
+            gpu_count=1,
+            gpu_type="h100-80gb",
+            cpu=1,
+            memory=8,
+            storage=100,
+            volumes=[],
+            environment_variables=[],
+        )
+        jig = SimpleNamespace(registry=lambda: "registry.together.ai/test/", short_image=_short_image)
+
+        output = _jig_mod.Jig.format_status(cast(Any, jig), deployment)
+
+        assert "Model Name:" not in output
+
 
 _S3_URI = "s3://my-bucket/weights"
 _ROLE_ARN = "arn:aws:iam::123456789012:role/together"
