@@ -240,8 +240,12 @@ class TestBetaEndpointsRetrieve:
                             "desiredRevisionId": "rv_1",
                             "etag": "etag",
                             "perCluster": [],
+                            "servingState": serving_state,
                         }
-                        for name in ("adapter_a", "adapter_b")
+                        for name, serving_state in (
+                            ("adapter_a", "ADAPTER_SERVING_STATE_READY"),
+                            ("adapter_b", "ADAPTER_SERVING_STATE_LOADING"),
+                        )
                     ],
                     "next_cursor": None,
                 },
@@ -272,6 +276,8 @@ class TestBetaEndpointsRetrieve:
         second_at = output.index("my-project/adapter_b")
         assert id_at < first_at < second_at
         assert output.count("Adapter:") == 2
+        assert "Ready" in output
+        assert "Loading" in output
 
     @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_endpoint_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
