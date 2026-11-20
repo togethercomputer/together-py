@@ -110,6 +110,14 @@ class JigDeployParams(TypedDict, total=False):
     At most one mount is supported, and it cannot be used with volumes.
     """
 
+    model_name: str
+    """ModelName is the model this deployment handles traffic for.
+
+    Defaults to name of the deployment. A value used by one project as a deployment
+    or model name is unavailable to other projects; within a project, any number of
+    deployments may share a model name
+    """
+
     placement_group: str
     """
     PlacementGroup co-locates deployments that share this value onto one cluster, so

@@ -144,6 +144,7 @@ class JigResource(SyncAPIResource):
         memory: float | Omit = omit,
         min_replicas: int | Omit = omit,
         model_mounts: Iterable[jig_update_params.ModelMount] | Omit = omit,
+        model_name: str | Omit = omit,
         name: str | Omit = omit,
         placement_group: str | Omit = omit,
         port: int | Omit = omit,
@@ -204,8 +205,11 @@ class JigResource(SyncAPIResource):
           model_mounts: Replacement model weights to mount into the deployment. At most one mount is
               supported, and it cannot be used with volumes.
 
-          name: Name is the new unique identifier for your deployment. Must contain only
-              alphanumeric characters, underscores, or hyphens (1-100 characters)
+          model_name: ModelName changes the model this deployment handles traffic for. Can be omitted.
+              Send the deployment name to reset it
+
+          name: Name is the deployment's current name. Deployment names cannot be changed after
+              creation
 
           placement_group: PlacementGroup co-locates deployments that share this value onto one cluster. A
               member that cannot co-locate stays pending. Send an empty string to clear the
@@ -259,6 +263,7 @@ class JigResource(SyncAPIResource):
                     "memory": memory,
                     "min_replicas": min_replicas,
                     "model_mounts": model_mounts,
+                    "model_name": model_name,
                     "name": name,
                     "placement_group": placement_group,
                     "port": port,
@@ -314,6 +319,7 @@ class JigResource(SyncAPIResource):
         memory: float | Omit = omit,
         min_replicas: int | Omit = omit,
         model_mounts: Iterable[jig_deploy_params.ModelMount] | Omit = omit,
+        model_name: str | Omit = omit,
         placement_group: str | Omit = omit,
         port: int | Omit = omit,
         regions: SequenceNotStr[str] | Omit = omit,
@@ -380,6 +386,11 @@ class JigResource(SyncAPIResource):
           model_mounts: Model weights to preload from Together's model registry into the container. At
               most one mount is supported, and it cannot be used with volumes.
 
+          model_name: ModelName is the model this deployment handles traffic for. Defaults to name of
+              the deployment. A value used by one project as a deployment or model name is
+              unavailable to other projects; within a project, any number of deployments may
+              share a model name
+
           placement_group: PlacementGroup co-locates deployments that share this value onto one cluster, so
               in-cluster traffic between them stays local. A member that cannot co-locate
               stays pending. Leave empty for no group
@@ -432,6 +443,7 @@ class JigResource(SyncAPIResource):
                     "memory": memory,
                     "min_replicas": min_replicas,
                     "model_mounts": model_mounts,
+                    "model_name": model_name,
                     "placement_group": placement_group,
                     "port": port,
                     "regions": regions,
@@ -772,6 +784,7 @@ class AsyncJigResource(AsyncAPIResource):
         memory: float | Omit = omit,
         min_replicas: int | Omit = omit,
         model_mounts: Iterable[jig_update_params.ModelMount] | Omit = omit,
+        model_name: str | Omit = omit,
         name: str | Omit = omit,
         placement_group: str | Omit = omit,
         port: int | Omit = omit,
@@ -832,8 +845,11 @@ class AsyncJigResource(AsyncAPIResource):
           model_mounts: Replacement model weights to mount into the deployment. At most one mount is
               supported, and it cannot be used with volumes.
 
-          name: Name is the new unique identifier for your deployment. Must contain only
-              alphanumeric characters, underscores, or hyphens (1-100 characters)
+          model_name: ModelName changes the model this deployment handles traffic for. Can be omitted.
+              Send the deployment name to reset it
+
+          name: Name is the deployment's current name. Deployment names cannot be changed after
+              creation
 
           placement_group: PlacementGroup co-locates deployments that share this value onto one cluster. A
               member that cannot co-locate stays pending. Send an empty string to clear the
@@ -887,6 +903,7 @@ class AsyncJigResource(AsyncAPIResource):
                     "memory": memory,
                     "min_replicas": min_replicas,
                     "model_mounts": model_mounts,
+                    "model_name": model_name,
                     "name": name,
                     "placement_group": placement_group,
                     "port": port,
@@ -942,6 +959,7 @@ class AsyncJigResource(AsyncAPIResource):
         memory: float | Omit = omit,
         min_replicas: int | Omit = omit,
         model_mounts: Iterable[jig_deploy_params.ModelMount] | Omit = omit,
+        model_name: str | Omit = omit,
         placement_group: str | Omit = omit,
         port: int | Omit = omit,
         regions: SequenceNotStr[str] | Omit = omit,
@@ -1008,6 +1026,11 @@ class AsyncJigResource(AsyncAPIResource):
           model_mounts: Model weights to preload from Together's model registry into the container. At
               most one mount is supported, and it cannot be used with volumes.
 
+          model_name: ModelName is the model this deployment handles traffic for. Defaults to name of
+              the deployment. A value used by one project as a deployment or model name is
+              unavailable to other projects; within a project, any number of deployments may
+              share a model name
+
           placement_group: PlacementGroup co-locates deployments that share this value onto one cluster, so
               in-cluster traffic between them stays local. A member that cannot co-locate
               stays pending. Leave empty for no group
@@ -1060,6 +1083,7 @@ class AsyncJigResource(AsyncAPIResource):
                     "memory": memory,
                     "min_replicas": min_replicas,
                     "model_mounts": model_mounts,
+                    "model_name": model_name,
                     "placement_group": placement_group,
                     "port": port,
                     "regions": regions,

@@ -251,6 +251,12 @@ class Deployment(BaseModel):
     api_model_mounts: Optional[List[ModelMount]] = FieldInfo(alias="model_mounts", default=None)
     """Model weights mounted into this deployment, including the pinned revisions."""
 
+    api_model_name: Optional[str] = FieldInfo(alias="model_name", default=None)
+    """ModelName is the model the deployment handles traffic for.
+
+    Equals name unless set
+    """
+
     name: Optional[str] = None
     """Name is the name of the deployment"""
 
