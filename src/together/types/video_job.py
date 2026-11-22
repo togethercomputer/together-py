@@ -55,6 +55,13 @@ class VideoJob(BaseModel):
     error: Optional[Error] = None
     """Error payload that explains why generation failed, if applicable."""
 
+    estimated_done_at: Optional[float] = None
+    """Estimated Unix timestamp (seconds) for when the job is expected to finish.
+
+    This is an estimate, not a guarantee. It is only returned when creating a video
+    and an estimate is available.
+    """
+
     object: Optional[Literal["video"]] = None
     """The object type, which is always video."""
 
