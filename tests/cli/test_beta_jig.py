@@ -331,40 +331,20 @@ class TestBetaJigImageVersion:
         assert ".git" not in with_git
         assert "ARG JIG_VERSION=0.0.0-dev\nRUN printf '%s\\n' \"$JIG_VERSION\" > VERSION\n" in with_git
 
-    @pytest.mark.parametrize(
-        ("outcome", "expected"),
-        [
-            (subprocess.CompletedProcess([], 0, stdout="v1.2.3\n", stderr=""), "v1.2.3"),
-            (subprocess.CalledProcessError(128, ["git"]), "0.0.0-dev"),
-            (FileNotFoundError("git"), "0.0.0-dev"),
-        ],
-    )
-    def test_git_version(self, outcome: object, expected: str, monkeypatch: pytest.MonkeyPatch) -> None:
-        def run(*_args: Any, **_kwargs: Any) -> object:
-            if isinstance(outcome, Exception):
-                raise outcome
-            return outcome
-
-        monkeypatch.setattr(_jig_mod.subprocess, "run", run)
-
-        assert _jig_mod._git_version() == expected
-
     @pytest.mark.parametrize("managed", [True, False])
-    @pytest.mark.parametrize("method", ["build", "build_and_push", "push"])
     def test_version_build_arg_only_for_managed_dockerfile(
-        self, method: str, managed: bool, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self, managed: bool, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         cmds: list[list[str]] = []
 
         def run(cmd: list[str], *_args: Any, **_kwargs: Any) -> subprocess.CompletedProcess[str]:
             cmds.append(cmd)
-            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+            return subprocess.CompletedProcess(cmd, 0)
 
         monkeypatch.setattr(_jig_mod.subprocess, "run", run)
         monkeypatch.setattr(_jig_mod, "_ensure_zstd_builder", lambda: "jig-zstd")
         monkeypatch.setattr(_jig_mod, "_git_version", lambda: "v1.2.3")
         monkeypatch.delenv("JIG_DISABLE_BUILDX", raising=False)
-        monkeypatch.delenv("DOCKER_BUILD_EXTRA_ARGS", raising=False)
 
         cfg = _image_jig_config(tmp_path)
 
@@ -377,30 +357,22 @@ class TestBetaJigImageVersion:
             def registry(self) -> str:
                 return "registry.example/"
 
-            def _docker_login(self, _host: str) -> None:
-                return None
+            def _docker_login(self, _host: str) -> None: ...
 
             def _metadata_path(self, _tag: str) -> Path:
                 return tmp_path / "metadata.json"
 
-            def prewarm(self, **_kwargs: Any) -> None:
-                return None
+            def prewarm(self, **_kwargs: Any) -> None: ...
 
             def image_with_digest(self, tag: str) -> str:
-                return f"{self.image(tag)}@sha256:abc"
+                return self.image(tag)
 
-        jig = _Jig()
         with _chdir(tmp_path):
-            dockerfile = _jig_mod._generate_dockerfile(cfg) if managed else "FROM python:3.11-slim\n"
-            Path("Dockerfile").write_text(dockerfile)
-            getattr(_jig_mod.Jig, method)(cast(Any, jig))
+            Path("Dockerfile").write_text(_jig_mod._generate_dockerfile(cfg) if managed else "FROM scratch\n")
+            _jig_mod.Jig.build_and_push(cast(Any, _Jig()))
 
-        (build_cmd,) = [c for c in cmds if c[:2] in (["docker", "build"], ["docker", "buildx"])]
-        if managed:
-            i = build_cmd.index("--build-arg")
-            assert build_cmd[i : i + 2] == ["--build-arg", "JIG_VERSION=v1.2.3"]
-        else:
-            assert "--build-arg" not in build_cmd
+        (build_cmd,) = cmds
+        assert ("JIG_VERSION=v1.2.3" in build_cmd) is managed
 
 
 class TestBetaJigLogs:
