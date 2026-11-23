@@ -222,6 +222,8 @@ class DeployConfig:
     image: Optional[str] = None
     placement_group: Optional[str] = None
     regions: Optional[list[str]] = None
+    model_name: Optional[str] = None
+    traffic_weight: Optional[int] = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
@@ -296,7 +298,7 @@ class ExperimentalConfig:
 class JigConfig:
     """Main configuration from jig.toml or pyproject.toml"""
 
-    model_name: str = ""
+    name: str = ""
     image: ImageConfig = field(default_factory=ImageConfig)
     deploy: DeployConfig = field(default_factory=DeployConfig)
     experimental: ExperimentalConfig = field(default_factory=ExperimentalConfig)
@@ -367,7 +369,7 @@ class JigConfig:
             image=ImageConfig.from_dict(jig_config.get("image", {})),
             deploy=DeployConfig.from_dict(jig_config.get("deploy", {})),
             experimental=ExperimentalConfig.from_dict(jig_config.get("experimental", {})),
-            model_name=name,
+            name=name,
             _path=path,
             _unique_name_hint=hint,
         )
@@ -528,7 +530,7 @@ ENTRYPOINT ["/tini", "--"]
 {run}
 WORKDIR /app
 {copy}
-ENV DEPLOYMENT_NAME={config.model_name}
+ENV DEPLOYMENT_NAME={config.name}
 # this tag will set the X-Worker-Version header, used for rollout monitoring
 {git_version_cmd}
 
@@ -640,7 +642,7 @@ class Jig:
 
     @cached_property
     def name(self) -> str:
-        return self.config.model_name
+        return self.config.name
 
     @cached_property
     def state(self) -> State:
@@ -999,11 +1001,15 @@ class Jig:
 
         if self.config.deploy.health_check_path:
             deploy_data["health_check_path"] = self.config.deploy.health_check_path
-        # None means "not configured" and is omitted so update leaves the server value alone; "" and [] clear it.
+        # None is omitted so update leaves the server value alone; "" and [] clear placement_group and regions.
         if self.config.deploy.placement_group is not None:
             deploy_data["placement_group"] = self.config.deploy.placement_group
         if self.config.deploy.regions is not None:
             deploy_data["regions"] = self.config.deploy.regions
+        if self.config.deploy.model_name is not None:
+            deploy_data["model_name"] = self.config.deploy.model_name
+        if self.config.deploy.traffic_weight is not None:
+            deploy_data["traffic_weight"] = self.config.deploy.traffic_weight
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
@@ -1040,7 +1046,9 @@ class Jig:
                 response = self.api.deploy(**deploy_data, **extra_kwargs)
                 console.print(f"\N{CHECK MARK} Deployed: {self.name}")
             except APIError as e:
-                if "already exists" in e.message:
+                # tdep reports a cross-project clash per key, so a model_name clash keeps the server's message.
+                msg = _api_error_message(e)
+                if "Deployment name already exists" in msg or f'"{self.name}" already exists' in msg:
                     raise JigError(f"Deployment name must be unique. Tip: {self.config._unique_name_hint}") from None
                 raise
 
@@ -1246,7 +1254,7 @@ Configuration:""")
         lines.append(f"  Volume: {vol.name} \N{RIGHTWARDS ARROW} {vol.mount_path}" if vol else "  Volume: (none)")
         for mm in d.api_model_mounts or []:
             pinned = f"{mm.api_model_id}@{mm.revision_id}" if mm.revision_id else mm.api_model_id
-            lines.append(f"  Model: {pinned} \N{RIGHTWARDS ARROW} {mm.mount_path}")
+            lines.append(f"  Model Mount: {pinned} \N{RIGHTWARDS ARROW} {mm.mount_path}")
         storage = f" ┃ {d.storage}GB Storage" if d.storage else ""
         lines.append(f"  Resources: {d.cpu} core CPU ┃ {d.memory}GB Memory{storage}")
 
@@ -1260,6 +1268,11 @@ Configuration:""")
             lines.append(f"  Placement Group: {d.placement_group}")
         if d.regions:
             lines.append(f"  Regions: {', '.join(d.regions)}")
+        shared_model = bool(d.api_model_name) and d.api_model_name != d.name
+        if shared_model:
+            lines.append(f"  Model: {d.api_model_name}")
+        if d.traffic_weight is not None and (shared_model or d.traffic_weight != 100):
+            lines.append(f"  Traffic Weight: {d.traffic_weight}")
         if d.health_check_path:
             lines.append(f"  Health Check Path: {d.health_check_path}")
 
@@ -1499,7 +1512,12 @@ def status(jig: Jig, json_output: bool = False) -> Any:
 
 def endpoint(jig: Jig) -> str:
     """Get deployment endpoint URL"""
-    return f"https://api.together.ai/v1/deployment-request/{jig.name}"
+    # Any API failure falls back to the config so endpoint works offline, without an API key, and before first deploy.
+    try:
+        model_name = jig.api.retrieve(jig.name).api_model_name
+    except APIError:
+        model_name = None
+    return f"https://api.together.ai/v1/deployment-request/{model_name or jig.config.deploy.model_name or jig.name}"
 
 
 def logs(
