@@ -533,7 +533,6 @@ CMD {json.dumps(shlex.split(config.image.cmd))}"""
 
 
 def _git_version() -> str:
-    """Exact git tag at HEAD, or the default version when there is none."""
     try:
         return _run(["git", "describe", "--tags", "--exact-match"]).stdout.strip() or DEFAULT_VERSION
     except (subprocess.CalledProcessError, OSError):
@@ -541,9 +540,6 @@ def _git_version() -> str:
 
 
 def _version_build_args(config: JigConfig) -> list[str]:
-    # Computed on the host: bind-mounting .git into the build puts every commit in the layer
-    # cache key, so a config-only deploy gets a new digest and rolls pods. Only jig's own
-    # Dockerfile declares the arg; a user-managed one would warn that it went unused.
     path = Path(config.image.dockerfile_path)
     if not path.exists() or not path.read_text().startswith(DOCKERFILE_MANAGED_MARKER):
         return []
