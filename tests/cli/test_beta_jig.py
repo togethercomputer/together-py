@@ -895,36 +895,25 @@ class TestBetaJigTrafficSplit:
         assert cfg.deploy.model_name == "chat"
         assert cfg.deploy.traffic_weight == 0
 
-    def test_config_leaves_unset_fields_as_none(self, tmp_path: Path) -> None:
+    def test_config_defaults_when_unset(self, tmp_path: Path) -> None:
         cfg = _jig_mod.Config.load({"name": "chat-v2"}, tmp_path / "jig.toml")
         assert cfg.deploy.model_name is None
-        assert cfg.deploy.traffic_weight is None
+        assert cfg.deploy.traffic_weight == 100
 
     def test_config_rejects_non_int_weight(self, tmp_path: Path) -> None:
         with pytest.raises(_jig_mod.JigError, match="deploy.traffic_weight"):
             _jig_mod.Config.load({"name": "chat-v2", "deploy": {"traffic_weight": "50"}}, tmp_path / "jig.toml")
 
-    def test_update_omits_fields_when_unset(self) -> None:
-        api = _UpdateApi()
+    @pytest.mark.parametrize("api_cls", [_UpdateApi, _CreateApi])
+    def test_deploy_sends_defaults_when_unset(self, api_cls: Any) -> None:
+        api = api_cls()
         _jig_mod.Jig.deploy(_deploy_jig(api, _jig_mod.DeployConfig()), existing_image="example.com/acme/app:tag")
-        assert "model_name" not in api.calls[0]
-        assert "traffic_weight" not in api.calls[0]
+        assert api.calls[0]["model_name"] == _DEPLOY_NAME
+        assert api.calls[0]["traffic_weight"] == 100
 
-    def test_update_sends_fields_including_zero_weight(self) -> None:
-        api = _UpdateApi()
-        deploy = _jig_mod.DeployConfig(model_name="chat", traffic_weight=0)
-        _jig_mod.Jig.deploy(_deploy_jig(api, deploy), existing_image="example.com/acme/app:tag")
-        assert api.calls[0]["model_name"] == "chat"
-        assert api.calls[0]["traffic_weight"] == 0
-
-    def test_create_omits_fields_when_unset(self) -> None:
-        api = _CreateApi()
-        _jig_mod.Jig.deploy(_deploy_jig(api, _jig_mod.DeployConfig()), existing_image="example.com/acme/app:tag")
-        assert "model_name" not in api.calls[0]
-        assert "traffic_weight" not in api.calls[0]
-
-    def test_create_sends_fields_including_zero_weight(self) -> None:
-        api = _CreateApi()
+    @pytest.mark.parametrize("api_cls", [_UpdateApi, _CreateApi])
+    def test_deploy_sends_configured_values_including_zero_weight(self, api_cls: Any) -> None:
+        api = api_cls()
         deploy = _jig_mod.DeployConfig(model_name="chat", traffic_weight=0)
         _jig_mod.Jig.deploy(_deploy_jig(api, deploy), existing_image="example.com/acme/app:tag")
         assert api.calls[0]["model_name"] == "chat"
@@ -972,41 +961,22 @@ class TestBetaJigTrafficSplit:
         assert "Model:" not in output
         assert "Traffic Weight: 50" in output
 
+    # No routes are mocked, so any API call fails the test: endpoint must work offline.
+    @pytest.mark.parametrize(
+        ("pyproject", "model"),
+        [(_TRAFFIC_PYPROJECT, "chat"), (_PYPROJECT, _DEPLOY_NAME)],
+        ids=["model_name", "unset"],
+    )
     @pytest.mark.respx(base_url=base_url)
-    def test_endpoint_uses_server_model_name(
-        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    def test_endpoint_uses_config_model_name(
+        self, pyproject: str, model: str, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
     ) -> None:
-        _write_jig_project(tmp_path)
-        respx_mock.get(f"/v1/deployments/{_DEPLOY_NAME}").mock(
-            return_value=httpx.Response(200, json={"name": _DEPLOY_NAME, "model_name": "chat"})
-        )
+        del respx_mock
+        tmp_path.joinpath("pyproject.toml").write_text(pyproject, encoding="utf-8")
         with _chdir(tmp_path):
             result = cli_runner.invoke(["beta", "jig", "endpoint"])
         assert result.exit_code == 0
-        assert "https://api.together.ai/v1/deployment-request/chat" in result.output
-
-    @pytest.mark.parametrize("status", [401, 404])
-    @pytest.mark.respx(base_url=base_url)
-    def test_endpoint_falls_back_to_config_model_name(
-        self, status: int, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
-    ) -> None:
-        tmp_path.joinpath("pyproject.toml").write_text(_TRAFFIC_PYPROJECT, encoding="utf-8")
-        respx_mock.get(f"/v1/deployments/{_DEPLOY_NAME}").mock(return_value=httpx.Response(status, json={}))
-        with _chdir(tmp_path):
-            result = cli_runner.invoke(["beta", "jig", "endpoint"])
-        assert result.exit_code == 0
-        assert "https://api.together.ai/v1/deployment-request/chat" in result.output
-
-    @pytest.mark.respx(base_url=base_url)
-    def test_endpoint_offline_falls_back_to_deployment_name(
-        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
-    ) -> None:
-        _write_jig_project(tmp_path)
-        respx_mock.get(f"/v1/deployments/{_DEPLOY_NAME}").mock(side_effect=httpx.ConnectError("offline"))
-        with _chdir(tmp_path):
-            result = cli_runner.invoke(["beta", "jig", "endpoint"])
-        assert result.exit_code == 0
-        assert f"https://api.together.ai/v1/deployment-request/{_DEPLOY_NAME}" in result.output
+        assert f"https://api.together.ai/v1/deployment-request/{model}" in result.output
 
 
 _S3_URI = "s3://my-bucket/weights"

@@ -223,7 +223,7 @@ class DeployConfig:
     placement_group: Optional[str] = None
     regions: Optional[list[str]] = None
     model_name: Optional[str] = None
-    traffic_weight: Optional[int] = None
+    traffic_weight: int = 100
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
@@ -997,19 +997,17 @@ class Jig:
             "termination_grace_period_seconds": self.config.deploy.termination_grace_period_seconds,
             "volumes": [{**asdict(vm), "version": vm.version or 0} for vm in self.config.deploy.volume_mounts],
             "model_mounts": [mm.to_api() for mm in self.config.deploy.model_mounts],
+            "model_name": self.config.deploy.model_name or self.name,
+            "traffic_weight": self.config.deploy.traffic_weight,
         }
 
         if self.config.deploy.health_check_path:
             deploy_data["health_check_path"] = self.config.deploy.health_check_path
-        # None is omitted so update leaves the server value alone; "" and [] clear placement_group and regions.
+        # None means "not configured" and is omitted so update leaves the server value alone; "" and [] clear it.
         if self.config.deploy.placement_group is not None:
             deploy_data["placement_group"] = self.config.deploy.placement_group
         if self.config.deploy.regions is not None:
             deploy_data["regions"] = self.config.deploy.regions
-        if self.config.deploy.model_name is not None:
-            deploy_data["model_name"] = self.config.deploy.model_name
-        if self.config.deploy.traffic_weight is not None:
-            deploy_data["traffic_weight"] = self.config.deploy.traffic_weight
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
@@ -1512,12 +1510,7 @@ def status(jig: Jig, json_output: bool = False) -> Any:
 
 def endpoint(jig: Jig) -> str:
     """Get deployment endpoint URL"""
-    # Any API failure falls back to the config so endpoint works offline, without an API key, and before first deploy.
-    try:
-        model_name = jig.api.retrieve(jig.name).api_model_name
-    except APIError:
-        model_name = None
-    return f"https://api.together.ai/v1/deployment-request/{model_name or jig.config.deploy.model_name or jig.name}"
+    return f"https://api.together.ai/v1/deployment-request/{jig.config.deploy.model_name or jig.name}"
 
 
 def logs(
