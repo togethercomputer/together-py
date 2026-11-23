@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+import subprocess
 from types import SimpleNamespace
 from typing import Any, cast
 from pathlib import Path
@@ -305,6 +306,101 @@ class TestBetaJigBuild:
                     result = cli_runner.invoke(["beta", "jig", "build"])
         assert result.exit_code == 1
         assert "deploy.image is set" in result.output
+
+
+def _image_jig_config(tmp_path: Path) -> Any:
+    with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
+        return _jig_mod.Config(
+            model_name=_DEPLOY_NAME,
+            image=_jig_mod.ImageConfig(),
+            deploy=_jig_mod.DeployConfig(),
+            _path=tmp_path / "pyproject.toml",
+            _unique_name_hint="h",
+        )
+
+
+class TestBetaJigImageVersion:
+    def test_dockerfile_reads_version_from_build_arg_not_git(self, tmp_path: Path) -> None:
+        cfg = _image_jig_config(tmp_path)
+        with _chdir(tmp_path):
+            without_git = _jig_mod._generate_dockerfile(cfg)
+            (tmp_path / ".git").mkdir()
+            with_git = _jig_mod._generate_dockerfile(cfg)
+
+        assert with_git == without_git
+        assert ".git" not in with_git
+        assert "ARG JIG_VERSION=0.0.0-dev\nRUN printf '%s\\n' \"$JIG_VERSION\" > VERSION\n" in with_git
+
+    @pytest.mark.parametrize(
+        ("outcome", "expected"),
+        [
+            (subprocess.CompletedProcess([], 0, stdout="v1.2.3\n", stderr=""), "v1.2.3"),
+            (subprocess.CalledProcessError(128, ["git"]), "0.0.0-dev"),
+            (FileNotFoundError("git"), "0.0.0-dev"),
+        ],
+    )
+    def test_git_version(self, outcome: object, expected: str, monkeypatch: pytest.MonkeyPatch) -> None:
+        def run(*_args: Any, **_kwargs: Any) -> object:
+            if isinstance(outcome, Exception):
+                raise outcome
+            return outcome
+
+        monkeypatch.setattr(_jig_mod.subprocess, "run", run)
+
+        assert _jig_mod._git_version() == expected
+
+    @pytest.mark.parametrize("managed", [True, False])
+    @pytest.mark.parametrize("method", ["build", "build_and_push", "push"])
+    def test_version_build_arg_only_for_managed_dockerfile(
+        self, method: str, managed: bool, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cmds: list[list[str]] = []
+
+        def run(cmd: list[str], *_args: Any, **_kwargs: Any) -> subprocess.CompletedProcess[str]:
+            cmds.append(cmd)
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+        monkeypatch.setattr(_jig_mod.subprocess, "run", run)
+        monkeypatch.setattr(_jig_mod, "_ensure_zstd_builder", lambda: "jig-zstd")
+        monkeypatch.setattr(_jig_mod, "_git_version", lambda: "v1.2.3")
+        monkeypatch.delenv("JIG_DISABLE_BUILDX", raising=False)
+        monkeypatch.delenv("DOCKER_BUILD_EXTRA_ARGS", raising=False)
+
+        cfg = _image_jig_config(tmp_path)
+
+        class _Jig:
+            config = cfg
+
+            def image(self, tag: str) -> str:
+                return f"registry.example/{_DEPLOY_NAME}:{tag}"
+
+            def registry(self) -> str:
+                return "registry.example/"
+
+            def _docker_login(self, _host: str) -> None:
+                return None
+
+            def _metadata_path(self, _tag: str) -> Path:
+                return tmp_path / "metadata.json"
+
+            def prewarm(self, **_kwargs: Any) -> None:
+                return None
+
+            def image_with_digest(self, tag: str) -> str:
+                return f"{self.image(tag)}@sha256:abc"
+
+        jig = _Jig()
+        with _chdir(tmp_path):
+            dockerfile = _jig_mod._generate_dockerfile(cfg) if managed else "FROM python:3.11-slim\n"
+            Path("Dockerfile").write_text(dockerfile)
+            getattr(_jig_mod.Jig, method)(cast(Any, jig))
+
+        (build_cmd,) = [c for c in cmds if c[:2] in (["docker", "build"], ["docker", "buildx"])]
+        if managed:
+            i = build_cmd.index("--build-arg")
+            assert build_cmd[i : i + 2] == ["--build-arg", "JIG_VERSION=v1.2.3"]
+        else:
+            assert "--build-arg" not in build_cmd
 
 
 class TestBetaJigLogs:
