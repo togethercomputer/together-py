@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.4.0](https://github.com/togethercomputer/together-py/compare/v3.3.0...v3.4.0) (2026-11-24)
+
+
+### Features
+
+* **deployments:** add model_name to deployment create, update, and response ([ce3ee10](https://github.com/togethercomputer/together-py/commit/ce3ee10ac70156ff0220b2cd8e395a69ab237252))
+* **deployments:** add traffic_weight to deployments ([a24ff4f](https://github.com/togethercomputer/together-py/commit/a24ff4ff075958af71ac3e8ac71420e1c6872b83))
+* send deploy.experimental replica_size from jig to the deployments api ([#687](https://github.com/togethercomputer/together-py/issues/687)) ([4ea96c5](https://github.com/togethercomputer/together-py/commit/4ea96c5a5f92e2646c0d6768357d661ab8378727))
+* **videos:** tell callers when their video will likely be ready ([0f7e7a4](https://github.com/togethercomputer/together-py/commit/0f7e7a404aed391a49d198453083b1d37be51f45))
+
+
+### Bug Fixes
+
+* **cli:** keep jig image digest stable across git commits ([#692](https://github.com/togethercomputer/together-py/issues/692)) ([4ad0e5d](https://github.com/togethercomputer/together-py/commit/4ad0e5d5568843610a3628860cb06e664d64f360))
+
 ## [3.3.0](https://github.com/togethercomputer/together-py/compare/v3.2.1...v3.3.0) (2026-11-18)
 
 
