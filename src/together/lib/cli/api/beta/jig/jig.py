@@ -59,6 +59,8 @@ else:
 
 # managed dockerfile marker - if this is the first line, jig will regenerate the file
 DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
+VERSION_BUILD_ARG = "JIG_VERSION"
+DEFAULT_VERSION = "0.0.0-dev"
 
 # check for --debug flag
 DEBUG = is_enabled()
@@ -498,12 +500,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \\
 
     copy = "\n".join(f"COPY {file} {file}" for file in _files_to_copy(config))
 
-    # check if .git exists in current directory
-    if Path(".git").exists():
-        git_version_cmd = 'RUN --mount=type=bind,source=.git,target=/git git --git-dir /git describe --tags --exact-match > VERSION || echo "0.0.0-dev" > VERSION'
-    else:
-        git_version_cmd = 'RUN echo "0.0.0-dev" > VERSION'
-
     return f"""{DOCKERFILE_MANAGED_MARKER}
 
 # Build stage
@@ -533,9 +529,24 @@ WORKDIR /app
 {copy}
 ENV DEPLOYMENT_NAME={config.model_name}
 # this tag will set the X-Worker-Version header, used for rollout monitoring
-{git_version_cmd}
+ARG {VERSION_BUILD_ARG}={DEFAULT_VERSION}
+RUN printf '%s\\n' "${VERSION_BUILD_ARG}" > VERSION
 
 CMD {json.dumps(shlex.split(config.image.cmd))}"""
+
+
+def _git_version() -> str:
+    try:
+        return _run(["git", "describe", "--tags", "--exact-match"]).stdout.strip() or DEFAULT_VERSION
+    except (subprocess.CalledProcessError, OSError):
+        return DEFAULT_VERSION
+
+
+def _version_build_args(config: JigConfig) -> list[str]:
+    path = Path(config.image.dockerfile_path)
+    if not path.exists() or not path.read_text().startswith(DOCKERFILE_MANAGED_MARKER):
+        return []
+    return ["--build-arg", f"{VERSION_BUILD_ARG}={_git_version()}"]
 
 
 def _dockerfile(config: JigConfig) -> bool:
@@ -838,6 +849,7 @@ class Jig:
             ]
         if self.config.image.dockerfile_path != "Dockerfile":
             cmd.extend(["-f", self.config.image.dockerfile_path])
+        cmd.extend(_version_build_args(self.config))
 
         extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
         if extra_args:
@@ -888,6 +900,7 @@ class Jig:
             ]
             if self.config.image.dockerfile_path != "Dockerfile":
                 cmd.extend(["-f", self.config.image.dockerfile_path])
+            cmd.extend(_version_build_args(self.config))
             cmd.append(".")
             ok = subprocess.run(cmd).returncode == 0
         if not ok:
@@ -937,6 +950,7 @@ class Jig:
         ]
         if self.config.image.dockerfile_path != "Dockerfile":
             cmd.extend(["-f", self.config.image.dockerfile_path])
+        cmd.extend(_version_build_args(self.config))
         extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
         if extra_args:
             cmd.extend(shlex.split(extra_args))
