@@ -633,7 +633,8 @@ class TestBetaEndpointShadow:
         assert result.exit_code == 0, result.output
         deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
         assert deployment_body["placement"] == {"inline": {"compliancePolicy": {"hipaa": True}}}
-        assert not any("/deployments/dep_control" in str(call.request.url) for call in respx_mock.calls)
+        calls = cast(list[Call], list(respx_mock.calls))
+        assert not any("/deployments/dep_control" in str(call.request.url) for call in calls)
 
     @pytest.mark.respx(base_url=base_url)
     def test_shadow_region_override_keeps_live_hipaa(
@@ -708,7 +709,8 @@ class TestBetaEndpointShadow:
 
         assert result.exit_code != 0
         assert "do not share a placement" in result.output
-        assert not any(call.request.method == "POST" for call in respx_mock.calls)
+        calls = cast(list[Call], list(respx_mock.calls))
+        assert not any(call.request.method == "POST" for call in calls)
 
     @pytest.mark.respx(base_url=base_url)
     def test_shadow_ignores_weight_zero_deployments(
@@ -738,4 +740,5 @@ class TestBetaEndpointShadow:
         assert result.exit_code == 0, result.output
         deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
         assert "placement" not in deployment_body
-        assert not any("/deployments/dep_warmup" in str(call.request.url) for call in respx_mock.calls)
+        calls = cast(list[Call], list(respx_mock.calls))
+        assert not any("/deployments/dep_warmup" in str(call.request.url) for call in calls)
