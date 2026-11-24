@@ -7,7 +7,7 @@ from typing_extensions import Annotated
 from cyclopts import Parameter
 from cyclopts.validators import Number as CycloptsNumberValidator
 
-from together import APIError, AsyncClient
+from together import APIError, AsyncClient, omit
 from together.types import ShadowSourceParam, ShadowEndpointSourceParam
 from together._utils._json import openapi_dumps
 from together.types.endpoints import ShadowExperiment
@@ -24,7 +24,15 @@ from together.types.shadow_endpoint_source_param import (
     SamplingAdaptiveUniform,
     SamplingAdaptiveKeyBased,
 )
-from together.lib.cli.api.endpoints._utils._parameters import ModelParameter, EndpointPromptParameter
+from together.lib.cli.api.endpoints._utils._placement import inherit_live_placement, resolve_deployment_placement
+from together.lib.cli.api.endpoints._utils._parameters import (
+    ModelParameter,
+    PlacementGroup,
+    PlacementModel,
+    EndpointPromptParameter,
+    placement_model,
+)
+from together.types.endpoints.deployment_create_params import Placement
 from together.lib.cli.api.endpoints._utils._resolve_model import (
     resolve_endpoint,
     construct_model_path,
@@ -80,16 +88,27 @@ async def shadow(
         Optional[str],
         Parameter(help="Observation window for adaptive sampling; applies with --target-qps (default: 60s)"),
     ] = None,
+    placement_id: Annotated[
+        Optional[str], Parameter(name="placement", help="Placement profile ID to use", group=PlacementGroup)
+    ] = None,
+    placement: Annotated[PlacementModel, Parameter(group=PlacementGroup)] = placement_model,
     config: CLIConfigParameter,
 ) -> None:
     """Create a shadow deployment and mirror sampled live traffic without serving its responses.
 
     The target deployment stays out of live traffic and active rollouts; weight-0
     traffic-split warm-up deployments are valid shadow targets.
+
+    Omitted placement flags copy the placement shared by the endpoint's live
+    deployments, including HIPAA. ``--placement.regions`` and ``--placement.constraint``
+    keep a HIPAA requirement copied from those deployments. ``--placement.hipaa`` or
+    ``--placement <profile-id>`` is sent as given. When live deployments do not share
+    a placement, pass one of those flags.
     """
     rate, target_qps = await resolve_rate_or_target_qps(rate, target_qps, config=config)
 
-    endpoint_id = (await resolve_endpoint(config, endpoint_id_or_name)).id
+    endpoint = await resolve_endpoint(config, endpoint_id_or_name)
+    endpoint_id = endpoint.id
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
 
@@ -110,6 +129,11 @@ async def shadow(
     source = ShadowSourceParam(endpoint=ShadowEndpointSourceParam(sampling=sampling))
     shadow_name = build_shadow_name(rate, key, target_qps, window)
 
+    async def load_inherited_placement() -> Placement | None:
+        return await inherit_live_placement(config.client, endpoint)
+
+    placement_value = await resolve_deployment_placement(placement_id, placement, load_inherited_placement)
+
     # If the shadow experiment already exists, we then just want to add the target to the existing experiment
     # This logic is turned on if the create fails with an error about the experiment already existing
     experiment = await create_or_find_shadow_experiment(config.client, endpoint_id, shadow_name, source)
@@ -122,6 +146,7 @@ async def shadow(
             model=construct_model_path(resolved_model, resolved.revision_id),
             config=construct_config_path(config_value),
             autoscaling=autoscaling,
+            placement=placement_value or omit,
         ),
     )
 

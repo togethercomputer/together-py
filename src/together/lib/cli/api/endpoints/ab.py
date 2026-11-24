@@ -15,7 +15,14 @@ from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.endpoints.retrieve import retrieve
-from together.lib.cli.api.endpoints._utils._parameters import ModelParameter
+from together.lib.cli.api.endpoints._utils._placement import placement_from_response, resolve_deployment_placement
+from together.lib.cli.api.endpoints._utils._parameters import (
+    ModelParameter,
+    PlacementGroup,
+    PlacementModel,
+    placement_model,
+)
+from together.types.endpoints.deployment_create_params import Placement
 from together.lib.cli.api.endpoints._utils._resolve_model import (
     construct_model_path,
     resolve_model_and_config,
@@ -56,9 +63,19 @@ async def ab(
         Optional[str],
         Parameter(help="Variant deployment name; defaults to the model name with a short suffix"),
     ] = None,
+    placement_id: Annotated[
+        Optional[str], Parameter(name="placement", help="Placement profile ID to use", group=PlacementGroup)
+    ] = None,
+    placement: Annotated[PlacementModel, Parameter(group=PlacementGroup)] = placement_model,
     config: CLIConfigParameter,
 ) -> None:
-    """Create a variant deployment and allocate it a percentage of live endpoint traffic."""
+    """Create a variant deployment and allocate it a percentage of live endpoint traffic.
+
+    Omitted placement flags copy the control deployment's placement, including HIPAA,
+    so the variant is scheduled where that traffic can reach it. ``--placement.regions``
+    and ``--placement.constraint`` keep a HIPAA requirement copied from the control.
+    ``--placement.hipaa`` or ``--placement <profile-id>`` is sent as given.
+    """
     endpoint = await find_endpoint_by_deployment(config.client, control)
 
     control_deployment = await show_loading_status(
@@ -86,6 +103,11 @@ async def ab(
         short_uuid = str(uuid.uuid4())[:8]
         name = f"{resolved_model.name}-{short_uuid}".replace("/", "-")
 
+    async def load_inherited_placement() -> Placement | None:
+        return placement_from_response(control_deployment.placement)
+
+    placement_value = await resolve_deployment_placement(placement_id, placement, load_inherited_placement)
+
     experiment_name = build_ab_experiment_name(control_deployment.name)
     existing_experiment = await find_ab_experiment_by_name(
         config.client,
@@ -101,6 +123,7 @@ async def ab(
             model=construct_model_path(resolved_model, resolved.revision_id),
             config=construct_config_path(config_value),
             autoscaling=autoscaling,
+            placement=placement_value or omit,
         ),
     )
     assert deployment.id is not None

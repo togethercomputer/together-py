@@ -14,6 +14,7 @@ from together.types.deployment_placement_config_param import DeploymentPlacement
 from together.types.endpoints.deployment_create_params import (
     Placement,
     PlacementInline,
+    PlacementProfile,
 )
 from together.lib.cli.api.endpoints._utils._resolve_model import MODEL_PATH_RE
 
@@ -49,6 +50,16 @@ class PlacementModel:
             inline["compliance_policy"] = {"hipaa": self.hipaa}
 
         return PlacementInline(inline=inline)
+
+
+def resolve_cli_placement(placement_id: str | None, placement: PlacementModel) -> Placement | None:
+    """Build a create-request placement from ``--placement`` and ``--placement.*`` flags."""
+    inline_placement = placement.to_json()
+    if placement_id and inline_placement is not None:
+        raise ValueError("Use either --placement or inline placement options, not both.")
+    if placement_id:
+        return PlacementProfile(profile=placement_id)
+    return inline_placement
 
 
 placement_model = PlacementModel()
