@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.0](https://github.com/togethercomputer/together-py/compare/v3.5.0...v3.6.0) (2026-11-25)
+
+
+### Features
+
+* **cli:** add --detach to endpoints update ([#696](https://github.com/togethercomputer/together-py/issues/696)) ([6bea707](https://github.com/togethercomputer/together-py/commit/6bea707323694722794ef8260a2e5b6698c3c526))
+
 ## [3.5.0](https://github.com/togethercomputer/together-py/compare/v3.4.0...v3.5.0) (2026-11-25)
 
 
