@@ -21,7 +21,7 @@ import logging
 import weakref
 import functools
 import threading
-from typing import Any, TypeVar, Protocol
+from typing import Any, TypeVar, Protocol, cast
 from collections.abc import Callable, Coroutine
 from typing_extensions import ParamSpec, Concatenate
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -263,7 +263,7 @@ class LoopGate:
         self._closed = False
         self._tearing_down = False
         self._teardown_stops_remote = False
-        self._teardown_done: Future[Any] | None = None
+        self._teardown_done: Future[object] | None = None
         self._futures: set[Future[Any]] = set()
         self._state_lock = threading.Lock()
         _live_gates.add(self)
@@ -332,17 +332,20 @@ class LoopGate:
 
     def _start_teardown(
         self, coro: Coroutine[Any, Any, _T], stops_remote: bool
-    ) -> tuple[Future[Any] | None, Callable[[], None] | None]:
+    ) -> tuple[Future[_T | None] | None, Callable[[], None] | None]:
         claimed, in_flight = self._claim_teardown(stops_remote)
+        # Stop callers share the same result type. Close can resolve the shared future
+        # with None, and callers that close discard its result.
+        outcome = cast("Future[_T | None] | None", in_flight)
         if not claimed:
             coro.close()
-            return in_flight, None
+            return outcome, None
         try:
             cancel = _process_loop.submit_task(coro, self._finish_teardown)
         except BaseException as exc:
             self._abort_teardown(exc)
             raise
-        return in_flight, cancel
+        return outcome, cancel
 
     def _finish_teardown(self, task: asyncio.Task[Any]) -> None:
         try:
@@ -383,7 +386,7 @@ class LoopGate:
             coro.close()
             raise RuntimeError(_ALREADY_STOPPED)
 
-    def _claim_teardown(self, stops_remote: bool) -> tuple[bool, Future[Any] | None]:
+    def _claim_teardown(self, stops_remote: bool) -> tuple[bool, Future[object] | None]:
         """Claim exclusive teardown, or say what a caller that lost the race should wait for.
 
         ``(True, future)`` — the caller drives teardown; the gate settles the outcome for
@@ -417,7 +420,7 @@ class LoopGate:
             if done is not None:
                 done.set_exception(failure)
 
-    def _close(self, output: Any) -> None:
+    def _close(self, output: object) -> None:
         """Hand the teardown's outcome to its waiters, refuse further work, cancel futures.
 
         Only futures this handle submitted from another thread are cancelled: work awaited in
