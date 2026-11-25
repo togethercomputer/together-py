@@ -1019,7 +1019,7 @@ class TestBetaEndpointsUpdateDetach:
         assert result.exit_code == 0, result.output
         assert delete_target.called
         assert update_dep.called
-        paths = [call.request.url.path for call in respx_mock.calls]
+        paths = [call.request.url.path for call in cast(list[Call], respx_mock.calls)]
         assert paths.index("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1") < paths.index(
             "/v2/projects/proj/endpoints/ep_1/deployments/dep_variant"
         )
