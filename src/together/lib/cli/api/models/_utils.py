@@ -115,6 +115,10 @@ async def print_model_detail(
         _print_detail_line("Description", model.description)
     if model.visibility:
         _print_detail_line("Visibility", _readable_visibility(model.visibility))
+    if model.created_at:
+        _print_detail_line("Created", format_datetime(model.created_at))
+    if model.updated_at:
+        _print_detail_line("Updated", format_datetime(model.updated_at))
     if files is not None:
         if files.revision_id:
             _print_detail_line("Current revision", files.revision_id)
@@ -134,10 +138,14 @@ def print_models_table(models: list[Model], *, empty_message: str) -> None:
     table = ListTable("Models", empty_message=empty_message)
     table.add_primary_column("ID")
     table.add_column("Name", ratio=2)
+    table.add_column("Created", overflow="fold")
+    table.add_column("Updated", overflow="fold")
     for model in models:
         table.add_row(
             model.id or "",
             model.name,
+            format_datetime(model.created_at) if model.created_at else "",
+            format_datetime(model.updated_at) if model.updated_at else "",
         )
     console.print(table)
 
