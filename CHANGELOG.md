@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.0](https://github.com/togethercomputer/together-py/compare/v3.4.0...v3.5.0) (2026-11-25)
+
+
+### Features
+
+* **cli:** Add placement flags to endpoint CLI for creating a/b and shadow deployments ([#693](https://github.com/togethercomputer/together-py/issues/693)) ([2aa3cba](https://github.com/togethercomputer/together-py/commit/2aa3cba9ce502b7e5144bd9d61c0d541c2d65bc0))
+
 ## [3.4.0](https://github.com/togethercomputer/together-py/compare/v3.3.0...v3.4.0) (2026-11-24)
 
 
