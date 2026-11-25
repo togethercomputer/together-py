@@ -7,7 +7,7 @@ from typing_extensions import Annotated
 from cyclopts import Parameter
 from cyclopts.validators import Number as CycloptsNumberValidator
 
-from together import APIError, AsyncClient
+from together import APIError, AsyncClient, omit
 from together.types import ShadowSourceParam, ShadowEndpointSourceParam
 from together._utils._json import openapi_dumps
 from together.types.endpoints import ShadowExperiment
@@ -24,7 +24,14 @@ from together.types.shadow_endpoint_source_param import (
     SamplingAdaptiveUniform,
     SamplingAdaptiveKeyBased,
 )
-from together.lib.cli.api.endpoints._utils._parameters import ModelParameter, EndpointPromptParameter
+from together.lib.cli.api.endpoints._utils._parameters import (
+    ModelParameter,
+    PlacementGroup,
+    PlacementModel,
+    EndpointPromptParameter,
+    placement_model,
+    resolve_cli_placement,
+)
 from together.lib.cli.api.endpoints._utils._resolve_model import (
     resolve_endpoint,
     construct_model_path,
@@ -80,6 +87,10 @@ async def shadow(
         Optional[str],
         Parameter(help="Observation window for adaptive sampling; applies with --target-qps (default: 60s)"),
     ] = None,
+    placement_id: Annotated[
+        Optional[str], Parameter(name="placement", help="Placement profile ID to use", group=PlacementGroup)
+    ] = None,
+    placement: Annotated[PlacementModel, Parameter(group=PlacementGroup)] = placement_model,
     config: CLIConfigParameter,
 ) -> None:
     """Create a shadow deployment and mirror sampled live traffic without serving its responses.
@@ -109,6 +120,7 @@ async def shadow(
     sampling = build_sampling(rate=rate, key=key, target_qps=target_qps, window=window)
     source = ShadowSourceParam(endpoint=ShadowEndpointSourceParam(sampling=sampling))
     shadow_name = build_shadow_name(rate, key, target_qps, window)
+    placement_value = resolve_cli_placement(placement_id, placement)
 
     # If the shadow experiment already exists, we then just want to add the target to the existing experiment
     # This logic is turned on if the create fails with an error about the experiment already existing
@@ -122,6 +134,7 @@ async def shadow(
             model=construct_model_path(resolved_model, resolved.revision_id),
             config=construct_config_path(config_value),
             autoscaling=autoscaling,
+            placement=placement_value or omit,
         ),
     )
 

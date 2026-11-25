@@ -258,6 +258,7 @@ class TestEndpointsAb:
         output = " ".join(result.output.replace("│", " ").split())
         assert result.exit_code == 0
         assert "--enable-lora" not in output
+        assert "--placement.hipaa" in output
 
     @pytest.mark.respx(base_url=base_url)
     def test_ab_creates_deployment_and_experiment(
@@ -429,3 +430,101 @@ class TestEndpointsAb:
 
         assert result.exit_code != 0
         assert "not receiving traffic" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_ab_omits_placement_when_unset(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        create_deployment_route = _mock_ab_create(respx_mock)
+
+        result = cli_runner.invoke(_ab_cli_args())
+
+        assert result.exit_code == 0, result.output
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert "placement" not in deployment_body
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_ab_sends_explicit_hipaa_placement(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        create_deployment_route = _mock_ab_create(respx_mock)
+
+        result = cli_runner.invoke([*_ab_cli_args(), "--placement.hipaa"])
+
+        assert result.exit_code == 0, result.output
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert deployment_body["placement"] == {"inline": {"compliancePolicy": {"hipaa": True}}}
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_ab_sends_regions_and_constraint(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        create_deployment_route = _mock_ab_create(respx_mock)
+
+        result = cli_runner.invoke(
+            [*_ab_cli_args(), "--placement.regions", "us-west-2", "--placement.constraint", "preferred"]
+        )
+
+        assert result.exit_code == 0, result.output
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert deployment_body["placement"] == {
+            "inline": {
+                "regions": ["us-west-2"],
+                "constraint": "ENFORCEMENT_PREFERRED",
+            }
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_ab_sends_placement_profile(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        create_deployment_route = _mock_ab_create(respx_mock)
+
+        result = cli_runner.invoke([*_ab_cli_args(), "--placement", "pp_other"])
+
+        assert result.exit_code == 0, result.output
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert deployment_body["placement"] == {"profile": "pp_other"}
+
+    def test_ab_rejects_profile_and_inline_placement(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke([*_ab_cli_args(), "--placement", "pp_1", "--placement.hipaa"])
+
+        assert result.exit_code != 0
+        assert "not both" in result.output
+
+
+def _mock_ab_create(respx_mock: MockRouter) -> Any:
+    _mock_model_and_config(respx_mock)
+    respx_mock.get("/v2/projects/proj/endpoints").mock(
+        return_value=httpx.Response(
+            200,
+            json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+        )
+    )
+    respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+        return_value=httpx.Response(
+            200,
+            json=_deployment_body(deployment_id="dep_control", name="my-project/my-endpoint/control"),
+        )
+    )
+    respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
+        return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+    )
+    create_deployment_route = respx_mock.post("/v2/projects/proj/endpoints/ep_1/deployments").mock(
+        return_value=httpx.Response(200, json=_deployment_body())
+    )
+    respx_mock.post("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
+        return_value=httpx.Response(
+            200,
+            json=_ab_experiment_body(name="my-project-my-endpoint-control-ab"),
+        )
+    )
+    return create_deployment_route
