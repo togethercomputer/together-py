@@ -598,6 +598,60 @@ def test_interrupt_cancels_untracked_work(monkeypatch: pytest.MonkeyPatch) -> No
     assert cancelled.wait(timeout=10)
 
 
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires fork")
+def test_interrupt_during_model_creation_waits_for_force_stop(monkeypatch: pytest.MonkeyPatch) -> None:
+    def child() -> None:
+        client = FakeClient()
+        models = client.post_training.model_resources
+        stopped = threading.Event()
+
+        async def retrieve(_resource_id: str) -> Any:
+            os.kill(os.getpid(), signal.SIGINT)
+            await asyncio.sleep(60)
+            pytest.fail("creation was not cancelled")
+
+        async def stop(resource_id: str, *, force: bool) -> None:
+            assert resource_id == "res-1" and force
+            await asyncio.sleep(0.01)
+            stopped.set()
+
+        def fake_client(**_kwargs: Any) -> FakeClient:
+            return client
+
+        monkeypatch.setattr(models, "retrieve", retrieve)
+        monkeypatch.setattr(models, "stop", stop)
+        monkeypatch.setattr(model_resources_client_module, "AsyncTogether", fake_client)
+
+        with pytest.raises(KeyboardInterrupt):
+            ModelResourcesClient.create(base_model="test-model")
+
+        assert stopped.is_set()
+        assert client.closed
+
+    assert _fork_probe(child) == b"\x00"
+
+
+def test_interrupt_during_model_force_stop_waits_for_response(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = FakeClient()
+    model = ModelResourcesClient("res-1", cast(Any, client))
+    entered = threading.Event()
+
+    async def stop(resource_id: str, *, force: bool) -> Any:
+        assert resource_id == "res-1" and force
+        entered.set()
+        await asyncio.sleep(0.01)
+        return {"id": resource_id}
+
+    monkeypatch.setattr(client.post_training.model_resources, "stop", stop)
+    _interrupt_the_first_submitted_wait(monkeypatch, entered)
+
+    with pytest.raises(KeyboardInterrupt):
+        model.stop(force=True)
+
+    assert client.closed
+    assert model._loop.closed
+
+
 def test_interrupt_during_stop_cancels_before_reopening_the_gate(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

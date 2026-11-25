@@ -21,7 +21,7 @@ import logging
 import weakref
 import functools
 import threading
-from typing import Any, TypeVar, Protocol
+from typing import Any, TypeVar, Protocol, cast
 from collections.abc import Callable, Coroutine
 from typing_extensions import ParamSpec, Concatenate
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -117,16 +117,15 @@ class _ProcessLoop:
             raise
         return asyncio.run_coroutine_threadsafe(coro, loop)
 
-    def submit_teardown(
+    def submit_task(
         self,
-        coro: Coroutine[Any, Any, Any],
-        on_done: Callable[[asyncio.Task[Any]], None],
+        coro: Coroutine[Any, Any, _T],
+        on_done: Callable[[asyncio.Task[_T]], None],
     ) -> Callable[[], None]:
-        """Start teardown and return a cancellation request, independent of completion.
+        """Start a task and return a cancellation request, independent of completion.
 
         Register the completion callback before the task can start, so cancellation
-        before its first step still settles the gate. Only this callback releases the
-        claim; cancelling a caller's wait cannot stand in for task completion.
+        before its first step still reports the outcome.
         """
         try:
             loop = self._start()
@@ -216,6 +215,33 @@ def run_untracked(coro: Coroutine[Any, Any, _T]) -> _T:
     return _blocking_result(_process_loop.submit(coro))
 
 
+def run_untracked_and_wait_on_cancel(coro: Coroutine[Any, Any, _T]) -> _T:
+    """Run untracked work, cancelling it on Ctrl-C and waiting for the task to exit."""
+    _process_loop.refuse_nested_blocking(coro)
+
+    # A run_coroutine_threadsafe future becomes done as soon as it is cancelled.
+    outcome: Future[_T] = Future()
+
+    def finish(task: asyncio.Task[_T]) -> None:
+        try:
+            result = task.result()
+        except BaseException as exc:
+            outcome.set_exception(exc)
+        else:
+            outcome.set_result(result)
+
+    cancel = _process_loop.submit_task(coro, finish)
+    try:
+        return outcome.result()
+    except KeyboardInterrupt:
+        cancel()
+        try:
+            outcome.result()
+        except asyncio.CancelledError:
+            pass
+        raise
+
+
 async def run_untracked_async(coro: Coroutine[Any, Any, _T]) -> _T:
     """Await coro on the process loop, hopping from a foreign loop when needed. Untracked."""
     if _process_loop.owns_running_loop():
@@ -237,7 +263,7 @@ class LoopGate:
         self._closed = False
         self._tearing_down = False
         self._teardown_stops_remote = False
-        self._teardown_done: Future[Any] | None = None
+        self._teardown_done: Future[object] | None = None
         self._futures: set[Future[Any]] = set()
         self._state_lock = threading.Lock()
         _live_gates.add(self)
@@ -264,7 +290,9 @@ class LoopGate:
         """Schedule coro on the process loop without blocking and return its future. Tracked."""
         return self._submit_and_track(coro)
 
-    def run_teardown(self, coro: Coroutine[Any, Any, _T], *, stops_remote: bool = True) -> _T | None:
+    def run_teardown(
+        self, coro: Coroutine[Any, Any, _T], *, stops_remote: bool = True, finish_on_interrupt: bool = False
+    ) -> _T | None:
         """Run coro then close. Runs at most once; on failure leaves the gate retryable.
 
         Callers that race lose the claim and wait for the winner, seeing the same result or
@@ -275,10 +303,14 @@ class LoopGate:
         """
         _process_loop.refuse_nested_blocking(coro)
         in_flight, cancel = self._start_teardown(coro, stops_remote)
+        if in_flight is None:
+            return None
         try:
-            return None if in_flight is None else in_flight.result()
-        except BaseException:
-            if cancel is not None:
+            return in_flight.result()
+        except BaseException as exc:
+            if finish_on_interrupt and isinstance(exc, KeyboardInterrupt):
+                in_flight.result()
+            elif cancel is not None:
                 cancel()
             raise
 
@@ -300,17 +332,20 @@ class LoopGate:
 
     def _start_teardown(
         self, coro: Coroutine[Any, Any, _T], stops_remote: bool
-    ) -> tuple[Future[Any] | None, Callable[[], None] | None]:
+    ) -> tuple[Future[_T | None] | None, Callable[[], None] | None]:
         claimed, in_flight = self._claim_teardown(stops_remote)
+        # Stop callers share the same result type. Close can resolve the shared future
+        # with None, and callers that close discard its result.
+        outcome = cast("Future[_T | None] | None", in_flight)
         if not claimed:
             coro.close()
-            return in_flight, None
+            return outcome, None
         try:
-            cancel = _process_loop.submit_teardown(coro, self._finish_teardown)
+            cancel = _process_loop.submit_task(coro, self._finish_teardown)
         except BaseException as exc:
             self._abort_teardown(exc)
             raise
-        return in_flight, cancel
+        return outcome, cancel
 
     def _finish_teardown(self, task: asyncio.Task[Any]) -> None:
         try:
@@ -351,7 +386,7 @@ class LoopGate:
             coro.close()
             raise RuntimeError(_ALREADY_STOPPED)
 
-    def _claim_teardown(self, stops_remote: bool) -> tuple[bool, Future[Any] | None]:
+    def _claim_teardown(self, stops_remote: bool) -> tuple[bool, Future[object] | None]:
         """Claim exclusive teardown, or say what a caller that lost the race should wait for.
 
         ``(True, future)`` — the caller drives teardown; the gate settles the outcome for
@@ -385,7 +420,7 @@ class LoopGate:
             if done is not None:
                 done.set_exception(failure)
 
-    def _close(self, output: Any) -> None:
+    def _close(self, output: object) -> None:
         """Hand the teardown's outcome to its waiters, refuse further work, cancel futures.
 
         Only futures this handle submitted from another thread are cancelled: work awaited in
