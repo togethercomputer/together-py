@@ -224,6 +224,7 @@ class DeployConfig:
     image: Optional[str] = None
     placement_group: Optional[str] = None
     regions: Optional[list[str]] = None
+    traffic_weight: Optional[int] = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
@@ -1021,6 +1022,8 @@ class Jig:
             deploy_data["placement_group"] = self.config.deploy.placement_group
         if self.config.deploy.regions is not None:
             deploy_data["regions"] = self.config.deploy.regions
+        if self.config.deploy.traffic_weight is not None:
+            deploy_data["traffic_weight"] = self.config.deploy.traffic_weight
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
@@ -1277,6 +1280,8 @@ Configuration:""")
             lines.append(f"  Placement Group: {d.placement_group}")
         if d.regions:
             lines.append(f"  Regions: {', '.join(d.regions)}")
+        if d.traffic_weight is not None:
+            lines.append(f"  Traffic Weight: {d.traffic_weight}")
         if d.health_check_path:
             lines.append(f"  Health Check Path: {d.health_check_path}")
 
