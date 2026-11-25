@@ -8,8 +8,9 @@ from cyclopts.validators import Number
 
 from together import omit
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.lib.cli.utils._console import console
+from together.lib.cli.utils._console import console, error_console
 from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.components.loader import show_loading_status
 from together.types.endpoints.ab_experiment import AbExperiment
@@ -26,7 +27,10 @@ from together.lib.cli.api.endpoints._utils._build_autoscaling import (
     build_autoscaling,
     build_scaling_metrics,
 )
-from together.lib.cli.api.endpoints._utils._find_endpoint_by_deployment import find_endpoint_by_deployment
+from together.lib.cli.api.endpoints._utils._detach_from_experiments import (
+    detach_deployment_from_experiments,
+)
+from together.lib.cli.api.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
 
 
 async def update(
@@ -120,9 +124,21 @@ async def update(
     etag: Annotated[
         Optional[str],
         Parameter(
-            help="ETag for optimistic concurrency on the deployment update (does not apply to ab_percent or traffic_weight)."
+            help="ETag for optimistic concurrency on the deployment update (does not apply to ab_percent, traffic_weight, or detach)."
         ),
     ] = None,
+    detach: Annotated[
+        bool,
+        Parameter(
+            name="--detach",
+            help=(
+                "Detach the deployment from any associated shadow or A/B experiment. "
+                "Deletes the experiment when removing this deployment would leave it empty or without a control."
+            ),
+            negative=(),
+            show_default=False,
+        ),
+    ] = False,
     config: CLIConfigParameter,
 ) -> None:
     """Update a deployment's parameters on an endpoint."""
@@ -156,13 +172,15 @@ async def update(
     if etag is not None:
         kwargs["etag"] = etag
 
-    if not update_mask and traffic_weight is None and ab_percent is None:
+    if not update_mask and traffic_weight is None and ab_percent is None and not detach:
         exit_with_message(
             "Error: At least one update option must be specified.",
             diagnostic="At least one endpoint update option must be specified",
         )
+    if detach and ab_percent is not None:
+        raise ValueError("--detach cannot be combined with --ab-percent.")
 
-    endpoint = await find_endpoint_by_deployment(config.client, id)
+    endpoint, deployment_id = await resolve_deployment_id(config.client, id)
 
     # Validate / compute A/B members before any mutations so failures leave no partial state.
     ab_members = None
@@ -172,84 +190,157 @@ async def update(
         ab_experiment = await find_ab_for_deployment(
             config.client,
             endpoint.id,
-            id,
+            deployment_id,
         )
         if ab_experiment is None:
-            raise ValueError(f"Deployment {id} is not part of an A/B experiment.")
+            raise ValueError(f"Deployment {deployment_id} is not part of an A/B experiment.")
 
-        ab_members = build_ab_members_with_percent(ab_experiment.members, id, ab_percent)
-        current = next(m for m in ab_experiment.members if m.deployment_id == id)
+        ab_members = build_ab_members_with_percent(ab_experiment.members, deployment_id, ab_percent)
+        current = next(m for m in ab_experiment.members if m.deployment_id == deployment_id)
         ab_already_at_percent = current.percent == ab_percent
 
+    # Detach before other mutations. Membership blocks live traffic and rollouts,
+    # and the removal is not rolled back if a later update fails.
+    actions: list[str] = []
+    if detach:
+        actions = await detach_deployment_from_experiments(
+            config,
+            endpoint=endpoint,
+            deployment_id=deployment_id,
+        )
+
     updated: Any = None
-    if update_mask:
-        updated = await show_loading_status(
-            "Updating deployment...",
-            config.client.endpoints.deployments.update(
-                id,
-                endpoint_id=endpoint.id,
-                update_mask=",".join(update_mask),
-                **kwargs,
-            ),
-        )
-
-    if traffic_weight is not None:
-        traffic_split = upsert_traffic_weight(
-            endpoint.traffic_split,
-            deployment_id=id,
-            weight=traffic_weight,
-        )
-        endpoint = await show_loading_status(
-            "Updating endpoint traffic split...",
-            config.client.endpoints.update(
-                endpoint.id,
-                traffic_split=traffic_split,
-                update_mask="trafficSplit",
-                etag=endpoint.etag or omit,
-            ),
-        )
-
     updated_ab: AbExperiment | None = None
-    if ab_percent is not None:
-        assert ab_experiment is not None
-        if ab_already_at_percent:
-            updated_ab = ab_experiment
-        else:
-            assert ab_members is not None
-            updated_ab = await show_loading_status(
-                "Updating A/B experiment...",
-                config.client.endpoints.ab_experiments.update(
-                    id=ab_experiment.id,
+    try:
+        if update_mask:
+            updated = await show_loading_status(
+                "Updating deployment...",
+                config.client.endpoints.deployments.update(
+                    deployment_id,
                     endpoint_id=endpoint.id,
-                    update_mask="members",
-                    members=ab_members,
-                    etag=ab_experiment.etag or omit,
+                    update_mask=",".join(update_mask),
+                    **kwargs,
                 ),
             )
 
-    if config.json:
-        # Preserve pre--ab-percent unwrapped precedence for existing flag combos.
-        # Only wrap when --ab-percent is involved (may combine with other updates).
+        if traffic_weight is not None:
+            traffic_split = upsert_traffic_weight(
+                endpoint.traffic_split,
+                deployment_id=deployment_id,
+                weight=traffic_weight,
+            )
+            endpoint = await show_loading_status(
+                "Updating endpoint traffic split...",
+                config.client.endpoints.update(
+                    endpoint.id,
+                    traffic_split=traffic_split,
+                    update_mask="trafficSplit",
+                    etag=endpoint.etag or omit,
+                ),
+            )
+
         if ab_percent is not None:
-            payload: dict[str, Any] = {"ab_experiment": updated_ab}
-            if updated is not None:
-                payload["deployment"] = updated
-            if traffic_weight is not None:
-                payload["endpoint"] = endpoint
-            console.print_json(openapi_dumps(payload).decode("utf-8"))
-        elif updated is not None:
-            console.print_json(openapi_dumps(updated).decode("utf-8"))
-        else:
-            console.print_json(openapi_dumps(endpoint).decode("utf-8"))
+            assert ab_experiment is not None
+            if ab_already_at_percent:
+                updated_ab = ab_experiment
+            else:
+                assert ab_members is not None
+                updated_ab = await show_loading_status(
+                    "Updating A/B experiment...",
+                    config.client.endpoints.ab_experiments.update(
+                        id=ab_experiment.id,
+                        endpoint_id=endpoint.id,
+                        update_mask="members",
+                        members=ab_members,
+                        etag=ab_experiment.etag or omit,
+                    ),
+                )
+    except Exception as exc:
+        _report_failed_update_after_detach(error=exc, actions=actions, config=config)
+        raise
+
+    if config.json:
+        console.print_json(
+            openapi_dumps(
+                _update_json_payload(
+                    detach=detach,
+                    actions=actions,
+                    ab_percent=ab_percent,
+                    updated=updated,
+                    updated_ab=updated_ab,
+                    traffic_weight=traffic_weight,
+                    endpoint=endpoint,
+                )
+            ).decode("utf-8")
+        )
         return
 
+    if actions:
+        console.print(f"[dim]{'; '.join(actions)}[/dim]")
+    elif detach:
+        console.print(f"Deployment {deployment_id} is not attached to a shadow or A/B experiment.\n\n")
     if updated is not None:
-        console.print(f"[green]√[/green] Updated deployment {updated.name or id}.\n\n")
+        console.print(f"[green]√[/green] Updated deployment {updated.name or deployment_id}.\n\n")
     if traffic_weight is not None:
-        console.print(f"[green]√[/green] Updated traffic weight for deployment {id}.\n\n")
+        console.print(f"[green]√[/green] Updated traffic weight for deployment {deployment_id}.\n\n")
+    if detach and actions and updated is None and traffic_weight is None:
+        console.print(f"[green]√[/green] Detached deployment {deployment_id}.\n\n")
     if ab_percent is not None:
         if ab_already_at_percent:
-            console.print(f"Deployment {id} is already at {ab_percent}%.\n\n")
+            console.print(f"Deployment {deployment_id} is already at {ab_percent}%.\n\n")
         else:
-            console.print(f"[green]√[/green] Updated A/B percent for deployment {id}.\n\n")
+            console.print(f"[green]√[/green] Updated A/B percent for deployment {deployment_id}.\n\n")
     await retrieve_endpoint(endpoint.id, config=config)
+
+
+def _update_json_payload(
+    *,
+    detach: bool,
+    actions: list[str],
+    ab_percent: int | None,
+    updated: Any,
+    updated_ab: AbExperiment | None,
+    traffic_weight: float | None,
+    endpoint: Any,
+) -> Any:
+    """JSON result for an update.
+
+    Existing flag combos stay unwrapped (a bare deployment, or the endpoint when
+    only traffic weight changes). ``--ab-percent`` and ``--detach`` add fields,
+    so those results are wrapped.
+    """
+    if ab_percent is None and not detach:
+        if updated is not None:
+            return updated
+        return endpoint
+
+    payload: dict[str, Any] = {}
+    if ab_percent is not None:
+        payload["ab_experiment"] = updated_ab
+    if updated is not None:
+        payload["deployment"] = updated
+    if traffic_weight is not None:
+        payload["endpoint"] = endpoint
+    if detach:
+        payload["actions"] = actions
+    return payload
+
+
+def _report_failed_update_after_detach(
+    *,
+    error: BaseException,
+    actions: list[str],
+    config: CLIConfigParameter,
+) -> None:
+    """Surface experiment removals that already committed when a later update fails."""
+    if not actions:
+        return
+
+    error_message = getattr(error, "message", None) or str(error)
+    hint = f"Update failed after irreversible changes: {'; '.join(actions)}"
+    if config.json:
+        console.print_json(openapi_dumps({"error": error_message, "hint": hint, "actions": actions}).decode("utf-8"))
+        # Avoid the outer APIError handler printing a second, action-less JSON error.
+        raise CliDiagnosticExit("Update failed after irreversible changes") from error
+
+    error_console.print(f"[yellow]![/yellow] {hint}")

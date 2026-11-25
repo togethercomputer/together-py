@@ -139,8 +139,59 @@ def _deployment_body(**overrides: Any) -> dict[str, Any]:
     return body
 
 
+def _shadow_experiment_body(
+    *,
+    experiment_id: str = "exp_1",
+    targets: list[dict[str, Any]] | None = None,
+    **overrides: Any,
+) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "id": experiment_id,
+        "projectId": "proj",
+        "endpointId": "ep_1",
+        "name": "shadow-rate-0.1",
+        "source": {"endpoint": {"sampling": {"uniform": {"rate": 0.1}}}},
+        "targets": targets
+        or [
+            {
+                "id": "target_1",
+                "experimentId": experiment_id,
+                "name": "shadow-target",
+                "targetDeploymentId": "dep_variant",
+                "createdAt": "2026-01-01T00:00:00Z",
+                "etag": "etag-target",
+            }
+        ],
+        "createdAt": "2026-01-01T00:00:00Z",
+        "state": "SHADOW_EXPERIMENT_STATE_ACTIVE",
+        "etag": "etag-shadow",
+    }
+    body.update(overrides)
+    return body
+
+
 def _update_args(*extra: str) -> list[str]:
     return ["endpoints", "update", "--project", "proj", *extra, "--json"]
+
+
+def _mock_experiment_lists(
+    respx_mock: MockRouter,
+    *,
+    shadows: list[dict[str, Any]] | None = None,
+    ab: list[dict[str, Any]] | None = None,
+) -> None:
+    respx_mock.get("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        return_value=httpx.Response(
+            200,
+            json={"object": "list", "data": shadows or [], "next_cursor": None},
+        )
+    )
+    respx_mock.get("/v2/projects/proj/endpoints/ep_1/abExperiments").mock(
+        return_value=httpx.Response(
+            200,
+            json={"object": "list", "data": ab or [], "next_cursor": None},
+        )
+    )
 
 
 def _mock_endpoint_list(respx_mock: MockRouter) -> None:
@@ -258,6 +309,8 @@ class TestBetaEndpointsUpdate:
         assert "--scale-down-window" in output
         assert "--inactive-timeout" in output
         assert "--max-concurrent-requests-per-replica" in output
+        assert "--detach" in output
+        assert "--no-detach" not in output
         assert "--scale-to-zero-window" not in output
 
     def test_update_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
@@ -806,3 +859,204 @@ class TestBetaEndpointsUpdateAbPercent:
         assert payload["id"] == "dep_variant"
         assert "deployment" not in payload
         assert "endpoint" not in payload
+
+
+class TestBetaEndpointsUpdateDetach:
+    @pytest.mark.respx(base_url=base_url)
+    def test_detach_counts_as_update_option(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        _mock_endpoint_list(respx_mock)
+
+        result = cli_runner.invoke(_update_args("dep_missing", "--detach"))
+
+        assert result.exit_code != 0
+        assert "At least one update option must be specified" not in result.output
+        assert "Deployment dep_missing not found" in result.output
+
+    def test_detach_rejects_ab_percent(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(_update_args("dep_variant", "--detach", "--ab-percent", "20"))
+
+        assert result.exit_code != 0
+        assert "--detach cannot be combined with --ab-percent" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_detach_shadow_target_deletes_empty_experiment(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        _mock_experiment_lists(respx_mock, shadows=[_shadow_experiment_body()])
+        delete_target = respx_mock.delete(
+            "/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1"
+        ).mock(return_value=httpx.Response(200, json={"id": "target_1"}))
+        delete_shadow = respx_mock.delete("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1").mock(
+            return_value=httpx.Response(200, json={"id": "exp_1"})
+        )
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--detach"))
+
+        assert result.exit_code == 0, result.output
+        assert delete_target.called
+        assert delete_shadow.called
+        assert "etag=etag-target" in str(cast(Call, delete_target.calls[0]).request.url)
+        payload = json.loads(result.out_out)
+        assert payload["actions"] == ["deleted empty shadow experiment exp_1"]
+        assert "deployment" not in payload
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_detach_shadow_target_keeps_experiment_with_other_targets(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        _mock_experiment_lists(
+            respx_mock,
+            shadows=[
+                _shadow_experiment_body(
+                    targets=[
+                        {
+                            "id": "target_1",
+                            "experimentId": "exp_1",
+                            "name": "shadow-target",
+                            "targetDeploymentId": "dep_variant",
+                            "createdAt": "2026-01-01T00:00:00Z",
+                            "etag": "etag-target",
+                        },
+                        {
+                            "id": "target_2",
+                            "experimentId": "exp_1",
+                            "name": "other-target",
+                            "targetDeploymentId": "dep_other",
+                            "createdAt": "2026-01-01T00:00:00Z",
+                            "etag": "etag-target-2",
+                        },
+                    ]
+                )
+            ],
+        )
+        delete_target = respx_mock.delete(
+            "/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1"
+        ).mock(return_value=httpx.Response(200, json={"id": "target_1"}))
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--detach"))
+
+        assert result.exit_code == 0, result.output
+        assert delete_target.called
+        payload = json.loads(result.out_out)
+        assert payload["actions"] == ["removed from shadow experiment exp_1"]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_detach_ab_variant_returns_percent_to_control(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        _mock_experiment_lists(respx_mock, ab=[_ab_experiment_body()])
+        update_ab = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+            return_value=httpx.Response(200, json=_ab_experiment_body())
+        )
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--detach"))
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, update_ab.calls[0]).request.content.decode())
+        assert body == {
+            "etag": "etag-ab",
+            "members": [
+                {
+                    "deploymentId": "dep_control",
+                    "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                    "percent": 90,
+                },
+                {
+                    "deploymentId": "dep_other",
+                    "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                    "percent": 10,
+                },
+            ],
+        }
+        payload = json.loads(result.out_out)
+        assert payload["actions"] == ["removed from A/B experiment abx_1"]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_detach_noop_reports_empty_actions(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        _mock_experiment_lists(respx_mock)
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--detach"))
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(result.out_out) == {"actions": []}
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_detach_then_scale_updates_deployment(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        _mock_experiment_lists(respx_mock, shadows=[_shadow_experiment_body()])
+        delete_target = respx_mock.delete(
+            "/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1"
+        ).mock(return_value=httpx.Response(200, json={"id": "target_1"}))
+        respx_mock.delete("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1").mock(
+            return_value=httpx.Response(200, json={"id": "exp_1"})
+        )
+        update_dep = respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
+            return_value=httpx.Response(200, json=_deployment_body(id="dep_variant", name="variant"))
+        )
+
+        result = cli_runner.invoke(
+            _update_args("dep_variant", "--detach", "--min-replicas", "1", "--max-replicas", "2")
+        )
+
+        assert result.exit_code == 0, result.output
+        assert delete_target.called
+        assert update_dep.called
+        paths = [call.request.url.path for call in respx_mock.calls]
+        assert paths.index("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1") < paths.index(
+            "/v2/projects/proj/endpoints/ep_1/deployments/dep_variant"
+        )
+        req = cast(Call, update_dep.calls[0]).request
+        assert json.loads(req.content.decode()) == {"autoscaling": {"minReplicas": 1, "maxReplicas": 2}}
+        payload = json.loads(result.out_out)
+        assert payload["deployment"]["id"] == "dep_variant"
+        assert payload["actions"] == ["deleted empty shadow experiment exp_1"]
+        assert "ab_experiment" not in payload
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_failure_after_detach_reports_irreversible_actions(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        _mock_experiment_lists(respx_mock, shadows=[_shadow_experiment_body()])
+        respx_mock.delete("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1").mock(
+            return_value=httpx.Response(200, json={"id": "target_1"})
+        )
+        respx_mock.delete("/v2/projects/proj/endpoints/ep_1/shadowExperiments/exp_1").mock(
+            return_value=httpx.Response(200, json={"id": "exp_1"})
+        )
+        respx_mock.patch("/v2/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
+            return_value=httpx.Response(
+                400,
+                json={"error": {"message": "cannot update deployment", "type": "invalid_request_error"}},
+            )
+        )
+
+        result = cli_runner.invoke(
+            _update_args("dep_variant", "--detach", "--min-replicas", "1", "--max-replicas", "2")
+        )
+
+        assert result.exit_code != 0
+        payload = json.loads(result.out_out)
+        assert "cannot update deployment" in payload["error"]
+        assert payload["actions"] == ["deleted empty shadow experiment exp_1"]
+        assert "deleted empty shadow experiment exp_1" in payload["hint"]
