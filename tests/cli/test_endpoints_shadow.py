@@ -131,21 +131,8 @@ def _mock_model_and_config(respx_mock: MockRouter, *, configs: list[dict[str, An
     )
 
 
-def _mock_endpoint(
-    respx_mock: MockRouter,
-    *,
-    control_placement: dict[str, Any] | None = None,
-    mock_live_deployment: bool = True,
-) -> None:
+def _mock_endpoint(respx_mock: MockRouter) -> None:
     respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
-    if not mock_live_deployment:
-        return
-    control = _deployment_body(deployment_id="dep_control", name="my-project/my-endpoint/control")
-    if control_placement is not None:
-        control["placement"] = control_placement
-    respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
-        return_value=httpx.Response(200, json=control)
-    )
 
 
 def _shadow_cli_args(**overrides: str) -> list[str]:
@@ -238,7 +225,6 @@ class TestBetaEndpointShadow:
         assert result.exit_code == 0
         assert "--enable-lora" not in output
         assert "--placement.hipaa" in output
-        assert "copied from live deployments" in output
 
     @pytest.mark.respx(base_url=base_url)
     def test_shadow_creates_experiment_deployment_and_target(
@@ -489,7 +475,7 @@ class TestBetaEndpointShadow:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        _mock_endpoint(respx_mock, mock_live_deployment=False)
+        _mock_endpoint(respx_mock)
         respx_mock.get("/v2/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
         respx_mock.get("/v2/projects/proj/configs").mock(
             return_value=httpx.Response(
@@ -572,21 +558,12 @@ class TestBetaEndpointShadow:
         }
 
     @pytest.mark.respx(base_url=base_url)
-    def test_shadow_inherits_live_hipaa_placement(
+    def test_shadow_omits_placement_when_unset(
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        _mock_endpoint(
-            respx_mock,
-            control_placement={
-                "inline": {
-                    "regions": ["us-east-1"],
-                    "constraint": "ENFORCEMENT_REQUIRED",
-                    "compliancePolicy": {"hipaa": True},
-                }
-            },
-        )
+        _mock_endpoint(respx_mock)
         _mock_model_and_config(respx_mock)
         respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json=_shadow_experiment_body())
@@ -602,21 +579,15 @@ class TestBetaEndpointShadow:
 
         assert result.exit_code == 0, result.output
         deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
-        assert deployment_body["placement"] == {
-            "inline": {
-                "regions": ["us-east-1"],
-                "constraint": "ENFORCEMENT_REQUIRED",
-                "compliancePolicy": {"hipaa": True},
-            }
-        }
+        assert "placement" not in deployment_body
 
     @pytest.mark.respx(base_url=base_url)
-    def test_shadow_explicit_hipaa_skips_live_placement_lookup(
+    def test_shadow_sends_explicit_hipaa_placement(
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        _mock_endpoint(respx_mock)
         _mock_model_and_config(respx_mock)
         respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json=_shadow_experiment_body())
@@ -633,19 +604,14 @@ class TestBetaEndpointShadow:
         assert result.exit_code == 0, result.output
         deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
         assert deployment_body["placement"] == {"inline": {"compliancePolicy": {"hipaa": True}}}
-        calls = cast(list[Call], list(respx_mock.calls))
-        assert not any("/deployments/dep_control" in str(call.request.url) for call in calls)
 
     @pytest.mark.respx(base_url=base_url)
-    def test_shadow_region_override_keeps_live_hipaa(
+    def test_shadow_sends_regions_and_constraint(
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        _mock_endpoint(
-            respx_mock,
-            control_placement={"inline": {"compliancePolicy": {"hipaa": True}}},
-        )
+        _mock_endpoint(respx_mock)
         _mock_model_and_config(respx_mock)
         respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json=_shadow_experiment_body())
@@ -667,63 +633,16 @@ class TestBetaEndpointShadow:
             "inline": {
                 "regions": ["us-west-2"],
                 "constraint": "ENFORCEMENT_PREFERRED",
-                "compliancePolicy": {"hipaa": True},
             }
         }
 
     @pytest.mark.respx(base_url=base_url)
-    def test_shadow_errors_when_live_placements_differ(
+    def test_shadow_sends_placement_profile(
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(
-            return_value=httpx.Response(
-                200,
-                json=_endpoint_body(
-                    trafficSplit=[
-                        {"deploymentId": "dep_a", "weight": 1.0},
-                        {"deploymentId": "dep_b", "weight": 1.0},
-                    ]
-                ),
-            )
-        )
-        _mock_model_and_config(respx_mock)
-        respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_a").mock(
-            return_value=httpx.Response(
-                200,
-                json=_deployment_body(
-                    deployment_id="dep_a",
-                    placement={"inline": {"compliancePolicy": {"hipaa": True}}},
-                ),
-            )
-        )
-        respx_mock.get("/v2/projects/proj/endpoints/ep_1/deployments/dep_b").mock(
-            return_value=httpx.Response(
-                200,
-                json=_deployment_body(deployment_id="dep_b", placement={"profile": "pp_other"}),
-            )
-        )
-
-        result = cli_runner.invoke(_shadow_cli_args())
-
-        assert result.exit_code != 0
-        assert "do not share a placement" in result.output
-        calls = cast(list[Call], list(respx_mock.calls))
-        assert not any(call.request.method == "POST" for call in calls)
-
-    @pytest.mark.respx(base_url=base_url)
-    def test_shadow_ignores_weight_zero_deployments(
-        self,
-        respx_mock: MockRouter,
-        cli_runner: CliRunner,
-    ) -> None:
-        respx_mock.get("/v2/projects/proj/endpoints/ep_1").mock(
-            return_value=httpx.Response(
-                200,
-                json=_endpoint_body(trafficSplit=[{"deploymentId": "dep_warmup", "weight": 0}]),
-            )
-        )
+        _mock_endpoint(respx_mock)
         _mock_model_and_config(respx_mock)
         respx_mock.post("/v2/projects/proj/endpoints/ep_1/shadowExperiments").mock(
             return_value=httpx.Response(200, json=_shadow_experiment_body())
@@ -735,10 +654,14 @@ class TestBetaEndpointShadow:
             return_value=httpx.Response(200, json=_shadow_target_body())
         )
 
-        result = cli_runner.invoke(_shadow_cli_args())
+        result = cli_runner.invoke([*_shadow_cli_args(), "--placement", "pp_other"])
 
         assert result.exit_code == 0, result.output
         deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
-        assert "placement" not in deployment_body
-        calls = cast(list[Call], list(respx_mock.calls))
-        assert not any("/deployments/dep_warmup" in str(call.request.url) for call in calls)
+        assert deployment_body["placement"] == {"profile": "pp_other"}
+
+    def test_shadow_rejects_profile_and_inline_placement(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke([*_shadow_cli_args(), "--placement", "pp_1", "--placement.hipaa"])
+
+        assert result.exit_code != 0
+        assert "not both" in result.output

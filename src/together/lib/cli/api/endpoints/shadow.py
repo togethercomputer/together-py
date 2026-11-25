@@ -24,15 +24,14 @@ from together.types.shadow_endpoint_source_param import (
     SamplingAdaptiveUniform,
     SamplingAdaptiveKeyBased,
 )
-from together.lib.cli.api.endpoints._utils._placement import inherit_live_placement, resolve_deployment_placement
 from together.lib.cli.api.endpoints._utils._parameters import (
     ModelParameter,
     PlacementGroup,
     PlacementModel,
     EndpointPromptParameter,
     placement_model,
+    resolve_cli_placement,
 )
-from together.types.endpoints.deployment_create_params import Placement
 from together.lib.cli.api.endpoints._utils._resolve_model import (
     resolve_endpoint,
     construct_model_path,
@@ -98,17 +97,10 @@ async def shadow(
 
     The target deployment stays out of live traffic and active rollouts; weight-0
     traffic-split warm-up deployments are valid shadow targets.
-
-    Omitted placement flags copy the placement shared by the endpoint's live
-    deployments, including HIPAA. ``--placement.regions`` and ``--placement.constraint``
-    keep a HIPAA requirement copied from those deployments. ``--placement.hipaa`` or
-    ``--placement <profile-id>`` is sent as given. When live deployments do not share
-    a placement, pass one of those flags.
     """
     rate, target_qps = await resolve_rate_or_target_qps(rate, target_qps, config=config)
 
-    endpoint = await resolve_endpoint(config, endpoint_id_or_name)
-    endpoint_id = endpoint.id
+    endpoint_id = (await resolve_endpoint(config, endpoint_id_or_name)).id
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
 
@@ -128,11 +120,7 @@ async def shadow(
     sampling = build_sampling(rate=rate, key=key, target_qps=target_qps, window=window)
     source = ShadowSourceParam(endpoint=ShadowEndpointSourceParam(sampling=sampling))
     shadow_name = build_shadow_name(rate, key, target_qps, window)
-
-    async def load_inherited_placement() -> Placement | None:
-        return await inherit_live_placement(config.client, endpoint)
-
-    placement_value = await resolve_deployment_placement(placement_id, placement, load_inherited_placement)
+    placement_value = resolve_cli_placement(placement_id, placement)
 
     # If the shadow experiment already exists, we then just want to add the target to the existing experiment
     # This logic is turned on if the create fails with an error about the experiment already existing

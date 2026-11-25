@@ -310,7 +310,7 @@ ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg endpoints ab ml_xxxxxxxxxxxx --control <deployment-id> \\
     --percent 5 --name my-variant[/primary]
 
-[dim]-[/dim] Require HIPAA placement (also copied from the control when omitted):
+[dim]-[/dim] Require HIPAA placement:
   [primary]tg endpoints ab Qwen/Qwen2.5-7B --control <deployment-id> \\
     --percent 10 --placement.hipaa[/primary]
 """
@@ -332,7 +332,7 @@ ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg endpoints shadow ml_xxxxxxxxxxxx --endpoint <endpoint-name-or-id> \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
 
-[dim]-[/dim] Require HIPAA placement (also copied from live deployments when omitted):
+[dim]-[/dim] Require HIPAA placement:
   [primary]tg endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> \\
     --rate 0.1 --placement.hipaa[/primary]
 
