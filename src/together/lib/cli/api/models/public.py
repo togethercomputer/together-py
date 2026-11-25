@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Literal, Optional, cast
+from typing import Literal, Optional, Sequence, cast
 from typing_extensions import Annotated
 
 from cyclopts import Parameter
@@ -9,6 +9,7 @@ from cyclopts import Parameter
 from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
+from together.types.supported_model import SupportedModel
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
@@ -33,7 +34,7 @@ async def public(
     *,
     config: CLIConfigParameter,
 ) -> None:
-    """List platform-supported base models usable when creating a model."""
+    """List platform-supported models and the products that offer them."""
     response = await show_loading_status(
         "Loading supported models...",
         config.client.models.list_supported(
@@ -52,33 +53,59 @@ async def public(
         return
 
     table = ListTable("Supported Models", empty_message="No supported models found.")
-    table.add_primary_column("Model", ratio=3)
-    table.add_column("GPUs")
-    table.add_column("Parallelism")
+    table.add_primary_column("Model", ratio=3, overflow="fold")
+    table.add_column("Products", ratio=2, overflow="fold")
 
     for model in response.data:
-        profiles = model.deployment_profiles or []
-        if not profiles:
-            table.add_row(model.name or model.id or "", "", "", "", "")
-            continue
-
-        for profile in profiles:
-            gpu = ""
-            if profile.gpu_count or profile.gpu_type:
-                gpu_type = profile.gpu_type or "?"
-                gpu_type = " ".join([part.capitalize() for part in gpu_type.split("-") if part.strip()])
-                gpu = f"{profile.gpu_count or '?'}x {gpu_type}"
-            profile_model = _profile_cli_model(profile, model.id)
-            table.add_row(
-                profile_model,
-                gpu,
-                profile.parallelism or "",
-            )
+        table.add_row(_format_model_cell(model), _format_products(model.products))
     console.print(table)
 
     if response.next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
         console.print(f"  [dim]-[/dim] [white]tg models public --after {response.next_cursor}[/white]")
+
+
+_PRODUCT_LABELS = {
+    "PRODUCT_SERVERLESS": "serverless",
+    "PRODUCT_DEDICATED": "dedicated endpoints",
+    "PRODUCT_FINE_TUNING": "training",
+    "PRODUCT_RESERVED": "reserved",
+}
+_PRODUCT_ORDER = (
+    "PRODUCT_SERVERLESS",
+    "PRODUCT_DEDICATED",
+    "PRODUCT_FINE_TUNING",
+    "PRODUCT_RESERVED",
+)
+
+
+def _format_model_cell(model: SupportedModel) -> str:
+    parent = model.name or model.id or ""
+    lines = [parent]
+    seen: set[str] = {parent} if parent else set()
+    for profile in model.deployment_profiles or []:
+        name = _profile_cli_model(profile, None)
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        lines.append(f"  └ {name}")
+    return "\n".join(lines)
+
+
+def _format_products(products: Sequence[str] | None) -> str:
+    present = list(dict.fromkeys(products or []))
+    ordered = [product for product in _PRODUCT_ORDER if product in present]
+    ordered.extend(product for product in present if product not in _PRODUCT_LABELS)
+    return "\n".join(_product_label(product) for product in ordered)
+
+
+def _product_label(product: str) -> str:
+    label = _PRODUCT_LABELS.get(product)
+    if label is not None:
+        return label
+    if product.startswith("PRODUCT_"):
+        return product.removeprefix("PRODUCT_").replace("_", " ").lower()
+    return product
 
 
 def _profile_cli_model(profile: object, fallback: str | None = None) -> str:

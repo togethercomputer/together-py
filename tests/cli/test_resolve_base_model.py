@@ -7,7 +7,10 @@ import pytest
 
 from together.lib.cli.utils.config import CLIConfig
 from together.types.supported_model import SupportedModel
-from together.lib.cli.api.models._resolve_base_model import resolve_base_model_id
+from together.lib.cli.api.models._resolve_base_model import (
+    resolve_base_model_id,
+    resolve_supported_model_location,
+)
 from together.types.supported_model_deployment_profile import SupportedModelDeploymentProfile
 
 
@@ -149,3 +152,38 @@ async def test_ambiguous_exact_name_requires_model_id() -> None:
 
     assert "ml_a" in str(exc.value)
     assert "ml_b" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_profile_name_without_model_path_uses_base_model() -> None:
+    client = MagicMock()
+    client.models.list_supported = AsyncMock(
+        return_value=MagicMock(
+            data=[
+                _supported_model(
+                    id="ml_tts",
+                    name="Qwen/Qwen3-TTS-12Hz-1.7B",
+                    baseModel="projects/together/models/ml_tts",
+                    baseModelId="ml_tts",
+                    deploymentProfiles=[_profile(model="", modelName="Qwen/Qwen3-TTS-12Hz-1.7B")],
+                )
+            ]
+        )
+    )
+
+    assert await resolve_base_model_id(_cli_config(client), "Qwen/Qwen3-TTS-12Hz-1.7B") == "ml_tts"
+    assert await resolve_supported_model_location(_cli_config(client), "Qwen/Qwen3-TTS-12Hz-1.7B") == (
+        "together",
+        "ml_tts",
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_resolves_catalog_name_when_profile_names_differ() -> None:
+    client = MagicMock()
+    client.models.list_supported = AsyncMock(return_value=MagicMock(data=[_supported_model()]))
+
+    assert await resolve_supported_model_location(_cli_config(client), "meta-llama/Llama-3-8B") == (
+        "together",
+        "ml_base",
+    )
