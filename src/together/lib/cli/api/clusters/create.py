@@ -30,8 +30,13 @@ KNOWN_GPU_TYPES = (
     "GB200_NVL",
 )
 
+NUM_GPUS_HELP = (
+    "Number of GPUs to allocate in the cluster. Must be at least 8 and a multiple of 8 "
+    "(GB200_NVL: at least 4 and a multiple of 4)."
+)
+
 NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
-NumGpusParameter = Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")]
+NumGpusParameter = Annotated[Optional[int], Parameter(help=NUM_GPUS_HELP)]
 RegionParameter = Annotated[Optional[str], Parameter(help="Region to create the cluster in")]
 BillingTypeParameter = Annotated[
     Optional[Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"]],

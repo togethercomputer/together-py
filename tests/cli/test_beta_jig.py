@@ -96,6 +96,55 @@ def test_jig_failure_exit_preserves_diagnostic(capsys: pytest.CaptureFixture[str
     assert f"Jig failed: {message}" in capsys.readouterr().out
 
 
+_ENTERPRISE_REFUSAL = (
+    "Together Dedicated Container Inference is an enterprise feature. "
+    "Please contact support or your account representative."
+)
+
+
+class TestBetaJigEnterpriseRefusal:
+    @pytest.mark.respx(base_url=base_url)
+    def test_refusal_says_it_covers_containers_only(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/v1/deployments").mock(return_value=httpx.Response(403, json={"error": _ENTERPRISE_REFUSAL}))
+
+        with _patched_jig_config(tmp_path), _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "list"])
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 1
+        assert _ENTERPRISE_REFUSAL in output
+        assert "This applies to container deployments (`tg beta jig`) only." in output
+        assert "use `tg endpoints`" in output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_refusal_hint_is_in_json_output(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/v1/deployments").mock(return_value=httpx.Response(403, json={"error": _ENTERPRISE_REFUSAL}))
+
+        with _patched_jig_config(tmp_path), _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "list", "--json"])
+
+        assert result.exit_code == 1
+        payload = json.loads(result.out_out)
+        assert payload["ok"] is False
+        assert payload["error"].startswith(_ENTERPRISE_REFUSAL)
+        assert "use `tg endpoints`" in payload["error"]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_other_api_errors_get_no_hint(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        respx_mock.get("/v1/deployments").mock(return_value=httpx.Response(403, json={"error": "Access denied"}))
+
+        with _patched_jig_config(tmp_path), _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "list"])
+
+        assert result.exit_code == 1
+        assert "Access denied" in result.output
+        assert "tg endpoints" not in result.output
+
+
 def test_volume_upload_failure_exit_preserves_diagnostic(tmp_path: Path) -> None:
     deleted: list[str] = []
 

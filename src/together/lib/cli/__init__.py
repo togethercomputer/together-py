@@ -110,11 +110,13 @@ from together.lib.cli.utils._version_check import VersionCheck
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
+CLI_DOCS_URL = "https://docs.together.ai/reference/cli/getting-started"
+
 app = App(
     version=__version__,
     name="tg",
     help_format="rich",
-    help=f"[dim]Together CLI (v{__version__})[/dim]",
+    help=f"[dim]Together CLI (v{__version__})[/dim]\n\n[dim]Docs:[/dim] {CLI_DOCS_URL}",
     console=console,
     usage="",
     help_formatter=help_formatter,
