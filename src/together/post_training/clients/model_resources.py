@@ -10,7 +10,7 @@ from collections.abc import Coroutine
 
 import httpx
 
-from .._loop import LoopGate, run_untracked, on_client_loop, run_untracked_async
+from .._loop import LoopGate, run_untracked, on_client_loop, run_untracked_async, run_untracked_and_wait_on_cancel
 from .session import (
     DEFAULT_SESSION_CREATION_TIMEOUT,
     DEFAULT_SESSION_CREATION_INTERVAL,
@@ -131,7 +131,7 @@ class ModelResourcesClient:
             RuntimeError: If the resource reaches STOPPING, STOPPED or ERROR before READY.
             TimeoutError: If the resource is not READY within ``ready_timeout`` (or ``timeout``).
         """
-        return run_untracked(
+        return run_untracked_and_wait_on_cancel(
             cls.create_async(
                 api_key=api_key,
                 base_url=base_url,
@@ -340,8 +340,9 @@ class ModelResourcesClient:
 
         force also stops every session attached to the resource, including sessions this
         process does not own. Without it the API refuses while any session is still active.
+        If Ctrl-C interrupts a force stop, wait for the in-flight request before raising.
         """
-        return self._loop.run_teardown(self._stop_remote(force=force))
+        return self._loop.run_teardown(self._stop_remote(force=force), finish_on_interrupt=force)
 
     async def stop_async(self, *, force: bool = False) -> ModelResources | None:
         """See :meth:`stop`."""

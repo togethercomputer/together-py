@@ -117,16 +117,15 @@ class _ProcessLoop:
             raise
         return asyncio.run_coroutine_threadsafe(coro, loop)
 
-    def submit_teardown(
+    def submit_task(
         self,
-        coro: Coroutine[Any, Any, Any],
-        on_done: Callable[[asyncio.Task[Any]], None],
+        coro: Coroutine[Any, Any, _T],
+        on_done: Callable[[asyncio.Task[_T]], None],
     ) -> Callable[[], None]:
-        """Start teardown and return a cancellation request, independent of completion.
+        """Start a task and return a cancellation request, independent of completion.
 
         Register the completion callback before the task can start, so cancellation
-        before its first step still settles the gate. Only this callback releases the
-        claim; cancelling a caller's wait cannot stand in for task completion.
+        before its first step still reports the outcome.
         """
         try:
             loop = self._start()
@@ -216,6 +215,33 @@ def run_untracked(coro: Coroutine[Any, Any, _T]) -> _T:
     return _blocking_result(_process_loop.submit(coro))
 
 
+def run_untracked_and_wait_on_cancel(coro: Coroutine[Any, Any, _T]) -> _T:
+    """Run untracked work, cancelling it on Ctrl-C and waiting for the task to exit."""
+    _process_loop.refuse_nested_blocking(coro)
+
+    # A run_coroutine_threadsafe future becomes done as soon as it is cancelled.
+    outcome: Future[_T] = Future()
+
+    def finish(task: asyncio.Task[_T]) -> None:
+        try:
+            result = task.result()
+        except BaseException as exc:
+            outcome.set_exception(exc)
+        else:
+            outcome.set_result(result)
+
+    cancel = _process_loop.submit_task(coro, finish)
+    try:
+        return outcome.result()
+    except KeyboardInterrupt:
+        cancel()
+        try:
+            outcome.result()
+        except asyncio.CancelledError:
+            pass
+        raise
+
+
 async def run_untracked_async(coro: Coroutine[Any, Any, _T]) -> _T:
     """Await coro on the process loop, hopping from a foreign loop when needed. Untracked."""
     if _process_loop.owns_running_loop():
@@ -264,7 +290,9 @@ class LoopGate:
         """Schedule coro on the process loop without blocking and return its future. Tracked."""
         return self._submit_and_track(coro)
 
-    def run_teardown(self, coro: Coroutine[Any, Any, _T], *, stops_remote: bool = True) -> _T | None:
+    def run_teardown(
+        self, coro: Coroutine[Any, Any, _T], *, stops_remote: bool = True, finish_on_interrupt: bool = False
+    ) -> _T | None:
         """Run coro then close. Runs at most once; on failure leaves the gate retryable.
 
         Callers that race lose the claim and wait for the winner, seeing the same result or
@@ -275,10 +303,14 @@ class LoopGate:
         """
         _process_loop.refuse_nested_blocking(coro)
         in_flight, cancel = self._start_teardown(coro, stops_remote)
+        if in_flight is None:
+            return None
         try:
-            return None if in_flight is None else in_flight.result()
-        except BaseException:
-            if cancel is not None:
+            return in_flight.result()
+        except BaseException as exc:
+            if finish_on_interrupt and isinstance(exc, KeyboardInterrupt):
+                in_flight.result()
+            elif cancel is not None:
                 cancel()
             raise
 
@@ -306,7 +338,7 @@ class LoopGate:
             coro.close()
             return in_flight, None
         try:
-            cancel = _process_loop.submit_teardown(coro, self._finish_teardown)
+            cancel = _process_loop.submit_task(coro, self._finish_teardown)
         except BaseException as exc:
             self._abort_teardown(exc)
             raise
