@@ -17,6 +17,7 @@ from respx.models import Call
 
 import together.lib.cli.api.beta.jig.jig as _jig_mod
 from tests.cli.utils import CliRunner
+from together._exceptions import ConflictError
 from together.types.beta.deployment import ModelMount as DeploymentModelMount
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -52,7 +53,7 @@ def _patched_jig_config(tmp_path: Path):
     """Avoid Config.find() + validate on py3.9 (DeployConfig uses PEP 604 hints)."""
     with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
         cfg = _jig_mod.Config(
-            model_name=_DEPLOY_NAME,
+            name=_DEPLOY_NAME,
             image=_jig_mod.ImageConfig(),
             deploy=_jig_mod.DeployConfig(),
             _path=tmp_path / "pyproject.toml",
@@ -291,7 +292,7 @@ class TestBetaJigBuild:
     def test_build_blocked_when_deploy_image_set(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
             cfg = _jig_mod.Config(
-                model_name=_DEPLOY_NAME,
+                name=_DEPLOY_NAME,
                 image=_jig_mod.ImageConfig(),
                 deploy=_jig_mod.DeployConfig(image="ghcr.io/org/prebuilt:latest"),
                 _path=tmp_path / "pyproject.toml",
@@ -834,7 +835,7 @@ class TestBetaJigModelMounts:
 
         output = _jig_mod.Jig.format_status(cast(Any, jig), deployment)
 
-        assert "Model: ml_abc123@rv_xyz789" in output
+        assert "Model Mount: ml_abc123@rv_xyz789" in output
         assert "/models" in output
 
 
@@ -923,6 +924,93 @@ class TestBetaJigPlacement:
 
         assert "Placement Group: shared-gpu" in output
         assert "Regions: us-east, eu-west-1" in output
+
+
+def _status_error(cls: Any, status: int, message: str) -> Any:
+    request = httpx.Request("POST", f"{base_url}/v1/deployments")
+    return cls(f"Error code: {status}", response=httpx.Response(status, request=request), body={"error": message})
+
+
+class _CreateApi:
+    def __init__(self, deploy_error: Exception | None = None) -> None:
+        self.calls: list[dict[str, Any]] = []
+        self.deploy_error = deploy_error
+
+    def update(self, _id: str, **_kwargs: Any) -> SimpleNamespace:
+        raise _status_error(_jig_mod.NotFoundError, 404, "Deployment not found")
+
+    def deploy(self, **kwargs: Any) -> SimpleNamespace:
+        if self.deploy_error:
+            raise self.deploy_error
+        self.calls.append(kwargs)
+        return SimpleNamespace(status="Pending", environment_variables=[])
+
+
+def _create(api: _CreateApi, deploy: Any) -> None:
+    jig = SimpleNamespace(
+        api=api,
+        config=SimpleNamespace(deploy=deploy, experimental=_jig_mod.ExperimentalConfig(), _unique_name_hint="h"),
+        name=_DEPLOY_NAME,
+        registry=lambda: "registry.together.ai/test/",
+        state=SimpleNamespace(secrets={}),
+        sync_secrets_from_deployment=lambda: None,
+        validate_model_mounts=lambda: None,
+        validate_volumes=lambda: None,
+        track=_noop_track,
+        together=SimpleNamespace(api_key="test-key", base_url=httpx.URL(base_url)),
+    )
+    _jig_mod.Jig.deploy(cast(Any, jig), existing_image="example.com/acme/app:tag")
+
+
+class TestBetaJigTrafficSplit:
+    def test_config_parses_model_name_and_zero_weight(self, tmp_path: Path) -> None:
+        data = {"name": "chat-v2", "deploy": {"model_name": "chat", "traffic_weight": 0}}
+        cfg = _jig_mod.Config.load(data, tmp_path / "chat-v2.toml")
+        assert (cfg.name, cfg.deploy.model_name, cfg.deploy.traffic_weight) == ("chat-v2", "chat", 0)
+
+    @pytest.mark.parametrize(
+        ("deploy", "sent"),
+        [
+            (_jig_mod.DeployConfig(), (_DEPLOY_NAME, 100)),
+            (_jig_mod.DeployConfig(model_name="chat", traffic_weight=0), ("chat", 0)),
+        ],
+        ids=["unset", "set"],
+    )
+    def test_deploy_sends_model_name_and_weight(self, deploy: Any, sent: tuple[str, int]) -> None:
+        api = _CreateApi()
+        _create(api, deploy)
+        assert (api.calls[0]["model_name"], api.calls[0]["traffic_weight"]) == sent
+
+    @pytest.mark.parametrize(
+        ("key", "raised"),
+        [(None, _jig_mod.JigError), (_DEPLOY_NAME, _jig_mod.JigError), ("chat", ConflictError)],
+    )
+    def test_create_rewrites_only_deployment_name_conflicts(self, key: str | None, raised: type) -> None:
+        message = f'"{key}" already exists as a deployment or model name in another project'
+        api = _CreateApi(_status_error(ConflictError, 409, message if key else "Deployment name already exists"))
+        with pytest.raises(raised):
+            _create(api, _jig_mod.DeployConfig(model_name="chat"))
+
+    @pytest.mark.parametrize(
+        ("model_name", "weight", "lines"),
+        [
+            ("chat", 0, ["  Model: chat", "  Traffic Weight: 0"]),
+            ("chat-v2", 100, []),
+            ("chat-v2", 50, ["  Traffic Weight: 50"]),
+        ],
+    )
+    def test_status_lines(self, model_name: str, weight: int, lines: list[str]) -> None:
+        deployment = _jig_mod.Deployment(name="chat-v2", model_name=model_name, traffic_weight=weight)
+        output = _jig_mod.Jig.format_status(cast(Any, SimpleNamespace(short_image=str)), deployment)
+        assert [line for line in output.splitlines() if line.startswith(("  Model:", "  Traffic Weight:"))] == lines
+
+    @pytest.mark.parametrize(("model_name", "url_name"), [("chat", "chat"), (None, _DEPLOY_NAME)])
+    def test_endpoint_uses_config_model_name(self, model_name: str | None, url_name: str) -> None:
+        # No `api` on the fake, so an API call would fail the test.
+        jig = SimpleNamespace(
+            name=_DEPLOY_NAME, config=SimpleNamespace(deploy=_jig_mod.DeployConfig(model_name=model_name))
+        )
+        assert _jig_mod.endpoint(cast(Any, jig)) == f"https://api.together.ai/v1/deployment-request/{url_name}"
 
 
 _S3_URI = "s3://my-bucket/weights"
