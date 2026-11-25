@@ -994,7 +994,7 @@ endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), show=False)
 endpoints_app.default(endpoints_app["retrieve"].default_command)
 endpoints_app.command(
     (f"{_CLI}.endpoints.update:update"),
-    help="Update a deployment's name, autoscaling, traffic weight, or A/B percent",
+    help="Update a deployment's autoscaling, traffic weight, A/B percent, or experiment membership",
     help_epilogue=ENDPOINTS_UPDATE_HELP_EXAMPLES,
     sort_key=4,
 )

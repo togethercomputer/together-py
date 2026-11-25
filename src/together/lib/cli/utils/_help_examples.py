@@ -296,6 +296,9 @@ ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Set an A/B variant percent (takes from or returns to control):
   [primary]tg endpoints update <variant-deployment-id> --ab-percent 20[/primary]
+
+[dim]-[/dim] Remove a deployment from a shadow or A/B experiment:
+  [primary]tg endpoints update <deployment-id> --detach[/primary]
 """
 
 ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -327,6 +330,9 @@ ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Shadow a private model with an explicit config:
   [primary]tg endpoints shadow ml_xxxxxxxxxxxx --endpoint <endpoint-name-or-id> \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
+
+[dim]-[/dim] Remove a deployment from the shadow experiment:
+  [primary]tg endpoints update <deployment-id> --detach[/primary]
 
 [dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
 """
