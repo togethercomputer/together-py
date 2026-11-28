@@ -284,22 +284,24 @@ def _check_csv(
                 f, total_bytes=total_bytes, progress_callback=progress_callback, phase="csv"
             )
         reader = csv.DictReader(source)
-        if not reader.fieldnames:
-            report_dict["message"] = "CSV file is empty or has no header."
-            report_dict["is_check_passed"] = False
-            return report_dict
-        idx = -1
+        sample_count = 0
 
         try:
-            for idx, item in enumerate(reader):
+            if not reader.fieldnames:
+                report_dict["message"] = "CSV file is empty or has no header."
+                report_dict["is_check_passed"] = False
+                return report_dict
+
+            for item in reader:
                 if None in item.keys() or None in item.values():
                     raise InvalidFileFormatError(
-                        message=f"CSV file is malformed or the number of columns found on line {idx + 1} is inconsistent with the header",
-                        line_number=idx + 1,
+                        message=f"CSV file is malformed or the number of columns found on line {reader.line_num} is inconsistent with the header",
+                        line_number=reader.line_num,
                         error_source="format",
                     )
+                sample_count += 1
 
-            report_dict.update(_check_samples_count(file, report_dict, idx))
+            report_dict.update(_check_samples_count(file, report_dict, sample_count - 1 if sample_count else -1))
             report_dict["load_csv"] = True
 
         except InvalidFileFormatError as e:
@@ -310,12 +312,13 @@ def _check_csv(
                 report_dict["line_number"] = e.line_number
             if e.error_source is not None:
                 report_dict[e.error_source] = False
-        except ValueError:
+        except (ValueError, csv.Error):
             report_dict["load_csv"] = False
-            if idx < 0:
+            if sample_count == 0:
                 report_dict["message"] = "Unable to decode file. File may be empty or in an unsupported format. "
             else:
-                report_dict["message"] = f"Error parsing the CSV file. Unexpected format on line {idx + 1}."
+                report_dict["message"] = f"Error parsing the CSV file. Unexpected format on line {reader.line_num}."
+                report_dict["line_number"] = reader.line_num
             report_dict["is_check_passed"] = False
 
     return report_dict
