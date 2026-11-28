@@ -138,7 +138,12 @@ def _test_alarm(_signum: int, _frame: object) -> None:
 @pytest.fixture(autouse=True)
 def _bound_test_runtime() -> Iterator[None]:  # pyright: ignore[reportUnusedFunction]
     # Temporary: surface the CI hang. Removed after diagnosis.
-    signal.signal(signal.SIGALRM, _test_alarm)
-    signal.alarm(30)
+    sigalrm = getattr(signal, "SIGALRM", None)
+    alarm_fn = getattr(signal, "alarm", None)
+    if sigalrm is None or alarm_fn is None:
+        yield
+        return
+    signal.signal(sigalrm, _test_alarm)
+    alarm_fn(30)
     yield
-    signal.alarm(0)
+    alarm_fn(0)

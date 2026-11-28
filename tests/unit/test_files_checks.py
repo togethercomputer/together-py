@@ -485,6 +485,70 @@ def test_check_csv_invalid_column(tmp_path: Path):
     assert not report["is_check_passed"]
 
 
+def test_check_csv_inconsistent_columns_first_row(tmp_path: Path):
+    file = tmp_path / "inconsistent_first_row.csv"
+    file.write_text("col1,col2\nval1,val2,val3\n", encoding="utf-8")
+
+    report = check_file(file, purpose="eval")
+
+    assert not report["is_check_passed"]
+    assert report["load_csv"] is False
+    assert report["line_number"] == 2
+    assert report["message"] == (
+        "CSV file is malformed or the number of columns found on line 2 is inconsistent with the header"
+    )
+
+
+def test_check_csv_inconsistent_columns_subsequent_row(tmp_path: Path):
+    file = tmp_path / "inconsistent_subsequent_row.csv"
+    file.write_text("col1,col2,col3\nval1,val2,val3\nval4,val5\n", encoding="utf-8")
+
+    report = check_file(file, purpose="eval")
+
+    assert not report["is_check_passed"]
+    assert report["load_csv"] is False
+    assert report["line_number"] == 3
+    assert report["message"] == (
+        "CSV file is malformed or the number of columns found on line 3 is inconsistent with the header"
+    )
+
+
+def test_check_csv_malformed_csv_error(tmp_path: Path):
+    file = tmp_path / "malformed_nul.csv"
+    file.write_bytes(b"col1,col2\n\x00val1,val2\n")
+
+    report = check_file(file, purpose="eval")
+
+    assert not report["is_check_passed"]
+    assert report["load_csv"] is False
+
+
+def test_check_csv_malformed_header_csv_error(tmp_path: Path):
+    file = tmp_path / "malformed_header.csv"
+    file.write_bytes(b"\x00col1,col2\nval1,val2\n")
+
+    report = check_file(file, purpose="eval")
+
+    assert not report["is_check_passed"]
+    assert report["load_csv"] is False
+    assert report["message"] == "Unable to decode file. File may be empty or in an unsupported format. "
+
+
+def test_check_csv_multiline_inconsistent_columns(tmp_path: Path):
+    file = tmp_path / "multiline_inconsistent.csv"
+    # Header is line 1, row 1 spans lines 2-3, row 2 is on line 4 with extra columns
+    file.write_text('prompt,completion\n"hello\nworld",done\ntest,extra1,extra2\n', encoding="utf-8")
+
+    report = check_file(file, purpose="eval")
+
+    assert not report["is_check_passed"]
+    assert report["load_csv"] is False
+    assert report["line_number"] == 4
+    assert report["message"] == (
+        "CSV file is malformed or the number of columns found on line 4 is inconsistent with the header"
+    )
+
+
 def test_check_file_missing_path(tmp_path: Path) -> None:
     missing = tmp_path / "does_not_exist.jsonl"
     report = check_file(missing)
